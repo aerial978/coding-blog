@@ -1,0 +1,21 @@
+includes:
+  - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+  level: max
+
+  paths:
+    - app
+    - tests
+
+  excludePaths:
+    - vendor/*
+    - tmp/*
+    - cache/*
+
+  checkMissingIterableValueType: false
+  checkGenericClassInNonGenericObjectType: false
+  inferPrivatePropertyTypeFromConstructor: true
+
+  noProgress: true
+

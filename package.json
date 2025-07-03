@@ -1,0 +1,15 @@
+{
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "eslint": "^9.30.1",
+    "globals": "^16.3.0",
+    "stylelint": "^16.21.0",
+    "stylelint-config-standard": "^38.0.0",
+    "stylelint-scss": "^6.12.1"
+  },
+  "scripts": {
+    "lint:js": "eslint public/js/",
+    "lint:js:fix": "eslint public/js/ --fix",
+    "lint:scss": "stylelint \"assets/scss/**/*.scss\""
+  }
+}
