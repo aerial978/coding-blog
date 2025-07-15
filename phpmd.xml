@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ruleset name="CodingBlog PHPMD Rules"
+         xmlns="http://pmd.sf.net/ruleset/1.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+         xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+
+    <description>
+        Règles personnalisées pour le projet coding-blog.
+    </description>
+
+    <directory>app</directory>
+
+    <rule ref="rulesets/cleancode.xml" />
+    <rule ref="rulesets/codesize.xml" />
+    <rule ref="rulesets/design.xml" />
+    <rule ref="rulesets/naming.xml" />
+    <rule ref="rulesets/unusedcode.xml" />
+    <rule ref="rulesets/controversial.xml">
+        <exclude name="Superglobals" />
+    </rule>
+</ruleset>

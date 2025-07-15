@@ -13,9 +13,6 @@ parameters:
     - tmp/*
     - cache/*
 
-  checkMissingIterableValueType: false
-  checkGenericClassInNonGenericObjectType: false
   inferPrivatePropertyTypeFromConstructor: true
 
-  noProgress: true
 

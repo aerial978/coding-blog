@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Mhath\\CodingBlog\\": "app/"
+            "App\\": "app/"
         }
     },
     "autoload-dev": {
@@ -37,7 +37,7 @@
         "cs:check": "php-cs-fixer fix --dry-run --diff",
   	    "cs:fix": "php-cs-fixer fix",
         "stan": "phpstan analyse",
-        "md": "phpmd app text cleancode,codesize,unusedcode,naming",
+        "md": "phpmd app text phpmd.xml",
         "check:quality": [
             "@cs:check",
             "@lint",
