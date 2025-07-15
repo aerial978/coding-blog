@@ -1,9 +1,9 @@
 ## What does this pull request do?
 
-- [ ] Adds a feature
-- [ ] Fixes a bug
-- [ ] Refactors existing code
-- [ ] Other (describe):
+  - [ ] Adds a feature
+  - [ ] Fixes a bug
+  - [ ] Refactors existing code
+  - [ ] Other (describe):
 
 ## Description
 
@@ -15,7 +15,7 @@ Closes #...
 
 ## Checklist
 
-- [ ] Code runs without error
-- [ ] Tests added or updated
-- [ ] Coding style respected
-- [ ] Issue linked (if applicable)
+  - [ ] Code runs without error
+  - [ ] Tests added or updated
+  - [ ] Coding style respected
+  - [ ] Issue linked (if applicable)

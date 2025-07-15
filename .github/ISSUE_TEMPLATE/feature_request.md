@@ -22,10 +22,10 @@ Briefly describe the feature you want to implement.
 
 ## Tasks
 
-- [ ] Describe the goal
-- [ ] Implement the logic
-- [ ] Add necessary views/controllers
-- [ ] Test the feature
+  - [ ] Describe the goal
+  - [ ] Implement the logic
+  - [ ] Add necessary views/controllers
+  - [ ] Test the feature
 
 **Additional context**
 Add any other context or screenshots about the feature request here.
