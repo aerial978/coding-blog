@@ -1,0 +1,53 @@
+engines:
+  phpmd:
+    enabled: true
+    config: phpmd.xml
+
+  phpstan:
+    enabled: true
+    config: .phpstan.neon.dist
+
+  php-cs-fixer:
+    enabled: true
+    config: .php-cs-fixer.dist.php
+
+  phpcs:
+    enabled: true
+    config: phpcs.xml
+
+  eslint:
+    enabled: true
+    config: .eslint.config.mjs
+
+  stylelint:
+    enabled: true
+    config: .stylelintrc.json
+
+  markdownlint:
+    enabled: true
+    rules:
+      list-item-indent: consistent
+      no-undefined-references: false
+
+tools:
+  exclude:
+    - bandit          # Python
+    - brakeman        # Ruby on Rails
+    - cppcheck        # C++
+    - duplication     # Pas utile dans tous les cas
+    - rubocop         # Ruby
+    - jsinspect       # Analyse de duplication JS
+    - coverage        # Si tu n’as pas de rapport de couverture
+
+files:
+  include:
+    - app/
+    - tests/
+    - public/
+    - assets/
+  exclude:
+    - vendor/
+    - node_modules/
+    - tmp/
+    - cache/
+    - .github/
