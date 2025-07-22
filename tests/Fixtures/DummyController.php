@@ -2,6 +2,8 @@
 
 namespace Tests\Fixtures;
 
+use RuntimeException;
+
 /**
  * Dummy controller used for unit testing.
  */
@@ -28,6 +30,6 @@ class DummyController
      */
     public function error(): void
     {
-        throw new \RuntimeException('Erreur volontaire');
+        throw new RuntimeException('Erreur volontaire');
     }
 }

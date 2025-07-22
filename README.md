@@ -5,6 +5,7 @@ It is intended for learners, junior developers, or anyone who wants to understan
 
 ## Badges
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/048f2ec31b3740f482f4d022c8579520)](https://app.codacy.com/gh/aerial978/coding-blog/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ## Features
 
@@ -15,50 +16,48 @@ It is intended for learners, junior developers, or anyone who wants to understan
 - Fully customized MVC architecture
 - Clear separation of business code, views, and controllers
 
-
 ## Installation
 
-1. Clone the repository
+- **Clone the repository**
 
 ```bash
   git clone https://github.com/aerial978/coding-blog.git
   cd coding-blog
 ```
 
-2. Install PHP dependencies
+- **Install PHP dependencies**
 
 ```bash
   composer install
 ```
 
-3. Install the front-end dependencies (JavaScript/CSS)
+- **Install the front-end dependencies (JavaScript/CSS)**
 
 ```bash
   npm install
 ```
 
-4. Configure your environment (.env file if used)
+- **Configure your environment (.env file if used)**
 Create your MySQL database and update the configuration if necessary.
 
-5. Generate the autoload
+- **Generate the autoload**
 
 ```bash
   composer dump-autoload
 ```
 
-
 ## Tech Stack
 
 - **Server language**: PHP 8.x (OOP)
 - **Database**: MySQL
+- **Templating**: Twig
 - **Front-end**: HTML5, CSS3, JavaScript (Vanilla)
 - **Quality tools**:
-- PHPUnit (unit tests)
-- PHPStan, PHPCS, PHP CS Fixer, PHPMD (static analysis, quality)
-- ESLint (JavaScript)
-- Stylelint (SCSS)
-- Roave/Security-Advisories (dependency security)
-
+  - PHPUnit (unit tests)
+  - PHPStan, PHPCS, PHP CS Fixer, PHPMD (static analysis, quality)
+  - ESLint (JavaScript)
+  - Stylelint (SCSS)
+  - Roave/Security-Advisories (dependency security)
 
 ## Running Tests & Quality
 
@@ -79,12 +78,13 @@ To run the code analysis, run the following command
   composer md          # PHPMD
 ```
 
-To run the Javascript & SCSS code analysis, run the following command
+To run the Javascript, SCSS & markdown code analysis, run the following command
 
 ```bash
 npm run lint:js      # ESLint
 npm run lint:js:fix
 npm run lint:scss    # Stylelint
+npm run lint:md      # Markdownlint
 ```
 
 ## License

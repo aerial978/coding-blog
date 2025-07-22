@@ -3,6 +3,7 @@
 namespace Tests\Unit\Core;
 
 use App\Core\Router;
+use Exception;
 use PHPUnit\Framework\TestCase;
 use Tests\Fixtures\DummyController;
 
@@ -114,9 +115,11 @@ class RouterTest extends TestCase
 
         $this->expectOutputRegex('/500/');
 
-        $router = new Router([
-            Router::METHOD_GET => ['/test' => [DummyController::class, 'index']]
-        ]);
+        $router = new Router(
+            [
+                Router::METHOD_GET => ['/test' => [DummyController::class, 'index']]
+            ]
+        );
 
         $router->handleRequest();
     }
@@ -129,9 +132,11 @@ class RouterTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = Router::METHOD_GET;
         $_SERVER['REQUEST_URI']    = '/coding-blog/test';
 
-        $router = new Router([
-            Router::METHOD_GET => ['/test' => [DummyController::class, 'index']]
-        ]);
+        $router = new Router(
+            [
+                Router::METHOD_GET => ['/test' => [DummyController::class, 'index']]
+            ]
+        );
 
         ob_start();
         $router->handleRequest();
@@ -150,10 +155,10 @@ class RouterTest extends TestCase
         $_SERVER['REQUEST_URI']    = '/invalid';
 
         $mock = $this->createMock(\App\Controller\ErrorController::class);
-        $mock->method('notFound')->will($this->throwException(new \Exception()));
-        $mock->method('serverError')->will($this->throwException(new \Exception()));
+        $mock->method('notFound')->will($this->throwException(new Exception()));
+        $mock->method('serverError')->will($this->throwException(new Exception()));
 
-        $router = new \App\Core\Router(
+        $router = new Router(
             [
                 \App\Core\Router::METHOD_GET => [
                     '/valide' => [DummyController::class, 'index']

@@ -2,6 +2,8 @@
 
 namespace app\Controller;
 
+use Exception;
+
 /**
  * Test controller intentionally misused to simulate internal errors.
  */
@@ -12,7 +14,7 @@ class FaultyErrorController
      */
     public function notFound(): void
     {
-        throw new \Exception('Erreur simulée');
+        throw new Exception('Erreur simulée');
     }
 
     /**
@@ -20,6 +22,6 @@ class FaultyErrorController
      */
     public function serverError(): void
     {
-        throw new \Exception('Erreur simulée');
+        throw new Exception('Erreur simulée');
     }
 }

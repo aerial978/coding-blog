@@ -24,8 +24,10 @@ class RoutingTest extends TestCase
         ob_start();
         $router->handleRequest();
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
+        $this->assertIsString($output);
         $this->assertStringContainsString('Bienvenue', $output);
+
+        $this->assertStringContainsString('<!DOCTYPE html>', $output);
     }
 }
