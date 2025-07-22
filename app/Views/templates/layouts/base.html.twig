@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Coding Blog{% endblock %}</title>
+</head>
+<body>
+    {% include 'templates/partials/header.html.twig' %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'templates/partials/footer.html.twig' %}
+</body>
+</html>

@@ -49,6 +49,8 @@ class Router
         }
 
         $path = parse_url($requestUri, PHP_URL_PATH);
+        // Defensive check: parse_url() with PHP_URL_PATH should always return string|null.
+        // This condition is unlikely to be triggered, but is kept as a safeguard.
         if (!is_string($path)) {
             $this->handleError(500);
             return;

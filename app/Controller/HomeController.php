@@ -2,14 +2,18 @@
 
 namespace App\Controller;
 
-class HomeController
+class HomeController extends BaseController
 {
     /**
      * Displays the home page
      */
     public function index(): void
     {
-        echo '<h1>Bienvenue sur le blog</h1>';
-        echo "<p>Ceci est la page d'accueil.</p>";
+        //throw new \Exception('Test erreur 500');
+
+        $this->render('home/index.html.twig', [
+            'title'   => 'Bienvenue sur le blog',
+            'message' => 'Ceci est la page d\'accueil.',
+        ]);
     }
 }

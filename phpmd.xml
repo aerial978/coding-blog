@@ -10,6 +10,7 @@
     </description>
 
     <directory>app</directory>
+    <directory>tests</directory>
 
     <rule ref="rulesets/cleancode.xml" />
     <rule ref="rulesets/codesize.xml" />

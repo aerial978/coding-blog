@@ -5,7 +5,7 @@ namespace App\Controller;
 /**
  * Controller dedicated to handling HTTP errors.
  */
-class ErrorController
+class ErrorController extends BaseController
 {
     /**
      * Displays a 404 page.
@@ -13,7 +13,7 @@ class ErrorController
     public function notFound(): void
     {
         http_response_code(404);
-        echo '<h3>404 - Page introuvable</h3>';
+        $this->render('errors/404.html.twig');
     }
 
     /**
@@ -22,6 +22,6 @@ class ErrorController
     public function serverError(): void
     {
         http_response_code(500);
-        echo '<h3>500 - Erreur interne du serveur</h3>';
+        $this->render('errors/500.html.twig');
     }
 }
