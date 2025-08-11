@@ -14,7 +14,7 @@ class DummyController
      */
     public function index(): void
     {
-        echo 'Méthode index exécutée';
+        echo 'Index method executed';
     }
 
     /**
@@ -30,6 +30,11 @@ class DummyController
      */
     public function error(): void
     {
-        throw new RuntimeException('Erreur volontaire');
+        throw new RuntimeException('Intentional error');
+    }
+
+    public function dummy(): string
+    {
+        return 'dummy';
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Tests\Functional;
 
+use App\Core\Container;
+use App\Core\Router;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -18,15 +20,22 @@ class RoutingTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
         /** @var array<string, array<string, array{0: class-string, 1: string}>> */
-        $routes = require __DIR__ . '/../../app/config/routes.php';
-        $router = new \App\Core\Router($routes);
+        $routes    = require __DIR__ . '/../../app/config/routes.php';
+        $container = new Container();
+
+        $router = new Router(
+            $routes,
+            $container,
+            $container->getErrorController(),
+            $container->getRequest()
+        );
 
         ob_start();
         $router->handleRequest();
         $output = ob_get_clean();
 
         $this->assertIsString($output);
-        $this->assertStringContainsString('Bienvenue', $output);
+        $this->assertStringContainsString('Home page', $output);
 
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
     }

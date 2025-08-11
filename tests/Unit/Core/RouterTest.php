@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Core;
 
+use App\Core\Container;
 use App\Core\Router;
 use Exception;
 use PHPUnit\Framework\TestCase;
@@ -26,8 +27,9 @@ class RouterTest extends TestCase
             ]
         ];
 
+        $container = new Container();
         ob_start();
-        $router = new Router($routes);
+        $router = new Router($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -49,8 +51,9 @@ class RouterTest extends TestCase
             ]
         ];
 
+        $container = new Container();
         ob_start();
-        $router = new Router($routes);
+        $router = new Router($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -66,7 +69,7 @@ class RouterTest extends TestCase
         $_SERVER['REQUEST_URI']    = '/fail';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
-        $fakeClass = 'App\\Controller\\Inexistant';
+        $fakeClass = 'App\\Controller\\Nonexistent';
 
         $routes = [
             Router::METHOD_GET => [
@@ -74,8 +77,9 @@ class RouterTest extends TestCase
             ]
         ];
 
+        $container = new Container();
         ob_start();
-        $router = new Router($routes);
+        $router = new Router($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -97,8 +101,9 @@ class RouterTest extends TestCase
             ]
         ];
 
+        $container = new Container();
         ob_start();
-        $router = new Router($routes);
+        $router = new Router($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -115,12 +120,14 @@ class RouterTest extends TestCase
 
         $this->expectOutputRegex('/500/');
 
-        $router = new Router(
-            [
-                Router::METHOD_GET => ['/test' => [DummyController::class, 'index']]
+        $routes = [
+            Router::METHOD_GET => [
+                '/test' => [DummyController::class, 'index']
             ]
-        );
+        ];
 
+        $container = new Container();
+        $router    = new Router($routes, $container);
         $router->handleRequest();
     }
 
@@ -132,18 +139,20 @@ class RouterTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = Router::METHOD_GET;
         $_SERVER['REQUEST_URI']    = '/coding-blog/test';
 
-        $router = new Router(
-            [
-                Router::METHOD_GET => ['/test' => [DummyController::class, 'index']]
+        $routes = [
+            Router::METHOD_GET => [
+                '/test' => [DummyController::class, 'index']
             ]
-        );
+        ];
 
+        $container = new Container();
         ob_start();
+        $router = new Router($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
 
-        $this->assertStringContainsString('Méthode index exécutée', $output);
+        $this->assertStringContainsString('Index method executed', $output);
     }
 
     /**
@@ -158,16 +167,15 @@ class RouterTest extends TestCase
         $mock->method('notFound')->will($this->throwException(new Exception()));
         $mock->method('serverError')->will($this->throwException(new Exception()));
 
-        $router = new Router(
-            [
-                \App\Core\Router::METHOD_GET => [
-                    '/valide' => [DummyController::class, 'index']
-                ]
-            ],
-            $mock // injection du contrôleur fautif
-        );
+        $routes = [
+            Router::METHOD_GET => [
+                '/valide' => [DummyController::class, 'index']
+            ]
+        ];
 
+        $container = new Container();
         ob_start();
+        $router = new Router($routes, $container, $mock);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);

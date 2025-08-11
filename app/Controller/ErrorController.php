@@ -19,9 +19,12 @@ class ErrorController extends BaseController
     /**
      * Displays a 500 page.
      */
-    public function serverError(): void
+    public function serverError(?string $errorId = null): void
     {
         http_response_code(500);
-        $this->render('errors/500.html.twig');
+
+        $this->render('errors/500.html.twig', [
+            'errorId' => $errorId
+        ]);
     }
 }

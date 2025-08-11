@@ -2,18 +2,38 @@
 
 namespace App\Controller;
 
+use App\Model\UserModel;
+
 class HomeController extends BaseController
 {
     /**
-     * Displays the home page
+     * Constructor.
+     *
+     * Initializes the controller with the UserModel dependency.
+     *
+     * @param UserModel $userModel The model used to interact with user data.
+     */
+    public function __construct(private UserModel $userModel)
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Default action for the home page.
+     *
+     * Fetches all users from the database and renders the home page template
+     * with the list of users and some static page data.
+     *
+     * @return void
      */
     public function index(): void
     {
-        //throw new \Exception('Test erreur 500');
+        $users = $this->userModel->findAll();
 
         $this->render('home/index.html.twig', [
-            'title'   => 'Bienvenue sur le blog',
-            'message' => 'Ceci est la page d\'accueil.',
+            'title'   => 'Home',
+            'message' => 'This is the home page.',
+            'users'   => $users,
         ]);
     }
 }
