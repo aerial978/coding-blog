@@ -17,23 +17,33 @@ class Router
      * @var array<string, array<string, array{0: string, 1: string}>>
      */
     private array $routes;
+    /** @internal Used internally by Router but not read yet */
     private string $basePath;
     private ErrorController $errorController;
     private Request $request;
-
+    private ControllerFactoryInterface $controllerFactory;
 
     /**
      * @param array<string, array<string, array{0: string, 1: string}>> $routes
-     * @param ErrorController|null $errorController Error controller (optional).
+     * @param Container $container
+     * @param ErrorController|null $errorController Contrôleur des erreurs (optionnel)
+     * @param Request|null $request Requête HTTP (optionnelle)
+     * @param ControllerFactoryInterface|null $controllerFactory Fabrique de contrôleurs
      */
-    public function __construct(array $routes, ?ErrorController $errorController = null, ?Request $request = null)
-    {
+    public function __construct(
+        array $routes,
+        Container $container,
+        ?ErrorController $errorController = null,
+        ?Request $request = null,
+        ?ControllerFactoryInterface $controllerFactory = null
+    ) {
         /** @var array{base_path: string} $config */
-        $config                = include __DIR__ . '/../Config/app.php';
-        $this->basePath        = rtrim($config['base_path'], '/');
-        $this->routes          = $routes;
-        $this->errorController = $errorController ?? new ErrorController();
-        $this->request         = $request         ?? new Request();
+        $config                    = include __DIR__ . '/../Config/app.php';
+        $this->basePath            = rtrim($config['base_path'], '/');
+        $this->routes              = $routes;
+        $this->controllerFactory   = $controllerFactory ?? new DefaultControllerFactory($container);
+        $this->errorController     = $errorController   ?? new ErrorController();
+        $this->request             = $request           ?? new Request();
     }
 
     /**
@@ -48,14 +58,7 @@ class Router
             return;
         }
 
-        $path = parse_url($requestUri, PHP_URL_PATH);
-        // Defensive check: parse_url() with PHP_URL_PATH should always return string|null.
-        // This condition is unlikely to be triggered, but is kept as a safeguard.
-        if (!is_string($path)) {
-            $this->handleError(500);
-            return;
-        }
-
+        $path       = (string) parse_url($requestUri, PHP_URL_PATH);
         $cleanedUri = $this->normalizeUri($path);
 
         $this->dispatch($cleanedUri);
@@ -97,7 +100,8 @@ class Router
             return;
         }
 
-        $controller = new $controllerClass();
+        $controller = $this->controllerFactory->create($controllerClass);
+
         $controller->$action();
     }
 

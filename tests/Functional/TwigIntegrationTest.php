@@ -2,6 +2,8 @@
 
 namespace Tests\Functional;
 
+use App\Core\Container;
+use App\Core\Router;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -32,8 +34,15 @@ class TwigIntegrationTest extends TestCase
 
         // Load application routes
         /** @var array<string, array<string, array{string, string}>> $routes */
-        $routes = require __DIR__ . '/../../app/config/routes.php';
-        $router = new \App\Core\Router($routes);
+        $routes    = require __DIR__ . '/../../app/config/routes.php';
+        $container = new Container();
+
+        $router = new Router(
+            $routes,
+            $container,
+            $container->getErrorController(),
+            $container->getRequest()
+        );
 
         // Capture the output of the response
         ob_start();
@@ -43,7 +52,7 @@ class TwigIntegrationTest extends TestCase
         // Validate the output
         $this->assertIsString($output);
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
-        $this->assertStringContainsString('Bienvenue sur le blog', $output);
-        $this->assertStringContainsString('Ceci est la page d&#039;accueil', $output);
+        $this->assertStringContainsString('Home', $output);
+        $this->assertStringContainsString('This is the home page.', $output);
     }
 }

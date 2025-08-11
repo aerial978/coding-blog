@@ -15,6 +15,10 @@ It is intended for learners, junior developers, or anyone who wants to understan
 - User login and registration
 - Fully customized MVC architecture
 - Clear separation of business code, views, and controllers
+- Environment configuration via `.env` files (Dotenv)
+- Secure PDO-based MySQL connection (singleton Database class)
+- Centralized application error handler (ErrorHandler + custom 500 page)
+- Structured logging using Monolog with per-domain log files
 
 ## Installation
 
@@ -58,6 +62,9 @@ Create your MySQL database and update the configuration if necessary.
   - ESLint (JavaScript)
   - Stylelint (SCSS)
   - Roave/Security-Advisories (dependency security)
+- **Logging**: Monolog (multi-channel file logging)
+- **Environment loader**: vlucas/phpdotenv
+- **Error management**: custom global ErrorHandler with user-friendly error pages
 
 ## Running Tests & Quality
 

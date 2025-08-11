@@ -1,4 +1,8 @@
 {% block content %}
     <h2>500 - Erreur interne</h2>
     <p>Une erreur inattendue s'est produite.</p>
+
+    {% if errorId %}
+        <p>Code erreur : <strong>{{ errorId }}</strong></p>
+    {% endif %}
 {% endblock %}

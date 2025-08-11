@@ -24,3 +24,6 @@
 # --- STYLELINT / ESLINT
 /.stylelintcache
 /.eslintcache
+
+.env
+.env.test
