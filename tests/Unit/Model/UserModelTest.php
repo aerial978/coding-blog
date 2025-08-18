@@ -36,11 +36,10 @@ final class UserModelTest extends TestCase
         $this->dummyUsername = 'test_user_' . uniqid();
 
         $pdo  = (new Database())->getConnection();
-        $stmt = $pdo->prepare('INSERT INTO user (username, email, password) VALUES (:username, :email, :password)');
+        $stmt = $pdo->prepare('INSERT INTO user (username, email) VALUES (:username, :email)');
         $stmt->execute([
             'username' => $this->dummyUsername,
-            'email'    => $this->dummyUsername . '@example.com',
-            'password' => 'hashed'
+            'email'    => $this->dummyUsername . '@example.com'
         ]);
     }
 

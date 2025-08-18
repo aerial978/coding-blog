@@ -10,7 +10,7 @@
         <h3>Users</h3>
         <ul>
             {% for user in users %}
-                <li>ID : {{ user.id }}, Email : {{ user.email }}, Created at : {{ user.createdAt|date('d/m/Y') }}</li>
+                <li>ID : {{ user.userId }}, Username : {{ user.username }}, Email : {{ user.email }}, Created at : {{ user.createdAt|date('d/m/Y') }}</li>
             {% endfor %}
         </ul>
     {% else %}

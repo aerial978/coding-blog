@@ -4,6 +4,8 @@ namespace Tests\Unit\Core;
 
 use App\Core\EnvLoader;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionMethod;
 use RuntimeException;
 
 /**
@@ -68,8 +70,8 @@ final class EnvLoaderTest extends TestCase
         $_ENV['DB_NAME_TEST'] = 'test_db';
         $_ENV['APP_URL']      = 'http://localhost';
 
-        $reflection = new \ReflectionClass(EnvLoader::class);
-        $method     = $reflection->getMethod('validateRequiredVariables');
+        $reflection = new ReflectionClass(EnvLoader::class);
+        $method = $reflection->getMethod('validateRequiredVariables');
         $method->setAccessible(true);
 
         $this->expectException(RuntimeException::class);
@@ -89,8 +91,8 @@ final class EnvLoaderTest extends TestCase
         $_ENV['DB_NAME_TEST'] = '';
         $_ENV['APP_URL']      = 'http://localhost';
 
-        $reflection = new \ReflectionClass(EnvLoader::class);
-        $method     = $reflection->getMethod('validateRequiredVariables');
+        $reflection = new ReflectionClass(EnvLoader::class);
+        $method = $reflection->getMethod('validateRequiredVariables');
         $method->setAccessible(true);
 
         $this->expectException(RuntimeException::class);
@@ -105,8 +107,8 @@ final class EnvLoaderTest extends TestCase
      */
     private function invokeResolveAppEnv(): string
     {
-        $reflection = new \ReflectionClass(EnvLoader::class);
-        $method     = $reflection->getMethod('resolveAppEnv');
+        $reflection = new ReflectionClass(EnvLoader::class);
+        $method = $reflection->getMethod('resolveAppEnv');
         $method->setAccessible(true);
 
         /** @var string $value */
@@ -120,7 +122,7 @@ final class EnvLoaderTest extends TestCase
      */
     public function testResolveAppEnvReturnsProdWhenEnvAndGetenvMissing(): void
     {
-        $backupEnv    = $_ENV['APP_ENV'] ?? null;
+        $backupEnv = $_ENV['APP_ENV'] ?? null;
         $backupGetenv = getenv('APP_ENV');
 
         unset($_ENV['APP_ENV']);
@@ -137,5 +139,16 @@ final class EnvLoaderTest extends TestCase
         if ($backupGetenv !== false) {
             putenv("APP_ENV=$backupGetenv");
         }
+    }
+
+    public function testIsNonEmptyStringVarReturnsFalseWhenNotString(): void
+    {
+        $_ENV['APP_URL'] = 12345; // valeur non-string
+        $method = new ReflectionMethod(\App\Core\EnvLoader::class, 'isNonEmptyStringVar');
+        $method->setAccessible(true);
+
+        $result = $method->invoke(null, 'APP_URL');
+
+        $this->assertFalse($result);
     }
 }

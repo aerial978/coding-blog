@@ -68,7 +68,7 @@ final class SqlHelperTest extends UnitTestCase
     public function testRequestWithoutParameters(): void
     {
         $email = $this->dummyUsername . '@example.com';
-        $sql   = "INSERT INTO user (username, email, password) VALUES ('{$this->dummyUsername}', '$email', 'hashed')";
+        $sql   = "INSERT INTO user (username, email) VALUES ('{$this->dummyUsername}', '$email')";
         $stmt  = $this->sqlHelper->request($sql);
 
         $inserted = $stmt->rowCount() > 0;
@@ -93,11 +93,10 @@ final class SqlHelperTest extends UnitTestCase
      */
     public function testRequestWithParameters(): void
     {
-        $sql    = 'INSERT INTO user (username, email, password) VALUES (:username, :email, :password)';
+        $sql    = 'INSERT INTO user (username, email) VALUES (:username, :email)';
         $params = [
             'username' => $this->dummyUsername,
-            'email'    => $this->dummyUsername . '@example.com',
-            'password' => 'hashed'
+            'email'    => $this->dummyUsername . '@example.com'
         ];
 
         $stmt = $this->sqlHelper->request($sql, $params);

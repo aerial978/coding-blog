@@ -4,7 +4,6 @@ namespace App\Model;
 
 use App\Core\SqlHelper;
 use App\Model\Entity\UserEntity;
-use Psr\Log\LoggerInterface;
 
 /**
  * Handles database operations related to the User entity.
@@ -16,11 +15,9 @@ class UserModel
 {
     /**
      * @param SqlHelper $sqlHelper Helper for executing SQL queries.
-     * @param LoggerInterface $logger Logger for recording application events.
      */
     public function __construct(
-        private SqlHelper $sqlHelper,
-        private LoggerInterface $logger
+        private SqlHelper $sqlHelper
     ) {
     }
 
@@ -32,7 +29,7 @@ class UserModel
     public function findAll(): array
     {
         // Execute the query to retrieve user data
-        $stmt = $this->sqlHelper->request('SELECT id, email, created_at FROM user');
+        $stmt = $this->sqlHelper->request('SELECT id AS user_id, username, email, created_at FROM user');
 
         // Fetch all results as associative arrays
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -45,11 +42,11 @@ class UserModel
             $users[] = (new UserEntity())->hydrate($row);
         }
 
-        // Log the retrieval event
+        /* Log the retrieval event
         $this->logger->info('Retrieved users', [
             'total'     => count($users),
             'timestamp' => date('Y-m-d H:i:s'),
-        ]);
+        ]);*/
 
         return $users;
     }

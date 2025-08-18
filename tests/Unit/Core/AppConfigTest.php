@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
  * This class verifies that environment configuration values
  * such as APP_ENV and APP_URL are correctly interpreted
  * by the AppConfig class methods.
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 final class AppConfigTest extends TestCase
 {

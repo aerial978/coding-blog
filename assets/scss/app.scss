@@ -1,0 +1,5 @@
+/* 1) Charger Bootstrap (via @use) en personnalisant quelques variables */
+@use "bootstrap/scss/bootstrap";
+
+/* 2) Charger ton fichier de styles custom (sans namespace) */
+@use "custom";

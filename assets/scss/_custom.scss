@@ -1,0 +1,22 @@
+/* Ici tu écris tes styles applicatifs "post-Bootstrap" */
+
+body {
+  /* Juste un mini repère visuel */
+  min-height: 100vh;
+  color: #d63384;
+}
+
+/* Exemple d’override léger */
+.navbar-brand {
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+
+/* Exemple de classe utilitaire locale */
+.btn-auth {
+  padding-inline: 1.25rem;
+}
+
+h1 {
+    color: #0dcaf0;
+}

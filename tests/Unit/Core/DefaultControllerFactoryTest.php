@@ -3,9 +3,11 @@
 namespace Tests\Unit\Core;
 
 use App\Controller\ErrorController;
+use App\Controller\HomeController;
 use App\Core\Container;
 use App\Core\DefaultControllerFactory;
 use PHPUnit\Framework\TestCase;
+use Tests\Fixtures\DummyController;
 
 /**
  * Unit tests for the DefaultControllerFactory class.
@@ -26,17 +28,17 @@ final class DefaultControllerFactoryTest extends TestCase
     {
         $userModelMock = $this->createMock(\App\Model\UserModel::class);
 
-        $homeController = new \App\Controller\HomeController($userModelMock);
+        $homeController = new HomeController($userModelMock);
 
-        $container = $this->createMock(\App\Core\Container::class);
+        $container = $this->createMock(Container::class);
         $container->expects($this->once())
             ->method('getHomeController')
             ->willReturn($homeController);
 
-        $factory    = new \App\Core\DefaultControllerFactory($container);
-        $controller = $factory->create(\App\Controller\HomeController::class);
+        $factory    = new DefaultControllerFactory($container);
+        $controller = $factory->create(HomeController::class);
 
-        $this->assertInstanceOf(\App\Controller\HomeController::class, $controller);
+        $this->assertInstanceOf(HomeController::class, $controller);
     }
 
     /**
@@ -71,8 +73,8 @@ final class DefaultControllerFactoryTest extends TestCase
         require_once __DIR__ . '/../../Fixtures/DummyController.php';
 
         $factory    = new DefaultControllerFactory($container);
-        $controller = $factory->create(\Tests\Fixtures\DummyController::class);
+        $controller = $factory->create(DummyController::class);
 
-        $this->assertInstanceOf(\Tests\Fixtures\DummyController::class, $controller);
+        $this->assertInstanceOf(DummyController::class, $controller);
     }
 }

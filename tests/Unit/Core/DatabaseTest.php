@@ -28,7 +28,7 @@ final class DatabaseTest extends TestCase
     {
         parent::setUp();
 
-        $this->originalEnv = array_filter($_ENV, fn ($k) => is_string($k), ARRAY_FILTER_USE_KEY);
+        $this->originalEnv = array_filter($_ENV, fn ($key) => is_string($key), ARRAY_FILTER_USE_KEY);
 
         $_ENV['DB_NAME']      = 'coding-blog';
         $_ENV['DB_HOST']      = 'localhost';

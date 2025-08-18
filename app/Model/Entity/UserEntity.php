@@ -13,6 +13,9 @@ class UserEntity extends AbstractEntity
     /** @var int|null Unique identifier for the user */
     private ?int $userId = null;
 
+     /** @var string|null User's username */
+    private ?string $username = null;
+
     /** @var string|null User's email address */
     private ?string $email = null;
 
@@ -38,6 +41,28 @@ class UserEntity extends AbstractEntity
     public function setUserId(int $userId): self
     {
         $this->userId = $userId;
+        return $this;
+    }
+
+    /**
+     * Gets the user's username.
+     *
+     * @return string|null The username, or null if not set.
+     */
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    /**
+     * Sets the user's username.
+     *
+     * @param string $usernama The username.
+     * @return self
+     */
+    public function setUsername(string $username): self
+    {
+        $this->username = $username;
         return $this;
     }
 

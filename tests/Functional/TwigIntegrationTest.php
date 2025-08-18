@@ -37,12 +37,7 @@ class TwigIntegrationTest extends TestCase
         $routes    = require __DIR__ . '/../../app/config/routes.php';
         $container = new Container();
 
-        $router = new Router(
-            $routes,
-            $container,
-            $container->getErrorController(),
-            $container->getRequest()
-        );
+        $router = Router::fromContainer($routes, $container);
 
         // Capture the output of the response
         ob_start();

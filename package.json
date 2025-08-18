@@ -12,6 +12,13 @@
     "lint:js": "eslint public/js/",
     "lint:js:fix": "eslint public/js/ --fix",
     "lint:scss": "stylelint \"assets/scss/**/*.scss\"",
-    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#vendor\""
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#vendor\"",
+    "scss:watch": "sass --load-path=node_modules assets/scss/app.scss public/css/app.css --watch",
+    "scss:build": "sass --load-path=node_modules assets/scss/app.scss public/css/app.css --style=compressed"
+  },
+  
+  "dependencies": {
+    "bootstrap": "^5.3.7",
+    "sass": "^1.90.0"
   }
 }

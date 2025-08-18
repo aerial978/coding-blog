@@ -9,6 +9,7 @@ It is intended for learners, junior developers, or anyone who wants to understan
 
 ## Features
 
+- User registration and login system (secure authentication)
 - Article creation, editing, and deletion
 - Commenting system
 - Administration interface
@@ -19,6 +20,8 @@ It is intended for learners, junior developers, or anyone who wants to understan
 - Secure PDO-based MySQL connection (singleton Database class)
 - Centralized application error handler (ErrorHandler + custom 500 page)
 - Structured logging using Monolog with per-domain log files
+- Bootstrap 5 integration for responsive design
+- SCSS support for maintainable and scalable styling
 
 ## Installation
 
@@ -35,7 +38,7 @@ It is intended for learners, junior developers, or anyone who wants to understan
   composer install
 ```
 
-- **Install the front-end dependencies (JavaScript/CSS)**
+- **Install front-end dependencies (Bootstrap, SCSS, JavaScript)**
 
 ```bash
   npm install

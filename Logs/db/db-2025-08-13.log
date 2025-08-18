@@ -1,0 +1,3 @@
+[2025-08-13T17:51:07.916238+00:00] db.ERROR: PDO error {"dsn":"mysql:host=localhost;dbname=coding-blog_test;charset=utf8mb4","env":"test","message":"SQLSTATE[HY000] [1045] Accès refusé pour l'utilisateur: 'invalid user'@'@localhost' (mot de passe: OUI)"} []
+[2025-08-13T17:52:48.903422+00:00] db.ERROR: PDO error {"dsn":"mysql:host=localhost;dbname=coding-blog_test;charset=utf8mb4","env":"test","message":"SQLSTATE[HY000] [1045] Accès refusé pour l'utilisateur: 'invalid user'@'@localhost' (mot de passe: OUI)"} []
+[2025-08-13T17:54:23.666576+00:00] db.ERROR: PDO error {"dsn":"mysql:host=localhost;dbname=coding-blog_test;charset=utf8mb4","env":"test","message":"SQLSTATE[HY000] [1045] Accès refusé pour l'utilisateur: 'invalid user'@'@localhost' (mot de passe: OUI)"} []

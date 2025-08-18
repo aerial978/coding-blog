@@ -4,7 +4,6 @@ namespace Tests\Unit\Core;
 
 use App\Core\Container;
 use App\Core\Router;
-use Exception;
 use PHPUnit\Framework\TestCase;
 use Tests\Fixtures\DummyController;
 
@@ -29,7 +28,7 @@ class RouterTest extends TestCase
 
         $container = new Container();
         ob_start();
-        $router = new Router($routes, $container);
+        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -53,7 +52,7 @@ class RouterTest extends TestCase
 
         $container = new Container();
         ob_start();
-        $router = new Router($routes, $container);
+        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -79,7 +78,7 @@ class RouterTest extends TestCase
 
         $container = new Container();
         ob_start();
-        $router = new Router($routes, $container);
+        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -103,7 +102,7 @@ class RouterTest extends TestCase
 
         $container = new Container();
         ob_start();
-        $router = new Router($routes, $container);
+        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -127,7 +126,7 @@ class RouterTest extends TestCase
         ];
 
         $container = new Container();
-        $router    = new Router($routes, $container);
+        $router    = Router::fromContainer($routes, $container);
         $router->handleRequest();
     }
 
@@ -147,7 +146,7 @@ class RouterTest extends TestCase
 
         $container = new Container();
         ob_start();
-        $router = new Router($routes, $container);
+        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
         $this->assertIsString($output);
@@ -160,25 +159,33 @@ class RouterTest extends TestCase
      */
     public function testHandleErrorWithFaultyErrorControllerFallback(): void
     {
-        $_SERVER['REQUEST_METHOD'] = Router::METHOD_GET;
-        $_SERVER['REQUEST_URI']    = '/invalid';
-
-        $mock = $this->createMock(\App\Controller\ErrorController::class);
-        $mock->method('notFound')->will($this->throwException(new Exception()));
-        $mock->method('serverError')->will($this->throwException(new Exception()));
-
         $routes = [
-            Router::METHOD_GET => [
-                '/valide' => [DummyController::class, 'index']
-            ]
+            'GET' => [
+                '/boom' => [\App\Controller\HomeController::class, 'index'],
+            ],
         ];
 
-        $container = new Container();
+        $request = $this->createMock(\App\Http\Request::class);
+        $request->method('getUri')->willReturn('/inconnu');
+        $request->method('getMethod')->willReturn('GET');
+
+        $faultyErrorController = $this->createMock(\App\Controller\ErrorController::class);
+        $faultyErrorController->method('notFound')
+            ->willThrowException(new \RuntimeException('boom'));
+
+        $factory = $this->createMock(\App\Core\ControllerFactoryInterface::class);
+
+        $router = new \App\Core\Router(
+            $routes,
+            '',
+            $faultyErrorController,
+            $request,
+            $factory
+        );
+
         ob_start();
-        $router = new Router($routes, $container, $mock);
         $router->handleRequest();
-        $output = ob_get_clean();
-        $this->assertIsString($output);
+        $output = (string) ob_get_clean();
 
         $this->assertStringContainsString('404 - An error has occurred', $output);
     }

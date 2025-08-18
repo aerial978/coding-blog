@@ -25,25 +25,43 @@ class Router
 
     /**
      * @param array<string, array<string, array{0: string, 1: string}>> $routes
-     * @param Container $container
-     * @param ErrorController|null $errorController Contrôleur des erreurs (optionnel)
-     * @param Request|null $request Requête HTTP (optionnelle)
-     * @param ControllerFactoryInterface|null $controllerFactory Fabrique de contrôleurs
      */
     public function __construct(
         array $routes,
-        Container $container,
-        ?ErrorController $errorController = null,
-        ?Request $request = null,
-        ?ControllerFactoryInterface $controllerFactory = null
+        string $basePath,
+        ErrorController $errorController,
+        Request $request,
+        ControllerFactoryInterface $controllerFactory
     ) {
-        /** @var array{base_path: string} $config */
-        $config                    = include __DIR__ . '/../Config/app.php';
-        $this->basePath            = rtrim($config['base_path'], '/');
-        $this->routes              = $routes;
-        $this->controllerFactory   = $controllerFactory ?? new DefaultControllerFactory($container);
-        $this->errorController     = $errorController   ?? new ErrorController();
-        $this->request             = $request           ?? new Request();
+        $this->routes            = $routes;
+        $this->basePath          = rtrim($basePath, '/');
+        $this->errorController   = $errorController;
+        $this->request           = $request;
+        $this->controllerFactory = $controllerFactory;
+    }
+
+    /**
+     * Small helper to build from Container (no logic in __construct).
+     *
+     * @param array<string, array<string, array{0: string, 1: string}>> $routes
+     */
+    public static function fromContainer(array $routes, Container $container): self
+    {
+        /** @var array{base_path?: mixed} $cfg */
+        $cfg = include __DIR__ . '/../Config/app.php';
+
+        $basePath = '';
+        if (isset($cfg['base_path']) && is_string($cfg['base_path'])) {
+            $basePath = $cfg['base_path'];
+        }
+
+        return new self(
+            $routes,
+            $basePath,
+            $container->getErrorController(),
+            $container->getRequest(),
+            $container->getControllerFactory()
+        );
     }
 
     /**

@@ -23,12 +23,7 @@ class RoutingTest extends TestCase
         $routes    = require __DIR__ . '/../../app/config/routes.php';
         $container = new Container();
 
-        $router = new Router(
-            $routes,
-            $container,
-            $container->getErrorController(),
-            $container->getRequest()
-        );
+        $router = Router::fromContainer($routes, $container);
 
         ob_start();
         $router->handleRequest();
