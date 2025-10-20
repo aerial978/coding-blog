@@ -1,0 +1,660 @@
+[2025-10-03T13:57:13+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T13:57:13+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T13:57:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"X5AxHQYYijmQllPyw7kUlhKXvbXlAG3cvHxeRVgCxRU"} 
+[2025-10-03T13:57:13+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T13:57:13+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:01:43+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"cuG1Y8O0LxNItG-y3vlU5gHN9WmQZ0P2io7e4S5N3BI"} 
+[2025-10-03T14:01:44+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ZC1sNMBQapmKC8yFW0Ez5w0T4DMQx26xZYH_LujMJPA"} 
+[2025-10-03T14:01:44+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:01:44+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:01:44+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:01:44+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"zAQQ38SrWzg5NZDo1rYdp5EAQXhSdpjSCWgdeVWSzMM"} 
+[2025-10-03T14:01:44+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:01:44+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:06:00+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"qEjcxbWFCjnNcaCa0HT0ZDMMGmFNFERdifE4Wju3Dd4"} 
+[2025-10-03T14:06:01+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"-KOHWE6B-fuesrvCdyhY5q87GwbbPQKl6VdYajMV974"} 
+[2025-10-03T14:06:01+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:06:01+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:06:01+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:06:01+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"yGI0BTz1qpFaiVnw8Ylgz54zl8DT7yEv4luwL4NsrCI"} 
+[2025-10-03T14:06:01+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:06:01+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:06:01+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"FUdz43FipuFfc0hqt0l_kX_1f3kw1xEs0AcgesNen9o"} 
+[2025-10-03T14:06:01+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:15:01+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"d8x2LEC3LyVOZznmzrVASc3zVaEGsm4EwkOikXjTyIo"} 
+[2025-10-03T14:15:01+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ThONGGPZ_krulpbhGua8YBrGWkQuYIMD8pFLP_H9OlM"} 
+[2025-10-03T14:15:01+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:15:01+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:15:01+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:15:01+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"HyUsosVE2gx7CfMrwu3oLyh5aw-ONpR1YBu0gQbwFeo"} 
+[2025-10-03T14:15:01+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:15:01+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:15:02+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"OiLwc0VXdr4YwyiMR6ywpe15aXs22BLNWeppkBcQVCA"} 
+[2025-10-03T14:15:02+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:15:02+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T14:15:02+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T14:18:59+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"OSK7PpRdO91dWLbae3ltCcRMXoXbYYihSXKLdvsFq2Y"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"HCWcKmbF2g3Ibx9Cp3LaOKWISPabXKsuIRDZdB9KjFc"} 
+[2025-10-03T14:19:00+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:19:00+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"tHHnsp-hicAu6n0ziAEeHjsR5uJc2gZVPIyvpvWiWec"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"pQAgtfGAwXO48mOEQC55Zvvq8Ep5wM_h6vDTt9grD0Q"} 
+[2025-10-03T14:19:00+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T14:19:00+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ZgkQR_aiq4XWoDyeDc8wB59TCyOxudI0kU5sGBPWUuo"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"iWuwcgOj6V6Q2h-r_0ChZtVRZfUyL0BuDXEcIIi8MW8"} 
+[2025-10-03T14:42:50+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:42:50+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"1HlczaVphFdLOCPivumUbfpbLBl1eM4_561mX5rbgpk"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Pp5KRAyKJi2Wo9aa8ls2hOErrO7koALoe_3VcMcCqXc"} 
+[2025-10-03T14:42:50+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T14:42:50+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T14:42:51+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Ty3CZ4mP9N1DlIXppoBbR8prDWr3aggscy1dw1WL0W8"} 
+[2025-10-03T14:42:51+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hDF6EA87qBvra2vfejOYl7PQ0UNOgCmhL7HvImHwmX8"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Qy7hQv2dsI1SHqKWz4-QvS0yyP7u-BTMU0WJMhXMsNU"} 
+[2025-10-03T14:44:57+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:44:57+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ESjwrkGBpp_-msuGbcKvfGjdr14NaYqk4CrsxkT0X18"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"gpGNFiUgdFYyRWiIC7MvkFGxZBGHNf-zWixwbiueRKU"} 
+[2025-10-03T14:44:57+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:44:57+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T14:44:58+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T14:44:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"xaAG9IxdN_h9p-yeoQqwvX50XBoyNF2T8sNHN0QLr8s"} 
+[2025-10-03T14:44:58+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T14:45:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"m_Hf69c9h7i0zBO30NE2S6UB52zB1PONkiaK5aF52Ek"} 
+[2025-10-03T14:45:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"OKlAif_Z27ANrkvY7Auyw1cHSUMKuFbpNLTKS9-Lsfo"} 
+[2025-10-03T14:45:22+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:45:22+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:45:22+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:45:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"cxyb3AFUjdrF2-io7j0M6bSVXd4tAWEv1KqZLkzlKQs"} 
+[2025-10-03T14:45:22+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:45:22+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:45:23+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"1GzSl1Xh2bbSh7VxVcPQL9ZYErXRnakVBgo9ZTuLQAI"} 
+[2025-10-03T14:45:23+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:45:23+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T14:45:23+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T14:45:23+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"YJWDMe6ExubVzwflOWUbzNJbALzgOSmAP8FPR_J9McM"} 
+[2025-10-03T14:45:23+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T14:45:23+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"U_Q7OsCnA3YSvxO5vOTDIp5fW7BRhgcyTXu7e4_WC6Y"} 
+[2025-10-03T14:45:23+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"z_yoGVCUjXa1_TsyddoekQ4bP5qrcIAzEp5AARdDCGk"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Wp1nealfenLZfIeLVTuSfMo5LMQv7Sl8QMLPBe0OoXY"} 
+[2025-10-03T14:45:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T14:45:46+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"32YiXId0O8t_xvcH9VlQazuvf64Ff0XahUQWkVYmqQc"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"-HUuqeO33W_x1br_xRRkaPHAi3_Ugz88lKoR8WcTqkE"} 
+[2025-10-03T14:45:46+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T14:45:46+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T14:45:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"M9jt1rwxbDSHFS_QYBeKpMqsQFMIJ-qkid2fWbzt_jA"} 
+[2025-10-03T14:45:47+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T14:45:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"P8SgVJRET0pVtzztxhHcf7fTSJgu1PHDlxU0vUwgUk4"} 
+[2025-10-03T14:45:47+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"fd-lS-DZaGuzKSplQQCLR2LUr46YZ6C15H3fe6NXA4w"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"7M-zZPBhPVCzxxASQW_gm24SqHkwHMYitnQcizBMrcQ"} 
+[2025-10-03T15:03:59+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:03:59+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"qatWLpD-M2BVSQjLMl5vvdIy1Gbsh_DadrEg7T-bZ3c"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"9lTwEiTlv4m0v4RRdcq8LcSO55Safk_fLp2hpY2_60A"} 
+[2025-10-03T15:03:59+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:03:59+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"noP3KtatW7T9EkD04sDN4ByHvEvKuB-oEnklRRalPGA"} 
+[2025-10-03T15:03:59+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:04:00+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"PqLrb0HjciWe3JtmQrqc_844fke9rUhGUs9PnPMtZF4"} 
+[2025-10-03T15:04:00+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:04:00+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"tIcMNrWT4_MBEussumV6QzIgsoyQVZv3gh9f9PwjZv0"} 
+[2025-10-03T15:04:00+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"Duplicate entry 'X' for key 'uniq_email'"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"R_AJf-GPD9fq4DPeyatmfvlvX-BvTpqXOhSTsChxxkY"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"_9Y9hOc0YjlYfhWLQc54_rUGiwUsEMAQ4LsXUoyfmgc"} 
+[2025-10-03T15:08:27+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:08:27+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"S3repmu2lnk-m1j_S-51g76EQtaQ5e1leBf0M9Dz4mU"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"sdg9FRNL0BYLUFvSslRLl__KeSJ-54Wfx5N1pJZUyic"} 
+[2025-10-03T15:08:27+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:08:27+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:08:28+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Tk0AwNSzkMvR6xvVmeTLrEMbymtGfOG5EtJ-b5Zt4tQ"} 
+[2025-10-03T15:08:28+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:08:28+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Aje3Y8xCFLg3YB9rjPnQ5uZdA9CueAFur8gAwJl8aHs"} 
+[2025-10-03T15:08:28+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:08:28+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"NTf57bFrORlbtEVdESwaRwDrlKTCnVDbuR51SGeDjWU"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"b3GA4mPf_YPxzFxwLIR0FPEBMazPJ9R1sDizy9_7sCw"} 
+[2025-10-03T15:09:41+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:09:41+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"DHIMW933WVGWgnvgH_r9dXk71tuVcvrr0wzfEDt7B-Y"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"CFp5S79AisJ8oR8wMXFMCg0RFiRY7IIMCP_BfB9MLfg"} 
+[2025-10-03T15:09:41+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:09:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ZNBqAyFd7sDFpptrCXzkNLMd45Z9-MRe2wwyAREzDqM"} 
+[2025-10-03T15:09:41+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:09:42+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hES8lDHQEhQhf4GkaSR4sDvK0UsyTk_SuhbRZYA8pUs"} 
+[2025-10-03T15:09:42+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:09:42+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:09:42+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:10:51+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ue78lmZuq_5GIGTti7wWSmuXA78SD5NpSssdlK18qiE"} 
+[2025-10-03T15:10:51+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Gtwhs262he4RGiPn2SPl3hfPcTyBpZW3w8fr3SZO55w"} 
+[2025-10-03T15:10:51+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:10:51+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:10:51+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:10:51+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"BujJ2c-Kv3musptlc3U8i38n01S3iEnMr7BcTj4Pb9A"} 
+[2025-10-03T15:10:51+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:10:51+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:10:52+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"4ahjM-KzD-3HrHewhmxpTmtIlWf9uET8TlPEHzymcLQ"} 
+[2025-10-03T15:10:52+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:10:52+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:10:52+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:10:52+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"PcGoe89uiIuiZk4Mc1XQPtoCo-PWogsZyDdIWhWG-K8"} 
+[2025-10-03T15:10:52+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:10:52+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"vlCc1yertpdjTSLYCHR4IwQy-HTfSSjhkuv89_dwgII"} 
+[2025-10-03T15:10:52+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:10:52+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:10:52+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:10:52+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"8-OI_y-UfoPR9NO8b-9_mlzuRvSOz3f6ulJwYs-lppM"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"K2pfXSAPTNOmLGb8ETroWmZepVvz80FacjT09f5ZNww"} 
+[2025-10-03T15:16:22+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:16:22+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"fBWaYfdkb6XzplFV9cPVys0nQqwGYsZBMt9rJPlAYP4"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"gAN58SvpSfaANNvhh8egq6vszPOK3GxV5cvi1_u-GNY"} 
+[2025-10-03T15:16:22+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:16:22+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"QDsU0hc8GJgE4ZqNH-SOSsZWzp7NSpQMCZu8H2AdHjo"} 
+[2025-10-03T15:16:22+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:16:23+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"8B3t5RcpB-UrvyCGFhYOeOZ02hep3MXgB8B551kbiTo"} 
+[2025-10-03T15:16:23+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:16:23+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:16:23+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:16:23+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:16:23+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:16:56+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"YtydDD-QeSXpbqNStOX8SCxdTwVQNwBohnGeQLOaBmw"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"cVE9ayT1hGjTVBxZ76OMPhi9cJ7EIelC8a8Fg3dD3sY"} 
+[2025-10-03T15:16:57+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:16:57+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"D1lt7WYbUjiKfLr6C50nJPFgLJ_nnyQ1yB23woXLP4g"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"QfhOoN6BRhpCMKFMl0__V75z3hOwZEweYqFKjf4eVgo"} 
+[2025-10-03T15:16:57+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"V3ptbSmLHlA6kIbvYsIJh7fW1HBvYHRxvu-ejuwO8QU"} 
+[2025-10-03T15:16:57+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"YETA9F-KPkyBuK5WJSMw0UmJtq6Nvk3YM69heY-OaH4"} 
+[2025-10-03T15:16:57+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:16:57+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:16:57+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:16:57+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:16:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"TAxK0yr4YOuUe7QwVeZeZ4uNvTg-grZhJE3Ui52H72c"} 
+[2025-10-03T15:16:57+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:17:23+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"wB5Ulr37te_4QauTCcehKRpVv2ZNWrh_6GuUMVqOk-U"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"yxmQDIeIiWb-5ZVawblWIo03JQpLfNUNHknuGuMBLwg"} 
+[2025-10-03T15:17:24+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:17:24+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"S9gDOiL-9_rmxrh5L8KCSKkW4R53-_tD6Muj8Pdef9Q"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"GH82taXvb4Ep8cJUyk5vD-zCI5Xc3pm6GkhklMNlLBM"} 
+[2025-10-03T15:17:24+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:17:24+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"EjorjgxVAo2QWU_1FyvS3ak_9b5tTceacNQJT-1Qwj8"} 
+[2025-10-03T15:17:24+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:17:25+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"-RRYY9DgoCBKgJRa_0lqO9DOPa_CNwys5ktu8qRcZE0"} 
+[2025-10-03T15:17:25+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:17:25+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:17:25+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:17:25+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:17:25+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:17:25+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"UrFtYJks9Q5BFDisEgS2HEQs0YKqJ00aLs9jHkDV1_I"} 
+[2025-10-03T15:17:25+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:17:25+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"5H6XqjPy0PRb-g58XH9waMYjk7VFp5yhO-HBOY1VWwM"} 
+[2025-10-03T15:17:25+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T15:17:57+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"eel64a-yhrtscI7m_F9FgQ7MDLc3ydthIenDGsXLRiE"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ZE5hJqkfhPxDRY1Gp324dWHrie_e0sGKjU0TIwbLNr8"} 
+[2025-10-03T15:17:58+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:17:58+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"yy1tHDb8gdb9mvvMNEWdY6rR0pYhS_lGCUqotiEOZPY"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Js3nH1-Gn7JRTm3mG_zbpHpcVxBCDhl1_fDendWys9s"} 
+[2025-10-03T15:17:58+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"BiO4JxmjLYNABQN72URishES_gJRkWJPiPEpdZMUxug"} 
+[2025-10-03T15:17:58+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"1cX7kcrgjzBIZTGbCLmPMELypzLB0D3WkW3QHFmvAro"} 
+[2025-10-03T15:17:58+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:17:58+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:17:58+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:17:58+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"x1S-NApmQNRnlaigqzfI8PMY2LsoKAkWl3vQlEabIvw"} 
+[2025-10-03T15:17:58+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"6zOhR6M_uI2-XSRkfkmgpKLWML7jl9SWQ8vkGZE6Mzs"} 
+[2025-10-03T15:17:58+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T15:17:58+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hRUEy9OyWOgyW_gijxvO4gLZjpFWz4xDwDs6PBIZqoA"} 
+[2025-10-03T15:17:58+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ioR-w78Q2v3hwoO8QRlfl7CvYzDc3rGl9AwuF68QESQ"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"PNfBjfXS-nu0-mUeRI9isApjxkcCmL73tnOkpSE9Jnw"} 
+[2025-10-03T15:18:18+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:18:18+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"dWP0u_W0JqxtyzXXB_SVvXp5vDJt3gFiCyStBvBXnhE"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"mLO-6ovsnUnC6NUvcqsJFMki5XPPWD0-WD12OMVynwM"} 
+[2025-10-03T15:18:18+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:18:18+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hFx9eBSRNl_9vX1-p5Wc4vMLSHRA2OrNxfkmjdOUYS8"} 
+[2025-10-03T15:18:18+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:18:19+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"MyC46Vu9YTN6BxtlCPPxr3zp9XtAxYqFy0R8ynB_qmk"} 
+[2025-10-03T15:18:19+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:18:19+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:18:19+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:18:19+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:18:19+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:18:19+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"kuO7BJsO5u87xCIDF0MRNiWVxDgvatPxee40EK3a6A4"} 
+[2025-10-03T15:18:19+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:18:19+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"zPvkQcuBWS-IOSut5RxV8Rvm4ZmiNl04vL5SWjEXQFk"} 
+[2025-10-03T15:18:19+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T15:18:19+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"kgqV-LaCeljEqhHmAxHtFxEEHj7_LU4eCos9zJbhAbk"} 
+[2025-10-03T15:18:19+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T15:18:19+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T15:19:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"vM0R7tvHUIC8WiKKtA9RAsLAwBVxAuRbEZAqq1lq57w"} 
+[2025-10-03T15:19:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"jkXvQ7b_eSJKQ58JhRWNpc2w-_QgEKY9EggGIblOz9g"} 
+[2025-10-03T15:19:13+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:19:13+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:19:13+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:19:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"-w6KBR2G-5ElWnHVCsxf7NcGdral6kQalQhdfCiXhtU"} 
+[2025-10-03T15:19:13+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:19:13+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"dRwaBPLvloAhW-79dNFAZ1UlZrBr3wld3vG4XPQeXKQ"} 
+[2025-10-03T15:19:14+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"7CKwneoJAOhj95WLOVNoTl0vD6mwEpDVhZXIocQkzW0"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"s1y7WX7nDUuUjefvc13wllQPlbrwW_b_t4fkRhtfHP8"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:19:14+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:19:14+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:19:14+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"GHJbu_BMBytTh4_aX2oRNTs_iAQ-b9EROvsS5uE6lnA"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"46jyA3Q6xylcPkw3h7WIcWkus0_L8lcG5HxIVg-dn5k"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T15:19:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"WSbnomUzGf5YHicXk8Za2mZFReVJoNF66wnwacHJ_N0"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T15:19:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"1cgSp4oI2NYrzYrakEKLEY-V4mwDfdiuXOFt0jxAZBI"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"4RX5UWxfnap1RD3n_yJX4Y8XJwpF3VNLgNkoJZ1Jsuw"} 
+[2025-10-03T15:19:49+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:19:49+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"wE5xmqxa4CYXMurJfPQlJ33j7pUe59IV5zqRKohqyRc"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"IKlDkQXSmyfdKkgA4YosyvyZw3m7iCAPfbEyKgs-3B0"} 
+[2025-10-03T15:19:49+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:19:49+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:19:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"FrtJz27Egg7CvwLl18npWx-KaprAfApnNidpGh4DPVg"} 
+[2025-10-03T15:19:50+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:19:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"KE3ZkPaV3j7SpxQWEqoLC-G3CUYkEfXO2HvzUpyxKTE"} 
+[2025-10-03T15:19:50+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:19:50+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:19:50+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:19:50+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:19:50+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:19:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"yCphiIV7N7a8wf_cTffUwss5ERi6n_aMuOPFYcazWfI"} 
+[2025-10-03T15:19:50+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:19:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"qR4hdk4ZN0JqjPFPHcK8Ebc18Y88Z7d_8tRlyXrDvwI"} 
+[2025-10-03T15:19:50+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T15:19:50+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"AI_n2z7nvWlzi3BBHfLtIqvAEjN6kM8SbYqc6Pu8o00"} 
+[2025-10-03T15:19:50+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T15:19:50+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"FJYaN2xkgfuoZeu8qM2CWPLvQVGxDpE22O0hVKNHuYk"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"OrWzrymas_Oy_EegyWencHJ0U8G-58WZ0E1aqnj8NZ8"} 
+[2025-10-03T15:20:09+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T15:20:09+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"-pkEg8eChTHJkFH6c9g6g61xEYHp8sCye6Z0M-95sfU"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Q11mXltL1sM_YYwZxBj4MbUlPjFR-BVJVvj3DcQeJMw"} 
+[2025-10-03T15:20:09+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T15:20:09+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"kXKJKHLmmYLBj2xw2lUJU0ufA0wCw3CxwuwBhDADrRk"} 
+[2025-10-03T15:20:09+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T15:20:10+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hK6fxFH56eqOIv_iIqx1OQ2xrX5Kvswh68Aeb9o5BX8"} 
+[2025-10-03T15:20:10+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T15:20:10+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T15:20:10+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T15:20:10+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T15:20:10+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T15:20:10+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"BuITUGp4tdF0mF6MeyQfkmYjPNRFeZX9SRARCl7l2tk"} 
+[2025-10-03T15:20:10+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T15:20:10+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ICdlgTaA6JTFgFvH1-qNqbqyWTqYNDos7Qppo891TBc"} 
+[2025-10-03T15:20:10+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T15:20:10+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"yBj3Xt8wKBrAHY7LJildL3BzzDF9wYfFuj9SZ7xcEk8"} 
+[2025-10-03T15:20:10+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T15:20:10+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T15:20:10+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T16:53:31+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Jey_qlWqOK801msnCbYetW-_-eYXMXbRC7Rh3f0Bftk"} 
+[2025-10-03T16:53:31+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"xoXeEjmjLBrwH-v6OGOsL_3v1nS0v_GqriY8Xd9QDtI"} 
+[2025-10-03T16:53:31+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T16:53:31+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T16:53:31+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T16:53:31+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"APSHz-vmFDnMHKKoeSEqpkY1siqToGev7jy9pbo4yVA"} 
+[2025-10-03T16:53:31+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T16:53:31+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T16:53:32+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"6JqWbxy8G-YUlL02P21sc-ZPbYHeXmfKwANaWQEwmik"} 
+[2025-10-03T16:53:32+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T16:53:32+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T16:53:32+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T16:53:32+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"QCSMYTPbFz8KDOMPZt1CEV-xF8n_X34t79uOtJ1gAIE"} 
+[2025-10-03T16:53:32+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T16:53:33+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"KWom_-HLc7JXHfdQg1hI83uDHyHb1QgzCm1AiRhcC_A"} 
+[2025-10-03T16:53:33+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T16:53:33+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T16:53:33+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T16:53:33+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T16:53:33+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T16:53:33+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"YDPbfp0cxdBEhon7HlWoBb5I0c6a03MYpjOsIII868o"} 
+[2025-10-03T16:53:33+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T16:53:33+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"GIxyl0bJDcOj7yTUyOe3j4Cr9caWZjArsQsSHd_RJ2o"} 
+[2025-10-03T16:53:33+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T16:53:33+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"suWTKk_67MzOCjhx7ZQzG_hTSd4ZjdpUCgZRlcvvV6U"} 
+[2025-10-03T16:53:33+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T16:53:33+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T16:53:33+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T16:53:33+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T16:53:33+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T16:53:33+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T16:53:33+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:09:04+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"t_5D0Mr2qnf1L_WZMYypefSSMxEuQwzc8UiVuaxCCjw"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"I-xNgbLxUam0gybBm2TZ02cU2J8GfZxKapd1zY7qgmw"} 
+[2025-10-03T17:09:05+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:09:05+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"SvIkSALCHcFRxGIQCtQvjWmV09mWQLXTuJIxgkDdPHE"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"alttPrFVL51yqE5OnUtDiPzonbQ3J8Wgg0jnhjiCdbc"} 
+[2025-10-03T17:09:05+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:09:05+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"7-ptCA6QLj_TorpKwwlSoZCzaEcGX3MQ8zHg4Xjs63s"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"fAuF1XApzmXWg8mPpRanPoOZFELPg26Cccl37yJ7DTQ"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:09:06+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:09:06+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T17:09:06+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"cwnyYhdcLiY5_1VWcSQ98MerOf8C_JEeqUek-Cfd0FQ"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"oW0Bp9-wmreyHT1DU0Ye_fSXaEBqjJvUinanxnTikRI"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"S1mhVPPNm4VNPBBubYNaNNtnUKJbhJNCmMZJNHbdvug"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:09:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:09:06+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:09:06+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:09:06+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:09:06+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:09:07+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"xqw0yVxiz6a8FhRJ8YcwPPWY_A6U3Z3482HgF2RnOew"} 
+[2025-10-03T17:09:07+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:09:07+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:09:07+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"wR3cCdTTtuyXOjo6CxM0DVtZHpFbAXA33OSJCORFKL4"} 
+[2025-10-03T17:09:07+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:09:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"GrAPb7LHFrFv4ZXM1NQzBdHE4BW0aY1JvkDUDmFVMoc"} 
+[2025-10-03T17:09:08+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:09:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"YnVpsFxAgay8OhhVUR2tuEqgeZdwhv3Q_YfbqQ-QH0s"} 
+[2025-10-03T17:09:08+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:09:09+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"oVX6n0jlsq0q9kPsfw_ioS8-Q6iPx9i2mqEw0dHnhMg"} 
+[2025-10-03T17:09:09+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:09:09+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:24:33+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"gmNhViiwpBdb4l8dp55K8rQUbYtBCfFnyXOcoeyf0m4"} 
+[2025-10-03T17:24:33+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:24:33+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:24:33+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"puL17T8ZD39JNswL0D77xS0EGhVqEaXKyMWqXlKklk4"} 
+[2025-10-03T17:24:33+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:24:34+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"bEzc66VwCj3fn9UGOwu5SI7HkH8HkB_zR3wwr0WPNvI"} 
+[2025-10-03T17:24:34+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:24:34+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"7T1sFmdNcRaYx8-vowVkiMphspoKSptgF1POvAcUQVE"} 
+[2025-10-03T17:24:34+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:24:34+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"6NudDkXQHYv5-7ynV14hYYmSEIGPXbtPxXIYYOOLkhE"} 
+[2025-10-03T17:24:34+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:24:34+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:24:34+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:24:34+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:24:34+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:24:35+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:24:35+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:24:35+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:24:35+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"lu3rWvwRIvk6u2JgUJBtnCj8-BmbFH6V9ZR3iVqLfl0"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hD8JQL7UXGnszggAISFmVDKupwbSsZ1REcJXbove_x0"} 
+[2025-10-03T17:24:35+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"QTBeYIqKacveMnQmgAT3-w_InePZPePPQyWNF2oW52w"} 
+[2025-10-03T17:24:35+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:24:35+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"X2RB4IcXYXqBy85Eh-MOgOMAJ9Nw7_6qsa6whXkvmcY"} 
+[2025-10-03T17:24:35+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:24:35+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:25:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"n9rTamAUH92xWnn5jO5bQzEGK2NzbBYFTJGj_rogjVs"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"w-XJbpiCY0B-IB8mhAg5KTqRbMYmVL-2Xzly6C2bENM"} 
+[2025-10-03T17:25:07+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:25:07+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"uQWMYXWHSNubYnxP_JdmipR-xuyw4RlPeh97RHOz8lo"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"fU5am58LMD5zJAhVOSXq0-f7ZF5w8sFmrVWkV9Zp5Ok"} 
+[2025-10-03T17:25:07+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:25:07+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"HDOoedaEYWdvlbttP5u_3NnimBXsKmUxs5DdJo2iAaY"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"I-JpK6QEJW7c9RK5Y5XccI1qmK89RUZb_N80ISiP3_A"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:25:08+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:25:08+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T17:25:08+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ArPrGkQSJuVwbeY3GADioYZ5Fw7mGi2qlB3dy0Gt3Oc"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"OVL1WQ_wY-Pypfnz8zvw9Rx27WR7hW9niSpih-bnD-8"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"t0ECq-hB4rhJIoij3Zf3dle-rEhdGg7T5LAkfo91J-g"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:25:08+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:25:08+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:25:08+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:25:08+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:25:08+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:30:12+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"8n1HGEtKMSe0EeCj_0A7yAaZxtQrj5WOfnME8ldzsO8"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"j--xzScza6_dcc063uiqq1_OFHkauVrbdacLsskbl3M"} 
+[2025-10-03T17:30:13+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:30:13+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"I9xG5DP_FlROLtxCEQ9nIElrxgRuhRa4xd1NyrJVmNg"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"ajhQNeYHvQRgDXiQAw-Yd8ISUkMLrgmkhNz16fUtD78"} 
+[2025-10-03T17:30:13+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:30:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"_KzTG1CXkjXFd40EHHbmszrU_0-BnqhFBotdWJG12zk"} 
+[2025-10-03T17:30:13+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"jG3TuXxAjVHue9oRCbiKNyawpqZg9cTu6t3Ho0anoas"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:30:14+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:30:14+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T17:30:14+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"vMpWxv5Wv11WChrWtuI91BdoyoFe5JnqZd7mKxgqDkg"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Wj-oob2Z9-8sscxQ9Jq1QjbAF87qMQnUZXAlfkarwEw"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"NSvI-ZFXkboXtI2SWQKUAj_vPv9WZ_DUHds_BUBNB8s"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:30:14+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:30:14+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:30:14+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:30:14+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"IWs1qEY_rhIZ83h4bDY_qmGeR8R2SZDcr6sJ4UiXA2w"} 
+[2025-10-03T17:30:14+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:47:40+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"NZnXzhHKHFBLl8c4bvuIEyE33ElHUie62P_KiJSCiSI"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"LyyIPgUbs6ilkgSi9KyGjUZ5qspWG7t5nvZl-ymOZj8"} 
+[2025-10-03T17:47:41+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:47:41+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"alirUkbhdT6MAxfMHMOs9T98YasgVGRMgJ8H_x35SLs"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"-ibiZPeUQSgqRpThVBM7PGOAohsV1ZCIlWvkZaPn7ao"} 
+[2025-10-03T17:47:41+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:47:41+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"urTZgoeXo560s--n7ethnPI7QedABGT8_LGE4tkb5gw"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"4fFl4UdE87dNdgzGtdDU_1cLuWOjGePwo9WHrcs8NUQ"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:47:42+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:47:42+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T17:47:42+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"2-71zHjRC7v3FPSKFUMYBqolTAqej6DQHYYvM8Ms614"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"T5vHQJzcJ2EonBpWSCkNtAVe4IQF8Tj4aqkb2JBoPYQ"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"O7X2Sn7RyMeFTbNT9_uAPi7mGMWUEOnVUCV9PEDoBTo"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:47:42+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:47:42+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:47:42+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:47:42+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:47:42+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:47:43+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"C6vvxkVM881SOcQeqEmYH8ea_6oE6xrsZ4Zg-eNHJ68"} 
+[2025-10-03T17:47:43+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:47:43+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"pdo_exception","sqlstate":0,"driver":1205,"exception":"DB temporary failure"} 
+[2025-10-03T17:48:10+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"8aJHr1CSNzZrZpOUL-F3WHL3wq-fIhIphWUa5Ac_HzU"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"zKi-VBTZ6qubWcGeVqcctiDRB9xBK_f4BUpbhmjv2M4"} 
+[2025-10-03T17:48:11+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:48:11+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"h22T1gXljR7pd6pZvm6HzonGnzg8bCANyHzEv-NXK10"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"_wQyDNotuI1OPW71ZTOIPWPLkQHL0STOLEhRyHIy-fc"} 
+[2025-10-03T17:48:11+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:48:11+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"FQh349bGagx0xkOgMlw_6RVjGZ5izJEq5kyOTAK5fIQ"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"KsF_Ljj4RR0Ikg1zv28bFFMniQM9hrX82iGsjLzOxBY"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:48:12+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:48:12+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T17:48:12+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"qXz95u4I7r_FcGYngSH-H5T4lVdEvzqSsMZla1wgbrk"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"qU72Y1913W8_wYCU7uXyKR_H0BtjXdNxNBMIHaQ9yJk"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"6zcX3XkzBFRXsI7NYTtKLMZNnaIPLCGi789XC9yneGU"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:48:12+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:48:12+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:48:12+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:48:12+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:48:12+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:48:13+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"jgTKfnpb2Dq7SKAde7huLD3j87L1dKSbj1SVzn_5QvE"} 
+[2025-10-03T17:48:13+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:48:13+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"pdo_exception","sqlstate":0,"driver":1205,"exception":"DB temporary failure"} 
+[2025-10-03T17:48:13+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"throwable","exception":"boom"} 
+[2025-10-03T17:50:04+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"0mLcabqT6ReB5EVkep54szxqMGQWftxvM-saDg-_esc"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"fe8EIZs3ENtlv2kz3IRpRdFHrJzTWknM-KMFBOpGUvI"} 
+[2025-10-03T17:50:05+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":42} 
+[2025-10-03T17:50:05+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Fp0qPT57-bSPHoSOIDkT6KI9xDnDFPP0rUV3SQRRVl8"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"JPpf9SAf3wHhU2kDI8JDs4yftX4Y1W7p4YRgsHmzc-w"} 
+[2025-10-03T17:50:05+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-03T17:50:05+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"J1TTyrp5GejTziOdG6q046lxBOm3yP0_j9w4fTnT-PE"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"xaSCRHwYvYHuMvFDRAMml3TeFWVN5o_m0-bmsMcTn9g"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-03T17:50:06+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-03T17:50:06+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-03T17:50:06+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"x-u3SHzyLoTIw3UqSgki0RwO2t61iVpWM0M5ffHNIdg"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"6YQBgpPiQL_v_gSOBxnyA4pGcC_GRP2I656t8ai9cWg"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"NcaFIfdj1s_x20ENgr98xAqV7r9SxOslk_u9DeCAesw"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-03T17:50:06+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"db down"} 
+[2025-10-03T17:50:06+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":123,"reason":"status_active"} 
+[2025-10-03T17:50:06+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_and_used_inconsistent_state","user_id":456} 
+[2025-10-03T17:50:06+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":789} 
+[2025-10-03T17:50:06+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":999,"reason":"token_used_user_still_inactive"} 
+[2025-10-03T17:50:07+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"i8YZ4NWxEkUaVi2tzBZPihjlYvbRJk6sJm8ZesQhGzk"} 
+[2025-10-03T17:50:07+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-03T17:50:07+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"pdo_exception","sqlstate":0,"driver":1205,"exception":"DB temporary failure"} 
+[2025-10-03T17:50:07+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"throwable","exception":"boom"} 

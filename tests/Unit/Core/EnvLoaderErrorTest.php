@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
  * - Missing environment files.
  * - Missing required environment variables.
  * - Fallback to default `.env` file when APP_ENV is not set.
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 final class EnvLoaderErrorTest extends TestCase
 {

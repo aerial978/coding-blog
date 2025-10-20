@@ -1,82 +1,183 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Model;
 
-use App\Core\Database;
 use App\Core\SqlHelper;
 use App\Model\Entity\UserEntity;
 use App\Model\UserModel;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
-/**
- * Unit tests for the UserModel class.
- *
- * This test suite ensures that UserModel correctly retrieves
- * user records from the database and returns them as UserEntity instances.
- */
 final class UserModelTest extends TestCase
 {
-    /**
-     * A randomly generated username used for creating and testing a dummy user.
-     *
-     * @var string
-     */
-    private string $dummyUsername;
+    /** @var SqlHelper&MockObject */
+    private SqlHelper $sqlHelper;
 
-    /**
-     * Set up the test environment.
-     *
-     * Creates a dummy user in the database before each test to ensure
-     * that the UserModel has data to retrieve.
-     */
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dummyUsername = 'test_user_' . uniqid();
-
-        $pdo  = (new Database())->getConnection();
-        $stmt = $pdo->prepare('INSERT INTO user (username, email, password) VALUES (:username, :email, :password)');
-        $stmt->execute([
-            'username' => $this->dummyUsername,
-            'email'    => $this->dummyUsername . '@example.com',
-            'password' => 'hashed'
-        ]);
+        $this->sqlHelper = $this->createMock(SqlHelper::class);
     }
 
-    /**
-     * Tear down the test environment.
-     *
-     * Removes the dummy user from the database after each test
-     * to prevent leftover test data.
-     */
-    protected function tearDown(): void
+    // =========================
+    // findOneByUsername()
+    // =========================
+
+    public function testFindOneByUsernameReturnsEntityWhenFound(): void
     {
-        $pdo  = (new Database())->getConnection();
-        $stmt = $pdo->prepare('DELETE FROM user WHERE username = :username');
-        $stmt->execute(['username' => $this->dummyUsername]);
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->sqlHelper
+            ->method('request')
+            ->with(
+                $this->stringContains('SELECT username FROM user WHERE username = :username'),
+                $this->equalTo([':username' => 'john'])
+            )
+            ->willReturn($stmt);
+
+        $stmt->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(['username' => 'john']);
+
+        $model  = new UserModel($this->sqlHelper);
+        $entity = $model->findOneByUsername('john');
+
+        $this->assertInstanceOf(UserEntity::class, $entity);
+        $this->assertSame('john', $entity->getUsername());
     }
 
-    /**
-     * Test that findAll() returns an array of UserEntity objects.
-     *
-     * This method:
-     * - Creates a UserModel instance with a real SqlHelper and a mocked logger.
-     * - Calls findAll() to retrieve users from the database.
-     * - Asserts that the result is not empty and contains UserEntity instances.
-     */
-    public function testFindAllReturnsUserArray(): void
+    public function testFindOneByUsernameReturnsNullWhenNotFound(): void
     {
-        $pdo       = (new Database())->getConnection();
-        $sqlHelper = new SqlHelper($pdo);
+        $stmt = $this->createMock(\PDOStatement::class);
 
-        $logger = $this->createMock(LoggerInterface::class);
+        $this->sqlHelper
+            ->method('request')
+            ->with(
+                $this->stringContains('SELECT username FROM user WHERE username = :username'),
+                $this->equalTo([':username' => 'nobody'])
+            )
+            ->willReturn($stmt);
 
-        $model = new UserModel($sqlHelper, $logger);
+        $stmt->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
 
-        $users = $model->findAll();
+        $model = new UserModel($this->sqlHelper);
+        $this->assertNull($model->findOneByUsername('nobody'));
+    }
 
-        $this->assertNotEmpty($users);
-        $this->assertInstanceOf(UserEntity::class, $users[0]);
+    // =========================
+    // findOneByEmail()
+    // =========================
+
+    public function testFindOneByEmailReturnsEntityWhenFound(): void
+    {
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->sqlHelper
+            ->method('request')
+            ->with(
+                $this->stringContains('SELECT'),
+                [':email' => 'john@example.test']
+            )
+            ->willReturn($stmt);
+
+        $stmt->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn([
+                'user_id'    => 42,
+                'username'   => 'john',
+                'slug'       => 'john',
+                'email'      => 'john@example.test',
+                'password'   => 'hashed',
+                'status'     => 'inactive',
+                'created_at' => '2025-10-03 12:00:00',
+                'updated_at' => '2025-10-03 12:00:00',
+            ]);
+
+        $model  = new UserModel($this->sqlHelper);
+        $entity = $model->findOneByEmail('john@example.test');
+
+        $this->assertInstanceOf(UserEntity::class, $entity);
+        $this->assertSame(42, $entity->getUserId());
+        $this->assertSame('john@example.test', $entity->getEmail());
+        $this->assertSame('inactive', $entity->getStatus());
+    }
+
+    public function testFindOneByEmailReturnsNullWhenNotFound(): void
+    {
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->sqlHelper
+            ->method('request')
+            ->with(
+                $this->stringContains('SELECT'),
+                [':email' => 'nope@example.test']
+            )
+            ->willReturn($stmt);
+
+        $stmt->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
+
+        $model = new UserModel($this->sqlHelper);
+        $this->assertNull($model->findOneByEmail('nope@example.test'));
+    }
+
+    // =========================
+    // createUser()
+    // =========================
+
+    public function testCreateUserReturnsLastInsertIdOnSuccess(): void
+    {
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('INSERT INTO user'),
+                $this->callback(function (array $params) {
+                    return $params[':username'] === 'John'
+                        && $params[':slug']     === 'john'
+                        && $params[':email']    === 'john@example.test'
+                        && $params[':password'] === 'hashed';
+                })
+            )
+            ->willReturn($stmt);
+
+        $stmt->method('rowCount')->willReturn(1);
+
+        $this->sqlHelper
+            ->method('lastInsertId')
+            ->willReturn(99);
+
+        $entity = (new UserEntity())
+            ->setUsername('John')
+            ->setSlug('john')
+            ->setEmail('john@example.test')
+            ->setPassword('hashed');
+
+        $model = new UserModel($this->sqlHelper);
+        $this->assertSame(99, $model->createUser($entity));
+    }
+
+    public function testCreateUserReturnsZeroWhenNoRowInserted(): void
+    {
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->sqlHelper->method('request')->willReturn($stmt);
+        $stmt->method('rowCount')->willReturn(0);
+
+        $entity = (new UserEntity())
+            ->setUsername('John')
+            ->setSlug('john')
+            ->setEmail('john@example.test')
+            ->setPassword('hashed');
+
+        $model = new UserModel($this->sqlHelper);
+        $this->assertSame(0, $model->createUser($entity));
     }
 }

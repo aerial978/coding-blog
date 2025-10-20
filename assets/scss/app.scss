@@ -1,0 +1,10 @@
+/* 1) Charger Bootstrap (via @use) en personnalisant quelques variables */
+@use "bootstrap/scss/bootstrap";
+
+/* 2) Charger ton fichier de styles custom (sans namespace) */
+@use "custom";
+
+@use "bootstrap/scss/bootstrap" as *;
+
+// tes styles à toi
+@use "components/password-strength";

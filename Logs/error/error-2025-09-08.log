@@ -1,0 +1,13 @@
+[2025-09-08T16:49:59+00:00] error.ERROR: Uncaught exception {"message":"Unknown \"endblock\" tag in \"security/register.html.twig\" at line 50.","file":"C:\\wamp64\\www\\coding-blog\\app\\Views\\security\\register.html.twig","line":50,"trace":"#0 C:\\wamp64\\www\\coding-blog\\vendor\\twig\\twig\\src\\Parser.php(101): Twig\\Parser->subparse(NULL, false)
+#1 C:\\wamp64\\www\\coding-blog\\vendor\\twig\\twig\\src\\Environment.php(558): Twig\\Parser->parse(Object(Twig\\TokenStream))
+#2 C:\\wamp64\\www\\coding-blog\\vendor\\twig\\twig\\src\\Environment.php(589): Twig\\Environment->parse(Object(Twig\\TokenStream))
+#3 C:\\wamp64\\www\\coding-blog\\vendor\\twig\\twig\\src\\Environment.php(408): Twig\\Environment->compileSource(Object(Twig\\Source))
+#4 C:\\wamp64\\www\\coding-blog\\vendor\\twig\\twig\\src\\Environment.php(370): Twig\\Environment->loadTemplate('__TwigTemplate_...', 'security/regist...')
+#5 C:\\wamp64\\www\\coding-blog\\vendor\\twig\\twig\\src\\Environment.php(333): Twig\\Environment->load('security/regist...')
+#6 C:\\wamp64\\www\\coding-blog\\app\\Core\\View.php(52): Twig\\Environment->render('security/regist...', Array)
+#7 C:\\wamp64\\www\\coding-blog\\app\\Controller\\BaseController.php(30): App\\Core\\View->render('security/regist...', Array)
+#8 C:\\wamp64\\www\\coding-blog\\app\\Controller\\SecurityController.php(40): App\\Controller\\BaseController->render('security/regist...', Array)
+#9 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(99): App\\Controller\\SecurityController->register()
+#10 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/register')
+#11 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
+#12 {main}"} 

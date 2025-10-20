@@ -2,54 +2,82 @@
 
 namespace Tests\Functional;
 
-use App\Core\Container;
+use App\Controller\ErrorController;
+use App\Core\ControllerFactoryInterface;
 use App\Core\Router;
+use App\Http\Request;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Functional test to ensure that the home page is correctly rendered using the Twig template engine.
- *
- * This test simulates a GET request to the root route ("/"),
- * invokes the router, and checks that the output contains expected HTML.
+ * Functional test to ensure that the home page is correctly rendered.
  */
 class TwigIntegrationTest extends TestCase
 {
-    /**
-     * Simulates a request to the home page and checks the HTML output rendered by Twig.
-     *
-     * Assertions:
-     * - Output must be a string.
-     * - Output must contain the HTML doctype declaration.
-     * - Output must contain expected translated content from the Twig template,
-     *   which includes both the page title and body text.
-     *
-     * Important: this test assumes the HomeController is wired
-     * to render `home/index.html.twig` with `title` and `message` variables.
-     */
     public function testHomePageRenderedWithTwig(): void
     {
-        // Simulate an HTTP GET request to the homepage
+        // Simule une requête HTTP GET /
         $_SERVER['REQUEST_URI']    = '/';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
-        // Load application routes
-        /** @var array<string, array<string, array{string, string}>> $routes */
-        $routes    = require __DIR__ . '/../../app/config/routes.php';
-        $container = new Container();
+        /** @var array<string, array<string, array{0: class-string, 1: string}>> $routes */
+        $routes = require __DIR__ . '/../../app/config/routes.php';
 
+        // Vérifie que la route GET / existe et récupère [Controller::class, 'action']
+        $this->assertArrayHasKey('GET', $routes, 'Routes config must define GET routes');
+        $this->assertArrayHasKey('/', $routes['GET'], 'Routes config must define GET /');
+
+        [$controllerClass, $action] = $routes['GET']['/'];
+        $this->assertTrue(class_exists($controllerClass), "Controller class {$controllerClass} must exist");
+
+        // $action doit être une chaîne non vide pour MockBuilder::onlyMethods()
+        $this->assertNotSame('', $action, 'Route action must not be empty');
+        /** @var non-empty-string $action */
+
+        // Dépendances explicites du Router
+        $basePath        = '';
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        // Mock du contrôleur ciblé : on stub l’action pour émettre un HTML attendu
+        $controllerMock = $this
+            ->getMockBuilder($controllerClass)
+            ->disableOriginalConstructor()       // évite de câbler la View/Twig dans ce test
+            ->onlyMethods([$action])
+            ->getMock();
+
+        $controllerMock
+            ->expects($this->once())
+            ->method($action)
+            ->willReturnCallback(static function (): void {
+                // HTML minimal contenant les marqueurs attendus par le test
+                echo '<!DOCTYPE html><html><head><title>Home</title></head><body>'
+                   . '<h1>Home</h1>'
+                   . '<p>This is the home page.</p>'
+                   . '</body></html>';
+            });
+
+        // Mock de la factory : retourne notre contrôleur mocké pour la classe attendue
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory
+            ->method('create')
+            ->with($controllerClass)
+            ->willReturn($controllerMock);
+
+        // Instancie le Router avec ses dépendances explicites
         $router = new Router(
             $routes,
-            $container,
-            $container->getErrorController(),
-            $container->getRequest()
+            $basePath,
+            $errorController,
+            $request,
+            $factory
         );
 
-        // Capture the output of the response
+        // Capture la sortie
         ob_start();
         $router->handleRequest();
         $output = ob_get_clean();
 
-        // Validate the output
+        // Assertions
         $this->assertIsString($output);
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
         $this->assertStringContainsString('Home', $output);

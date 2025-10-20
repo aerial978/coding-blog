@@ -62,7 +62,13 @@ class ErrorHandler
         $appConfig = new AppConfig();
 
         if (!$appConfig->isLocal()) {
-            (self::$errorController ?? new ErrorController())->serverError($uniqueErrorId);
+            // Use the injected controller if available; otherwise render a basic 500 page.
+            if (self::$errorController) {
+                self::$errorController->serverError($uniqueErrorId);
+                return;
+            }
+
+            self::renderGeneric500($uniqueErrorId);
             return;
         }
 
@@ -103,7 +109,13 @@ class ErrorHandler
             $appConfig = new AppConfig();
 
             if (!$appConfig->isLocal()) {
-                (self::$errorController ?? new ErrorController())->serverError();
+                if (self::$errorController) {
+                    // serverError can accept null/omitted id if your method signature allows it
+                    self::$errorController->serverError();
+                    return;
+                }
+
+                self::renderGeneric500(null);
                 return;
             }
 
@@ -147,5 +159,19 @@ class ErrorHandler
     public static function setErrorController(?ErrorController $controller): void
     {
         self::$errorController = $controller;
+    }
+
+    /**
+     * Renders a minimal generic 500 page for production when no controller is set.
+     *
+     * @param string|null $uniqueErrorId
+     */
+    private static function renderGeneric500(?string $uniqueErrorId): void
+    {
+        echo '<h1>Something went wrong</h1>';
+        echo '<p>An unexpected error occurred. Please try again later.</p>';
+        if ($uniqueErrorId !== null) {
+            echo "<p>Error code: <code>{$uniqueErrorId}</code></p>";
+        }
     }
 }

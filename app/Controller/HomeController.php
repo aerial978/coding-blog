@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Core\FlashService;
+use App\Core\View;
 use App\Model\UserModel;
 
 class HomeController extends BaseController
@@ -13,9 +15,9 @@ class HomeController extends BaseController
      *
      * @param UserModel $userModel The model used to interact with user data.
      */
-    public function __construct(private UserModel $userModel)
+    public function __construct(View $view, private UserModel $userModel, FlashService $flash)
     {
-        parent::__construct();
+        parent::__construct($view, $flash);
     }
 
     /**
@@ -30,10 +32,10 @@ class HomeController extends BaseController
     {
         $users = $this->userModel->findAll();
 
-        $this->render('home/index.html.twig', [
+        $this->render('home/index.html.twig', $this->withFlashes([
             'title'   => 'Home',
             'message' => 'This is the home page.',
             'users'   => $users,
-        ]);
+        ]));
     }
 }

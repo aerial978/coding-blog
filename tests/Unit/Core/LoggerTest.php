@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
  * - A logger instance is properly created with a given channel name.
  * - The log directory is automatically created if it does not exist.
  * - Temporary log files and directories are cleaned up after tests.
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 final class LoggerTest extends TestCase
 {

@@ -42,7 +42,6 @@ tools:
 files:
   include:
     - app/
-    - tests/
     - public/
     - assets/
   exclude:
@@ -51,3 +50,4 @@ files:
     - tmp/
     - cache/
     - .github/
+    - tests/

@@ -1,0 +1,20 @@
+[2025-10-20T09:08:49+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"Xne-TyIRpUQydmrn1yiJp3caAhfi1_SXZpO9RVFLM1s"} 
+[2025-10-20T09:08:51+00:00] auth.INFO: [auth.confirmation.email_sent] Un email de confirmation vous a été envoyé pour activer votre compte. {"email":"mhl193230@gmail.com","username":"bouboul3W"} 
+[2025-10-20T09:09:43+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":172} 
+[2025-10-20T09:09:43+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter.  
+[2025-10-20T09:23:00+00:00] auth.WARNING: Rate limit exceeded {"action":"registration","limit":5,"window_sec":300,"retry_after":296} 
+[2025-10-20T09:23:00+00:00] auth.WARNING: [auth.rate_limited_dynamic] Trop de tentatives. Veuillez réessayer dans {time}. {"retry_after":296,"route":"/register","username":"bouboul3W","email":""} 
+[2025-10-20T13:02:23+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"1pKqHStdT3HFWD64rAxdL8ENXtwngRX2aEoi0Bibd4g"} 
+[2025-10-20T13:02:24+00:00] auth.INFO: [auth.confirmation.email_sent] Un email de confirmation vous a été envoyé pour activer votre compte. {"email":"mhl193230@gmail.com","username":"bouboul3W"} 
+[2025-10-20T13:02:56+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter. {"user_id":173} 
+[2025-10-20T13:02:56+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter.  
+[2025-10-20T13:03:49+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":173,"reason":"status_active"} 
+[2025-10-20T13:03:49+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter.  
+[2025-10-20T13:05:43+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":173,"reason":"status_active"} 
+[2025-10-20T13:05:43+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter.  
+[2025-10-20T13:06:34+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired_before_activation","user_id":173} 
+[2025-10-20T13:06:34+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired"} 
+[2025-10-20T13:07:33+00:00] auth.WARNING: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter. {"user_id":173,"reason":"token_used_user_still_inactive"} 
+[2025-10-20T13:07:33+00:00] auth.INFO: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter.  
+[2025-10-20T13:17:30+00:00] auth.WARNING: [auth.csrf_invalid] Une erreur de sécurité est survenue. Veuillez réessayer. {"email":"mhl193230@gmail.com","username":"bouboul3W","route":"/register"} 
+[2025-10-20T13:18:02+00:00] auth.WARNING: [auth.csrf_invalid] Une erreur de sécurité est survenue. Veuillez réessayer. {"email":"mhl193230@gmail.com","username":"bouboul3W","route":"/register"} 

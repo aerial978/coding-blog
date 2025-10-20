@@ -4,20 +4,40 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use App\Core\AppConfig;
 use App\Core\EnvLoader;
 use App\Core\ErrorHandler;
-use App\Core\AppConfig;
 use App\Core\Router;
-use App\Core\Database;
-use App\Core\Container;
+use App\Core\PsrControllerFactory;
+use App\Core\Container\AppContainer;
+use App\Controller\ErrorController;
+use App\Http\Request;
 
+// 1) Env
 EnvLoader::load(__DIR__ . '/../');
 
-$container = new Container();
+// 1.1) Session (centralisée et sécurisée)
+session_name('SID');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 
-ErrorHandler::register($container->getSystem()->getLogger('error'));
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
-// Gestion des erreurs selon l'environnement
+// 2) Conteneur PSR-11 (définitions)
+$definitions = require __DIR__ . '/../app/config/services.php';
+$psr = new AppContainer($definitions);
+
+// 3) Logger d’erreur via le container PSR-11
+ErrorHandler::register($psr->get('logger.error'));
+
+// 4) Affichage des erreurs selon l’environnement
 if (AppConfig::isLocal()) {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
@@ -28,18 +48,22 @@ if (AppConfig::isLocal()) {
     error_reporting(0);
 }
 
-// Chargement des routes
+// 5) Routes
 $routes = require __DIR__ . '/../app/config/routes.php';
 
-// Création manuelle d’un PDO à injecter dans toute l’application
-$database = new Database();
-$pdo = $database->getConnection();
+// 6) basePath depuis la config app
+/** @var array{base_path: string} $cfg */
+$cfg      = require __DIR__ . '/../app/Config/app.php';
+$basePath = rtrim($cfg['base_path'] ?? '', '/');
 
+// 7) Router (avec factory PSR)
 $router = new Router(
-    require __DIR__ . '/../app/config/routes.php',
-    $container,
-    $container->getControllers()->getErrorController(),
-    $container->getRequest()
+    $routes,
+    $basePath,
+    $psr->get(ErrorController::class),
+    $psr->get(Request::class),
+    new PsrControllerFactory($psr)
 );
 
+// 8) Démarrage
 $router->handleRequest();

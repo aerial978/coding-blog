@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
  * ensuring that environment variables are loaded before each test
  * through the EnvLoader. Any functional test class should extend this
  * to guarantee a properly configured testing environment.
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 abstract class FunctionalTestCase extends TestCase
 {

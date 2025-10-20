@@ -68,19 +68,16 @@ final class SqlHelperTest extends UnitTestCase
     public function testRequestWithoutParameters(): void
     {
         $email = $this->dummyUsername . '@example.com';
-        $sql   = "INSERT INTO user (username, email, password) VALUES ('{$this->dummyUsername}', '$email', 'hashed')";
+        $sql   = "INSERT INTO user (username, email) VALUES ('{$this->dummyUsername}', '$email')";
         $stmt  = $this->sqlHelper->request($sql);
 
         $inserted = $stmt->rowCount() > 0;
         $this->assertTrue($inserted, 'User insertion failed.');
 
-        $stmt = $this->sqlHelper->request("SELECT * FROM user WHERE username = '$this->dummyUsername'");
+        $stmt = $this->sqlHelper->request("SELECT username FROM user WHERE username = '$this->dummyUsername'");
 
-        /** @var \stdClass|false $user */
-        $user = $stmt->fetch();
-
-        $this->assertNotFalse($user, 'Inserted user was not found.');
-        $this->assertEquals($this->dummyUsername, $user->username);
+        $fetchedUsername = $stmt->fetchColumn();
+        $this->assertSame($this->dummyUsername, $fetchedUsername);
     }
 
     /**
@@ -93,26 +90,22 @@ final class SqlHelperTest extends UnitTestCase
      */
     public function testRequestWithParameters(): void
     {
-        $sql    = 'INSERT INTO user (username, email, password) VALUES (:username, :email, :password)';
+        $sql    = 'INSERT INTO user (username, email) VALUES (:username, :email)';
         $params = [
             'username' => $this->dummyUsername,
-            'email'    => $this->dummyUsername . '@example.com',
-            'password' => 'hashed'
+            'email'    => $this->dummyUsername . '@example.com'
         ];
 
         $stmt = $this->sqlHelper->request($sql, $params);
         $this->assertTrue($stmt->rowCount() > 0, 'User insertion failed.');
 
         $stmt = $this->sqlHelper->request(
-            'SELECT * FROM user WHERE username = :username',
+            'SELECT username FROM user WHERE username = :username',
             ['username' => $this->dummyUsername]
         );
 
-        /** @var \stdClass|false $user */
-        $user = $stmt->fetch();
-
-        $this->assertNotFalse($user, 'Inserted user was not found.');
-        $this->assertEquals($this->dummyUsername, $user->username);
+        $fetchedUsername = $stmt->fetchColumn();
+        $this->assertSame($this->dummyUsername, $fetchedUsername);
     }
 
     /**

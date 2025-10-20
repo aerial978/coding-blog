@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
  * required for running tests and ensures that the `.env.test` file
  * is loaded before each test. All other test cases can extend this
  * class to inherit the environment setup.
+ *
+ * @SuppressWarnings("PHPMD.StaticAccess")
  */
 abstract class BaseTestCase extends TestCase
 {

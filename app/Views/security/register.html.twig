@@ -1,0 +1,39 @@
+{% extends "templates/layouts/base.html.twig" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    {% if mode == 'check_email' %}
+        <h2>Vérifiez votre boîte mail</h2>
+        <p>Nous avons envoyé un lien de confirmation à <strong>{{ obfuscated_email }}</strong>.</p>
+        <p>Si vous ne le voyez pas, vérifiez vos spams.</p>
+        <p><a href="/coding-blog/resend-confirmation">Renvoyer le lien</a></p>
+    {% else %}
+        <h1 class="mb-4 text-center">Register</h1>
+        {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+        <form method="post" action="" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" value="{{ old.username|default('') }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ old.email|default('') }}" required>
+            </div>
+
+            {% include 'templates/components/password_strength.html.twig' with {
+                id: 'password-field',
+                input_id: 'password',
+                name: 'password',
+                label: 'Password',
+                required: true
+            } %}
+
+            <button type="submit" class="btn btn-primary w-100">Register</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

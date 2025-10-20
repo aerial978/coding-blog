@@ -56,4 +56,26 @@ class SqlHelper
 
         return $statement;
     }
+
+    public function lastInsertId(): int
+    {
+        return (int) $this->databaseConnection->lastInsertId();
+    }
+
+    public function beginTransaction(): void
+    {
+        $this->databaseConnection->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->databaseConnection->commit();
+    }
+
+    public function rollBack(): void
+    {
+        if ($this->databaseConnection->inTransaction()) {
+            $this->databaseConnection->rollBack();
+        }
+    }
 }
