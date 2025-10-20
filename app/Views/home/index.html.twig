@@ -3,6 +3,7 @@
 {% block title %}Home page{% endblock %}
 
 {% block content %}
+    {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
     <h2>{{ title }}</h2>
     <p>{{ message }}</p>
 

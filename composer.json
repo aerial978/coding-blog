@@ -4,6 +4,8 @@
     "type": "project",
     "license": "MIT",
     "require": {
+        "cocur/slugify": "^4.6",
+        "mailjet/mailjet-apiv3-php": "^1.6",
         "monolog/monolog": "^3.9",
         "psr/container": "2.0",
         "twig/twig": "^3.21",

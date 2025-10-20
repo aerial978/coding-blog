@@ -1,0 +1,15 @@
+[2025-08-26T13:44:20+00:00] error.ERROR: Uncaught exception {"message":"Cannot create service 'App\\Controller\\SecurityController': Too few arguments to function App\\Controller\\SecurityController::__construct(), 4 passed in C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\Provider\\ControllerServiceProvider.php on line 34 and exactly 5 expected","file":"C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\AppContainer.php","line":50,"trace":"#0 C:\\wamp64\\www\\coding-blog\\app\\Core\\PsrControllerFactory.php(13): App\\Core\\Container\\AppContainer->get('App\\\\Controller\\\\...')
+#1 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(97): App\\Core\\PsrControllerFactory->create('App\\\\Controller\\\\...')
+#2 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/register')
+#3 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
+#4 {main}"} 
+[2025-08-26T14:02:54+00:00] error.ERROR: Uncaught exception {"message":"Cannot create service 'App\\Controller\\SecurityController': Too few arguments to function App\\Controller\\SecurityController::__construct(), 4 passed in C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\Provider\\ControllerServiceProvider.php on line 34 and exactly 5 expected","file":"C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\AppContainer.php","line":50,"trace":"#0 C:\\wamp64\\www\\coding-blog\\app\\Core\\PsrControllerFactory.php(13): App\\Core\\Container\\AppContainer->get('App\\\\Controller\\\\...')
+#1 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(97): App\\Core\\PsrControllerFactory->create('App\\\\Controller\\\\...')
+#2 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/register')
+#3 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
+#4 {main}"} 
+[2025-08-26T17:08:31+00:00] error.ERROR: Uncaught exception {"message":"Cannot create service 'App\\Controller\\SecurityController': Too few arguments to function App\\Controller\\SecurityController::__construct(), 5 passed in C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\Provider\\ControllerServiceProvider.php on line 35 and exactly 6 expected","file":"C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\AppContainer.php","line":50,"trace":"#0 C:\\wamp64\\www\\coding-blog\\app\\Core\\PsrControllerFactory.php(13): App\\Core\\Container\\AppContainer->get('App\\\\Controller\\\\...')
+#1 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(97): App\\Core\\PsrControllerFactory->create('App\\\\Controller\\\\...')
+#2 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/register')
+#3 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
+#4 {main}"} 

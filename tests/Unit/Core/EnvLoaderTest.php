@@ -71,7 +71,7 @@ final class EnvLoaderTest extends TestCase
         $_ENV['APP_URL']      = 'http://localhost';
 
         $reflection = new ReflectionClass(EnvLoader::class);
-        $method = $reflection->getMethod('validateRequiredVariables');
+        $method     = $reflection->getMethod('validateRequiredVariables');
         $method->setAccessible(true);
 
         $this->expectException(RuntimeException::class);
@@ -92,7 +92,7 @@ final class EnvLoaderTest extends TestCase
         $_ENV['APP_URL']      = 'http://localhost';
 
         $reflection = new ReflectionClass(EnvLoader::class);
-        $method = $reflection->getMethod('validateRequiredVariables');
+        $method     = $reflection->getMethod('validateRequiredVariables');
         $method->setAccessible(true);
 
         $this->expectException(RuntimeException::class);
@@ -108,7 +108,7 @@ final class EnvLoaderTest extends TestCase
     private function invokeResolveAppEnv(): string
     {
         $reflection = new ReflectionClass(EnvLoader::class);
-        $method = $reflection->getMethod('resolveAppEnv');
+        $method     = $reflection->getMethod('resolveAppEnv');
         $method->setAccessible(true);
 
         /** @var string $value */
@@ -122,7 +122,7 @@ final class EnvLoaderTest extends TestCase
      */
     public function testResolveAppEnvReturnsProdWhenEnvAndGetenvMissing(): void
     {
-        $backupEnv = $_ENV['APP_ENV'] ?? null;
+        $backupEnv    = $_ENV['APP_ENV'] ?? null;
         $backupGetenv = getenv('APP_ENV');
 
         unset($_ENV['APP_ENV']);
@@ -144,7 +144,7 @@ final class EnvLoaderTest extends TestCase
     public function testIsNonEmptyStringVarReturnsFalseWhenNotString(): void
     {
         $_ENV['APP_URL'] = 12345; // valeur non-string
-        $method = new ReflectionMethod(\App\Core\EnvLoader::class, 'isNonEmptyStringVar');
+        $method          = new ReflectionMethod(\App\Core\EnvLoader::class, 'isNonEmptyStringVar');
         $method->setAccessible(true);
 
         $result = $method->invoke(null, 'APP_URL');

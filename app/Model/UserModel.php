@@ -8,46 +8,146 @@ use App\Model\Entity\UserEntity;
 /**
  * Handles database operations related to the User entity.
  *
- * This class acts as the data access layer for user records.
- * It uses SqlHelper for database queries and LoggerInterface for logging.
+ * This model acts as the data access layer (DAL) for user records.
+ * It encapsulates SQL queries related to user persistence, retrieval,
+ * and creation, using the SqlHelper abstraction for safe and reusable
+ * database interactions.
  */
 class UserModel
 {
+    protected string $table = 'user';
+
     /**
-     * @param SqlHelper $sqlHelper Helper for executing SQL queries.
+     * Constructor.
+     *
+     * Initializes the model with a SqlHelper instance for
+     * executing database queries.
+     *
+     * @param SqlHelper $sqlHelper
+     *     Helper class for preparing, executing, and managing SQL statements.
      */
-    public function __construct(
-        private SqlHelper $sqlHelper
-    ) {
+    public function __construct(private SqlHelper $sqlHelper)
+    {
     }
 
     /**
      * Retrieves all users from the database.
      *
-     * @return UserEntity[] An array of UserEntity objects representing all users in the database.
+     * Executes a SELECT query on the user table and returns a list of hydrated
+     * UserEntity objects representing each user.
+     *
+     * @return UserEntity[]
+     *     An array of UserEntity objects for all users found.
      */
     public function findAll(): array
     {
-        // Execute the query to retrieve user data
-        $stmt = $this->sqlHelper->request('SELECT id AS user_id, username, email, created_at FROM user');
+        $stmt = $this->sqlHelper->request("SELECT id AS user_id, username, email, created_at FROM {$this->table}");
 
-        // Fetch all results as associative arrays
+        /** @var list<array<string,mixed>> $results */
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         $users = [];
 
         /** @var array<string, mixed> $row */
         foreach ($results as $row) {
-            // Hydrate each UserEntity with database data
             $users[] = (new UserEntity())->hydrate($row);
         }
-
-        /* Log the retrieval event
-        $this->logger->info('Retrieved users', [
-            'total'     => count($users),
-            'timestamp' => date('Y-m-d H:i:s'),
-        ]);*/
-
         return $users;
+    }
+
+    /**
+     * Finds a single user by their username.
+     *
+     * @param string $username
+     *     The username to look up.
+     *
+     * @return UserEntity|null
+     *     The corresponding UserEntity if found, or null otherwise.
+     */
+    public function findOneByUsername(string $username): ?UserEntity
+    {
+        $stmt = $this->sqlHelper->request(
+            "SELECT username FROM {$this->table} WHERE username = :username",
+            [':username' => $username]
+        );
+
+        /** @var array<string,mixed>|false $data */
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $data ? (new UserEntity())->hydrate((array) $data) : null;
+    }
+
+    /**
+     * Finds a single user by their email address.
+     *
+     * @param string $email
+     *     The email address to look up.
+     *
+     * @return UserEntity|null
+     *     A hydrated UserEntity if found, or null if no record matches.
+     */
+    public function findOneByEmail(string $email): ?UserEntity
+    {
+        $sql = "SELECT 
+                id AS user_id, username, slug, email, password,
+                status,
+                created_at, updated_at
+            FROM {$this->table}
+            WHERE email = :email
+            LIMIT 1";
+
+        $stmt = $this->sqlHelper->request($sql, [':email' => $email]);
+
+        /** @var array<string,mixed>|false $row */
+        $row  = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ? (new UserEntity())->hydrate((array) $row) : null;
+    }
+
+    /**
+     * Creates a new user record in the database.
+     *
+     * Inserts a new row into the `user` table based on the provided UserEntity.
+     * The account is created with an initial status of "inactive".
+     *
+     * @param UserEntity $user
+     *     The user entity containing data to insert.
+     *
+     * @return int
+     *     The ID of the newly created user record, or 0 if the insertion failed.
+     */
+    public function createUser(UserEntity $user): int
+    {
+        $sql = "INSERT INTO {$this->table} (
+                    username,
+                    slug,
+                    email,
+                    password,
+                    created_at,
+                    updated_at,
+                    status
+                ) VALUES (
+                    :username,
+                    :slug,
+                    :email,
+                    :password,
+                    NOW(),
+                    NOW(),
+                    'inactive'
+                )";
+
+        $params = [
+            ':username' => $user->getUsername(),
+            ':slug'     => $user->getSlug(),
+            ':email'    => $user->getEmail(),
+            ':password' => $user->getPassword(),
+        ];
+
+        $query = $this->sqlHelper->request($sql, $params);
+
+        if ($query->rowCount() !== 1) {
+            return 0;
+        }
+
+        return $this->sqlHelper->lastInsertId();
     }
 }

@@ -5,22 +5,33 @@ namespace App\Model\Entity;
 /**
  * Represents a User entity.
  *
- * Extends the AbstractEntity class, allowing it to be hydrated from an array.
- * Stores basic user information such as ID, email, and creation date.
+ * This class extends the AbstractEntity base class, allowing automatic
+ * hydration from arrays. It encapsulates core user attributes such as
+ * identifiers, credentials, and timestamps.
+ *
+ * The entity follows a strict encapsulation principle and provides
+ * typed getter and setter methods for all user properties.
  */
 class UserEntity extends AbstractEntity
 {
     /** @var int|null Unique identifier for the user */
     private ?int $userId = null;
 
-     /** @var string|null User's username */
+    /** @var string|null User's username */
     private ?string $username = null;
+
+    /** @var string|null User's slug */
+    private ?string $slug = null;
 
     /** @var string|null User's email address */
     private ?string $email = null;
 
+    private ?string $password = null;
+
     /** @var string|null Account creation timestamp */
     private ?string $createdAt = null;
+
+    private ?string $status = null;
 
     /**
      * Gets the user ID.
@@ -57,12 +68,36 @@ class UserEntity extends AbstractEntity
     /**
      * Sets the user's username.
      *
-     * @param string $usernama The username.
+     * @param string $username The username.
      * @return self
      */
     public function setUsername(string $username): self
     {
         $this->username = $username;
+        return $this;
+    }
+
+    /**
+     * Gets the user's slug.
+     *
+     * Typically used for URL generation or SEO-friendly identifiers.
+     *
+     * @return string|null The slug value, or null if not set.
+     */
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    /**
+     * Sets the user's slug.
+     *
+     * @param string $slug The slug derived from the username.
+     * @return self
+     */
+    public function setSlug(string $slug): self
+    {
+        $this->slug = $slug;
         return $this;
     }
 
@@ -89,6 +124,28 @@ class UserEntity extends AbstractEntity
     }
 
     /**
+     * Gets the user's hashed password.
+     *
+     * @return string|null The hashed password, or null if not set.
+     */
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    /**
+     * Sets the user's hashed password.
+     *
+     * @param string $password The hashed password.
+     * @return self
+     */
+    public function setPassword(string $password): self
+    {
+        $this->password = $password;
+        return $this;
+    }
+
+    /**
      * Gets the account creation date.
      *
      * @return string|null The creation date, or null if not set.
@@ -107,6 +164,30 @@ class UserEntity extends AbstractEntity
     public function setCreatedAt(string $createdAt): self
     {
         $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    /**
+     * Gets the user's account status.
+     *
+     * Example values: "active", "pending", "banned", etc.
+     *
+     * @return string|null The account status, or null if not set.
+     */
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    /**
+     * Sets the user's account status.
+     *
+     * @param string $status The new status value.
+     * @return self
+     */
+    public function setStatus(string $status): self
+    {
+        $this->status = $status;
         return $this;
     }
 }

@@ -16,6 +16,20 @@ use App\Http\Request;
 // 1) Env
 EnvLoader::load(__DIR__ . '/../');
 
+// 1.1) Session (centralisée et sécurisée)
+session_name('SID');
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 // 2) Conteneur PSR-11 (définitions)
 $definitions = require __DIR__ . '/../app/config/services.php';
 $psr = new AppContainer($definitions);

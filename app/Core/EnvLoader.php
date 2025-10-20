@@ -62,7 +62,7 @@ class EnvLoader
      *
      * @throws RuntimeException When the file does not exist.
      *
-     * @SuppressWarnings("PHPMD.StaticAccess") 
+     * @SuppressWarnings("PHPMD.StaticAccess")
      */
     private static function loadEnvFile(string $path, string $file): void
     {

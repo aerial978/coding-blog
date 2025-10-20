@@ -41,30 +41,6 @@ class Router
     }
 
     /**
-     * Small helper to build from Container (no logic in __construct).
-     *
-     * @param array<string, array<string, array{0: string, 1: string}>> $routes
-     */
-    public static function fromContainer(array $routes, Container $container): self
-    {
-        /** @var array{base_path?: mixed} $cfg */
-        $cfg = include __DIR__ . '/../Config/app.php';
-
-        $basePath = '';
-        if (isset($cfg['base_path']) && is_string($cfg['base_path'])) {
-            $basePath = $cfg['base_path'];
-        }
-
-        return new self(
-            $routes,
-            $basePath,
-            $container->getErrorController(),
-            $container->getRequest(),
-            $container->getControllerFactory()
-        );
-    }
-
-    /**
      * Handles the current HTTP request by calling the corresponding route or returning an error.
      */
     public function handleRequest(): void

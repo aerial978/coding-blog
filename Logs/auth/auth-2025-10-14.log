@@ -1,0 +1,75 @@
+[2025-10-14T17:13:36+00:00] auth.WARNING: [auth.rate_limited_dynamic] Trop de tentatives. Veuillez réessayer dans {time}. {"retry_after":125,"route":"/register","username":"john","email":"john@example.test"} 
+[2025-10-14T17:13:36+00:00] auth.WARNING: [auth.csrf_invalid] Une erreur de sécurité est survenue. Veuillez réessayer. {"email":"john@example.test","username":"john","route":"/register"} 
+[2025-10-14T17:13:36+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"john@example.test","username":"john"} 
+[2025-10-14T17:13:36+00:00] auth.INFO: [auth.confirmation.email_sent] Un email de confirmation vous a été envoyé pour activer votre compte. {"email":"john@example.test","username":"john"} 
+[2025-10-14T17:13:36+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"john@example.test","username":"john"} 
+[2025-10-14T17:13:36+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"missing_or_empty"} 
+[2025-10-14T17:13:36+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter.  
+[2025-10-14T17:13:36+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter.  
+[2025-10-14T17:13:36+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"expired"} 
+[2025-10-14T17:13:37+00:00] auth.INFO: [auth.confirmation.token_used] Ce lien a déjà été utilisé. Votre compte est probablement déjà confirmé. Vous pouvez maintenant vous connecter.  
+[2025-10-14T17:13:37+00:00] auth.WARNING: [auth.confirmation.invalid_token] Le lien de confirmation est invalide ou a expiré. Veuillez demander un nouvel envoi. {"reason":"not_found"} 
+[2025-10-14T17:13:37+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom"} 
+[2025-10-14T17:13:37+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"jane@example.test"} 
+[2025-10-14T17:13:37+00:00] auth.ERROR: [auth.csrf_invalid] Une erreur de sécurité est survenue. Veuillez réessayer. {"route":"/resend-confirmation"} 
+[2025-10-14T17:13:37+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter.  
+[2025-10-14T17:13:37+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"jane@example.test"} 
+[2025-10-14T17:13:37+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"jane@example.test"} 
+[2025-10-14T17:13:37+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"email":"jane@example.test"} 
+[2025-10-14T17:13:37+00:00] auth.INFO: [auth.confirmation.success] Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter.  
+[2025-10-14T17:13:38+00:00] auth.WARNING: Rate limit exceeded {"action":"registration","limit":1,"window_sec":600,"retry_after":600} 
+[2025-10-14T17:13:38+00:00] auth.WARNING: Rate limit exceeded {"action":"default_key","limit":5,"window_sec":300,"retry_after":300} 
+[2025-10-14T17:13:42+00:00] auth.WARNING: Rate limit exceeded {"action":"register","limit":3,"window_sec":10,"retry_after":9} 
+[2025-10-14T17:13:42+00:00] auth.WARNING: Rate limit exceeded {"action":"cooldown","limit":3,"window_sec":10,"retry_after":9} 
+[2025-10-14T17:13:43+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"QlEj4OK9TTkUmfhUeOAQYli6UrE1qmX6VvJZkLLSJbg"} 
+[2025-10-14T17:13:43+00:00] auth.INFO: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"ExistingUser"} 
+[2025-10-14T17:13:43+00:00] auth.INFO: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"existing@example.test"} 
+[2025-10-14T17:13:44+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"6UGmAvIbw7yQdOPBAERSRMMowBPhAmLiZgCMGav8HPA"} 
+[2025-10-14T17:13:44+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"email":"tiny.person+test@example.test","username":"TinyPerson123"} 
+[2025-10-14T17:13:44+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hb-LKFnXLzvaFAB9FAef_TQPVqOr-Q9XqqOu30dgnq0"} 
+[2025-10-14T17:13:44+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"create_confirmation_token_failed","user_id":10} 
+[2025-10-14T17:13:44+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"cf0mzTy0YLV_bdvsD_fTHygb9C4eRHQaQ2RgE9N3COE"} 
+[2025-10-14T17:13:44+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"transaction_exception","exception":"boom"} 
+[2025-10-14T17:13:45+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"h9J5qAlvpuBjvF-1h72YDm1qphmw8OH5QD0HcIV31XA"} 
+[2025-10-14T17:13:45+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"alice.boom@example.test","user_id":77,"exception":"SMTP down"} 
+[2025-10-14T17:13:45+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"aOxZHDh78J322ftoWoCw__wwp66bi4jakOJjrKlBEok"} 
+[2025-10-14T17:13:45+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-14T17:13:46+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"zBa2-IbLAQ_zGJDQpJwMk-ZZ38pPafg2-oQyVHYiFHU"} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"email":"mail.fail@example.test","user_id":123,"reason":"mailer_returned_false"} 
+[2025-10-14T17:13:46+00:00] auth.WARNING: [auth.registration.email_exists] Cette adresse email est déjà associée à un compte. {"email":"dup.email@example.test","dup":true} 
+[2025-10-14T17:13:46+00:00] auth.WARNING: [auth.registration.username_exists] Nom d'utilisateur déjà utilisé. {"username":"DupOnUsername","dup":true} 
+[2025-10-14T17:13:46+00:00] auth.WARNING: [auth.registration.failed] Une erreur est survenue lors de votre inscription. {"reason":"duplicate_key","sqlstate":"23000","driver":1062} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"pdo_exception","sqlstate":0,"driver":1205,"exception":"DB temporary failure"} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"throwable","exception":"boom"} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0xee46f9c6ba941...12dc1ec): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0x2f05d4b689d27...ab31fb1): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0xeacb38bf8620d...ed5028e): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0x6680775bebed5...9e4a447): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0x5feec41c66434...e1ab873): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0x375aa25ca86dc...55c6abf): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0xd39b671a65b73...4c5f05b): array is too low."} 
+[2025-10-14T17:13:46+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"Expectation failed for method name is \"findConfirmationContextByHash\" when invoked zero or more times
+Parameter count for invocation App\\Model\\UserTokenModel::findConfirmationContextByHash(Binary String: 0xa1d4ecf233add...3bc7784): array is too low."} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"yvG2OC-Y-wU03kQu2Jl8QmGJlXSvTG3WTYhvqMqS7ks"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"user_id":99,"email":"bob@example.test"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [auth.resend.email_sent] Si un compte existe pour cette adresse, un nouveau lien d’activation vient d’être envoyé. {"email":"unknown@example.test","reason":"user_not_found"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [auth.confirmation.already_confirmed] Votre compte est déjà activé. Vous pouvez vous connecter. {"user_id":5,"email":"active@example.test"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"hZYTi_XeYHA7q-OL7TFd5_bxWiCeBMX3X97NutZlVGI"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"user_id":10,"reason":"set_confirmation_token_failed"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"7G-L9R0QyF7XcH87NgjhMjjeWbZ0MEDkE4S3AKjTFbM"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":11,"email":"inactive2@example.test","exception":"SMTP down"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"oPtodDNWexjb0XylVuezuz124vG36Hk7oGBTzhA1QeE"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.confirmation.send_failed] Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous. {"user_id":12,"email":"inactive3@example.test","reason":"mailer_returned_false"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"exception":"boom","email":"boom@example.test"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"tok"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"invalid_binary_hash_length"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"invalid_binary_hash_length"} 
+[2025-10-14T17:13:47+00:00] auth.INFO: [token clair] Une erreur technique est survenue. Merci de réessayer plus tard. {"token":"tok"} 
+[2025-10-14T17:13:47+00:00] auth.ERROR: [auth.technical_error] Une erreur technique est survenue. Merci de réessayer plus tard. {"reason":"invalid_binary_hash_length","email":"need.resend@example.test"} 

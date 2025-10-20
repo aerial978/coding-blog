@@ -11878,4 +11878,21 @@ h1 {
   color: #0dcaf0;
 }
 
+/* 1) Charger Bootstrap (via @use) en personnalisant quelques variables */
+#password-field .pw-criteria .pw-dot, [id$=password-field] .pw-criteria .pw-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid var(--bs-gray-600, #6c757d);
+}
+#password-field .pw-criteria .text-success .pw-dot, [id$=password-field] .pw-criteria .text-success .pw-dot {
+  background-color: var(--bs-success, #198754);
+  border-color: var(--bs-success, #198754);
+}
+#password-field .pw-criteria .text-danger .pw-dot, [id$=password-field] .pw-criteria .text-danger .pw-dot {
+  background-color: transparent;
+  border-color: var(--bs-danger, #dc3545);
+}
+
 /*# sourceMappingURL=app.css.map */

@@ -1,46 +1,46 @@
-id;username;email;created_at
-1;cosmicTraveler!2196;cosmictraveler219@google.com;2023:11:15 12:00
-2;SolarSailor88*;solarsailor88@yahoo.com;2022:01:01 08:40
-3;Codecyclist04?;codecyclist@outlook.com;2023:10:09 18:15 
-4;DevMelomane63%;devmelomane@yahoo.com;2024:01:10 12:00
-5;LunaExplorer92#;lunaexplorer92@gmail.com;2022:01:23 20:32
-6;phoenixBlaze42!;pblaze@outlook.com;2024:03:27 17:49
-7;GalaxyRider59@;galaxyrider59@gmail.com;2022:01:18 11:58
-8;AstroNomad45&;astronoad45@gmail.com;2022:01:20 11:06
-9;PhpRandoneur7$;phprandom36@google.com;2023:08:07 11:18
-10;NebulaDeamer99@;nebuladream@yahoo.com;2024:03:05 15:19
-11;QuantumSeeker14#;quantumseeker14@google.com;2022:02:01 07:57
-12;Frostgardian#52;frostgard@google.com;2024:02:25 11:25
-13;StarWalker65*;starwalker65@gmail.com;2022:02:06 09:26
-14;Stormhunter2597?;stormhunter@outlook.com;2024:01:05 16:22
-15;CosmicWizard12@;cosmicwizard12@gmail.com;2022:01:10 21:14
-16;NebulaKnight23!;nebulaknight23@outlook.com;2022:01:11 16:35
-17;StellarMage44*;stellarmage44@gmail.com;2022:01:11 22:38
-18;coderRouelibre*124;coderlibre239@google.com;2023:06:12 10:29
-19;AstroRogue89&;astrorogue89@gmail.com;2022:01:21 20:52
-20;phantomBlade56&;phantomblade56@google.com;2023:12:21 13:33
-21;CometHunter78@;comethunter78@yahoo.com;2022:01:26 08:57
-22;GalaxyWarrior57#;galaxywarrior57@gmail.com;2022:01:26 11:25
-23;Crystalmage752*;crystalmage@outlook.com;2024:03:02 09:52
-24;ThunderLord28%;thunderlord@yahoo.com;2024:03:10 11:35
-25;LunarSage91@;lunarsage91@gmail.com;2022:02:02 20:28
-26;CometSorcerer83&;cometsorcerer83@outlook.com;2022:02:04 18:44
-27;Solarknight209!;solarknight@yahoo.com;2024:01:26 12:55
-28;DuskWizard!186;duskwizard@google.com;2023:07:05 15:15
-29;StarGazer99*;stargazer99@yahoo.com;2021:12:16 11:17
-30;AstroMage77!;astromage77@gmail.com;2021:12:16 20:29
-31;Blazephantom4*;blazephantom@google.com;2024:06:10 13:15
-32;VoidArcher!148;voidarcher@outlook.com;2023:06:25 10:54
-33;Lightsorcerer567?;lightsorcerer567@google.com;2023:06:10 14:03
-34;SolarSage52#;solarsage52@gmail.com;2022:02:07 01:35
-35;EchoMarauder29#;echomarauder@yahoo.com;2024:07:18 16:45
-36;GalaxyNomad88*;galaxynomad88@outlook.com;2021:12:22 05:17
-37;ShadowReaper23!;shadowreaper@google.com;2024:02:05 10:00
-38;cyberSamurai55&;cybersamurai55@google.com;2023:09:19 09:06
-39;LunarHunter47!;lunarhunter47@gmail.com;2023:06:13 00:40
-40;CosmicRogue23#;cosmicrogue23@yahoo.com;2023:06:13 01:13
-41;GalaxyKnight54*;galaxyknight54@gmail.com;2023:06:13 06:12
-42;StarSorcerer66@;starsorcerer66@outlook.com;2023:06:13 15:56
-43;NebulaMage88*;nebulamage88@gmail.com;2023:06:14 02:36
-44;AstroRider92&;astrorider92@yahoo.com;2023:06:14 05:54
-45;CometHunter56@;comethunter56@gmail.com;2023:06:14 12:13
+id;username;password;email;slug;created_at;updated_at;status_user;confirmation_token_hash;confirmation_expires_at;confirmation_token_used
+1;cosmicTraveler!2196;XyZ!89qw1nTi;cosmictraveler219@google.com;cosmictraveler-2196;2021:12:16 11:17;2021:12:16 11:17;active;NULL;NULL;1
+2;SolarSailor88*;TyU@45kl7mNw;solarsailor88@yahoo.com;solarsailor88;2021:12:16 20:29;2021:12:16 20:29;active;NULL;NULL;1
+3;Codecyclist04?;AGe$72lm3nQw;codecyclist@outlook.com;codecyclist04;2021:12:22 05:17;2021:12:22 05:17;active;NULL;NULL;1
+4;DevMelomane63%;JkL&45op7vWx;devmelomane@yahoo.com;devmelomane63;2022:01:01 08:40;2022:01:01 08:40;disabled;NULL;NULL;1
+5;LunaExplorer92#;Uio@12qw3eRt;lunaexplorer92@gmail.com;lunaexplorer92;2022:01:10 21:14;2022:01:10 21:14;active;NULL;NULL;1
+6;phoenixBlaze42!;RtY!56ab8xQz;pblaze@outlook.com;phoenixblaze42;2022:01:11 16:35;2022:01:11 16:35;active;NULL;NULL;1
+7;GalaxyRider59@;GHi$45lm6oPq;galaxyrider59@gmail.com;galaxyrider59;2022:01:11 22:38;2022:01:11 22:38;active;NULL;NULL;1
+8;AstroNomad45&;JkL$67op8vWx;astronoad45@gmail.com;astronomad45;2022:01:18 11:58;2022:01:18 11:58;active;NULL;NULL;1
+9;PhpRandoneur7$;UiO#67gh2wLr;phprandom36@google.com;phprandoneur7;2022:01:20 11:06;2022:01:20 11:06;active;NULL;NULL;1
+10;NebulaDeamer99@;ZyX@91op5vLm;nebuladream@yahoo.com;nebuladeamer99;2022:01:21 20:52;2022:01:21 20:52;disabled;NULL;NULL;1
+11;QuantumSeeker14#;TRe$78kl1oMn;quantumseeker14@google.com;quantumseeker14;2022:01:23 20:32;2022:01:23 20:32;active;NULL;NULL;1
+12;Frostgardian#52;WxY#23kl7mNs;frostgard@google.com;frostgardian-52;2022:01:26 08:57;2022:01:26 08:57;active;NULL;NULL;1
+13;StarWalker65*;QwE#12ty3uIp;starwalker65@gmail.com;starwalker65;2022:01:26 11:25;2022:01:26 11:25;active;NULL;NULL;1
+14;Stormhunter2597?;JkL$78nm4vPo;stormhunter@outlook.com;stormhunter2597;2022:02:01 07:57;2022:02:01 07:57;active;NULL;NULL;1
+15;CosmicWizard12@;Rty$56kl7mNq;cosmicwizard12@gmail.com;cosmicwizard12;2022:02:02 20:28;2022:02:02 20:28;active;NULL;NULL;1
+16;NebulaKnight23!;Plo#34ty6eRt;nebulaknight23@outlook.com;nebulaknight23;2022:02:04 18:44;2022:02:04 18:44;active;NULL;NULL;1
+17;StellarMage44*;Mno$12qw3uPq;stellarmage44@gmail.com;stellarmage44;2022:02:06 09:26;2022:02:06 09:26;active;NULL;NULL;1
+18;coderRouelibre*124;GhJ%34yz6nQl;coderlibre239@google.com;coderrouelibre-124;2022:02:07 01:35;2022:02:07 01:35;active;NULL;NULL;1
+19;AstroRogue89&;YUi$45op6eRw;astrorogue89@gmail.com;astrorogue89;2023:06:10 14:03;2023:06:10 14:03;active;NULL;NULL;1
+20;phantomBlade56&;MnO%31xy4tVu;phantomblade56@google.com;phantomblade56;2023:06:12 10:29;2023:06:12 10:29;active;NULL;NULL;1
+21;CometHunter78@;RtY$78kl9oMn;comethunter78@yahoo.com;comethunter78;2023:06:13 00:40;2023:06:13 00:40;disabled;NULL;NULL;1
+22;GalaxyWarrior57#;XyZ$23gh4mNp;galaxywarrior57@gmail.com;galaxywarrior57;2023:06:13 01:13;2023:06:13 01:13;active;NULL;NULL;1
+23;Crystalmage752*;UsA!89wx1pLr;crystalmage@outlook.com;crystalmage752;2023:06:13 06:12;2023:06:13 06:12;active;NULL;NULL;1
+24;ThunderLord28%;KbL#67op4mNw;thunderlord@yahoo.com;thunderlord28;2023:06:13 15:56;2023:06:13 15:56;active;NULL;NULL;1
+25;LunarSage91@;JkL$23mn4oPx;lunarsage91@gmail.com;lunarsage91;2023:06:14 02:36;2023:06:14 02:36;active;NULL;NULL;1
+26;CometSorcerer83&;UiO$45gh6eWq;cometsorcerer83@outlook.com;cometsorcerer83;2023:06:14 05:54;2023:06:14 05:54;active;NULL;NULL;1
+27;Solarknight209!;QyZ@32lm5nTi;solarknight@yahoo.com;solarknight209;2023:06:14 12:13;2023:06:14 12:13;active;NULL;NULL;1
+28;DuskWizard!186;MnO%54xy6vUx;duskwizard@google.com;duskwizard-186;2023:06:25 10:54;2023:06:25 10:54;active;NULL;NULL;1
+29;StarGazer99*;QwE$67ty1uIo;stargazer99@yahoo.com;stargazer99;2023:07:05 15:15;2023:07:05 15:15;active;NULL;NULL;1
+30;AstroMage77!;Plo$34kl5eMn;astromage77@gmail.com;astromage77;2023:08:07 11:18;2023:09:19 09:06;active;NULL;NULL;1
+31;Blazephantom4*;GhJ$12yz7nQl;blazephantom@google.com;blazephantom4;2023:09:19 09:06;2023:10:09 18:15 ;active;NULL;NULL;1
+32;VoidArcher!148;XkZ!43gh9wTi;voidarcher@outlook.com;voidarcher-148;2023:10:09 18:15 ;2023:11:15 12:00;disabled;NULL;NULL;1
+33;Lightsorcerer567?;AbC$65kl8nQw;lightsorcerer567@google.com;lightsorcerer567;2023:11:15 12:00;2023:12:21 13:33;active;NULL;NULL;1
+34;SolarSage52#;TRe$89kl0pMn;solarsage52@gmail.com;solarsage52;2023:12:21 13:33;2024:01:10 12:00;active;NULL;NULL;1
+35;EchoMarauder29#;WxY#87op2vLm;echomarauder@yahoo.com;echomarauder29;2024:01:05 16:22;2024:01:26 12:55;active;NULL;NULL;1
+36;GalaxyNomad88*;Rty$12op3eLn;galaxynomad88@outlook.com;galaxynomad88;2024:01:10 12:00;2024:02:05 10:00;active;NULL;NULL;1
+37;ShadowReaper23!;WcA$5mHm4vgA;shadowreaper@google.com;shadowreaper23;2024:01:26 12:55;2024:02:15 11:52;active;NULL;NULL;1
+38;cyberSamurai55&;m8J%34tB9nQx;cybersamurai55@google.com;cybersamurai55;2024:02:05 10:00;2024:02:25 11:25;active;NULL;NULL;1
+39;LunarHunter47!;TRe$45kl6mNp;lunarhunter47@gmail.com;lunarhunter47;2024:02:25 11:25;2024:03:02 09:52;active;NULL;NULL;1
+40;CosmicRogue23#;XyZ$12gh3oMw;cosmicrogue23@yahoo.com;cosmicrogue23;2024:03:02 09:52;2024:03:05 15:19;active;NULL;NULL;1
+41;GalaxyKnight54*;Uio$78ty9eLp;galaxyknight54@gmail.com;galaxyknight54;2024:03:05 15:19;2024:03:10 11:35;active;NULL;NULL;1
+42;StarSorcerer66@;Plo$12mn3oWx;starsorcerer66@outlook.com;starsorcerer66;2024:03:10 11:35;2024:03:27 17:49;inactive;j8GV44Bc2um9s-nUuEnwP5chLip9r6aTxN4ekQUPLLw;2024:03:11 11:35;0
+43;NebulaMage88*;QwE$45kl1uOp;nebulamage88@gmail.com;nebulamage88;2024:03:27 17:49;2024:04:15 18:33;inactive;JLaXIT43MaZ6NXA5uRJr3s_LhizcrTyAJ5mTSkHfshM;2024:03:28 17:49;0
+44;AstroRider92&;XyZ$89op2mNt;astrorider92@yahoo.com;astrorider92;2024:06:10 13:15;2024:06:10 13:15;inactive;i8n02WIzuSbB0_0edwqTBXCwYUefDiOU0kDOS1EMWYA;2024:06:11 13:15;0
+45;CometHunter56@;UiO$34gh1ePv;comethunter56@gmail.com;comethunter56;2024:07:18 16:45;2024:07:18 16:45;inactive;vosVI9pTgOYGIz3Xpzl4j7LDCdZeb8rYNagrf3qkUWo;2024:07:19 16:45;0

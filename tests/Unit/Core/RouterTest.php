@@ -2,8 +2,10 @@
 
 namespace Tests\Unit\Core;
 
-use App\Core\Container;
+use App\Controller\ErrorController;
+use App\Core\ControllerFactoryInterface;
 use App\Core\Router;
+use App\Http\Request;
 use PHPUnit\Framework\TestCase;
 use Tests\Fixtures\DummyController;
 
@@ -26,14 +28,32 @@ class RouterTest extends TestCase
             ]
         ];
 
-        $container = new Container();
-        ob_start();
-        $router = Router::fromContainer($routes, $container);
-        $router->handleRequest();
-        $output = ob_get_clean();
-        $this->assertIsString($output);
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
 
-        $this->assertStringContainsString('Hello from dummy controller', $output);
+        // Le contrôleur ciblé par la route : on mocke l'action pour produire le contenu attendu
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['hello'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('hello')
+            ->willReturnCallback(static function (): void {
+                echo 'Hello from dummy controller';
+            });
+
+        // La factory doit retourner notre contrôleur mocké
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
+        ob_start();
+        $router->handleRequest();
+        $output = (string) ob_get_clean();
     }
 
     /**
@@ -50,13 +70,26 @@ class RouterTest extends TestCase
             ]
         ];
 
-        $container = new Container();
+        // Le contrôleur d'erreur doit émettre quelque chose contenant "404"
+        $errorController = $this->createMock(ErrorController::class);
+        $errorController->expects($this->once())
+            ->method('notFound')
+            ->willReturnCallback(static function (): void {
+                echo '404 - Not found';
+            });
+
+        $request = new Request();
+
+        // La factory ne sera pas appelée dans ce scénario
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
         ob_start();
-        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
+        $this->assertIsString($output);
         $this->assertStringContainsString('404', $output);
     }
 
@@ -72,17 +105,30 @@ class RouterTest extends TestCase
 
         $routes = [
             Router::METHOD_GET => [
-                '/fail' => [$fakeClass, 'fail']
+                '/fail' => [$fakeClass, 'fail'],
             ]
         ];
 
-        $container = new Container();
+        // Le contrôleur d'erreur doit émettre quelque chose contenant "500"
+        $errorController = $this->createMock(ErrorController::class);
+        $errorController->expects($this->once())
+            ->method('serverError')
+            ->willReturnCallback(static function (): void {
+                echo '500 - Server error';
+            });
+
+        $request = new Request();
+
+        // La factory ne sera pas appelée car la classe n'existe pas
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
         ob_start();
-        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
+        $this->assertIsString($output);
         $this->assertStringContainsString('500', $output);
     }
 
@@ -100,13 +146,23 @@ class RouterTest extends TestCase
             ]
         ];
 
-        $container = new Container();
+        $errorController = $this->createMock(ErrorController::class);
+        $errorController->expects($this->once())
+            ->method('notFound')
+            ->willReturnCallback(static function (): void {
+                echo '404 - Not found';
+            });
+
+        $request = new Request();
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
         ob_start();
-        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
+        $this->assertIsString($output);
         $this->assertStringContainsString('404', $output);
     }
 
@@ -115,19 +171,33 @@ class RouterTest extends TestCase
      */
     public function testHandleRequestWithNullRequestUriShouldTriggerError500(): void
     {
-        $_SERVER['REQUEST_URI'] = null;
-
-        $this->expectOutputRegex('/500/');
+        // On mocke Request pour renvoyer null
+        $request = $this->createMock(Request::class);
+        $request->method('getUri')->willReturn(null);
+        $request->method('getMethod')->willReturn('GET');
 
         $routes = [
             Router::METHOD_GET => [
-                '/test' => [DummyController::class, 'index']
+                '/test' => [DummyController::class, 'index'],
             ]
         ];
 
-        $container = new Container();
-        $router    = Router::fromContainer($routes, $container);
+        $errorController = $this->createMock(ErrorController::class);
+        $errorController->expects($this->once())
+            ->method('serverError')
+            ->willReturnCallback(static function (): void {
+                echo '500 - Server error';
+            });
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
+        ob_start();
         $router->handleRequest();
+        $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('500', $output);
     }
 
     /**
@@ -140,17 +210,37 @@ class RouterTest extends TestCase
 
         $routes = [
             Router::METHOD_GET => [
-                '/test' => [DummyController::class, 'index']
+                '/test' => [DummyController::class, 'index'],
             ]
         ];
 
-        $container = new Container();
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['index'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('index')
+            ->willReturnCallback(static function (): void {
+                echo 'Index method executed';
+            });
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        // Ici, on fixe basePath pour que normalizeUri enlève bien "/coding-blog"
+        $router = new Router($routes, '/coding-blog', $errorController, $request, $factory);
+
         ob_start();
-        $router = Router::fromContainer($routes, $container);
         $router->handleRequest();
         $output = ob_get_clean();
-        $this->assertIsString($output);
 
+        $this->assertIsString($output);
         $this->assertStringContainsString('Index method executed', $output);
     }
 
@@ -187,6 +277,7 @@ class RouterTest extends TestCase
         $router->handleRequest();
         $output = (string) ob_get_clean();
 
+        // Le fallback de Router::handleError() echo "<h1>404 - An error has occurred</h1>"
         $this->assertStringContainsString('404 - An error has occurred', $output);
     }
 }

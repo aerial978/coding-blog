@@ -74,13 +74,10 @@ final class SqlHelperTest extends UnitTestCase
         $inserted = $stmt->rowCount() > 0;
         $this->assertTrue($inserted, 'User insertion failed.');
 
-        $stmt = $this->sqlHelper->request("SELECT * FROM user WHERE username = '$this->dummyUsername'");
+        $stmt = $this->sqlHelper->request("SELECT username FROM user WHERE username = '$this->dummyUsername'");
 
-        /** @var \stdClass|false $user */
-        $user = $stmt->fetch();
-
-        $this->assertNotFalse($user, 'Inserted user was not found.');
-        $this->assertEquals($this->dummyUsername, $user->username);
+        $fetchedUsername = $stmt->fetchColumn();
+        $this->assertSame($this->dummyUsername, $fetchedUsername);
     }
 
     /**
@@ -103,15 +100,12 @@ final class SqlHelperTest extends UnitTestCase
         $this->assertTrue($stmt->rowCount() > 0, 'User insertion failed.');
 
         $stmt = $this->sqlHelper->request(
-            'SELECT * FROM user WHERE username = :username',
+            'SELECT username FROM user WHERE username = :username',
             ['username' => $this->dummyUsername]
         );
 
-        /** @var \stdClass|false $user */
-        $user = $stmt->fetch();
-
-        $this->assertNotFalse($user, 'Inserted user was not found.');
-        $this->assertEquals($this->dummyUsername, $user->username);
+        $fetchedUsername = $stmt->fetchColumn();
+        $this->assertSame($this->dummyUsername, $fetchedUsername);
     }
 
     /**
