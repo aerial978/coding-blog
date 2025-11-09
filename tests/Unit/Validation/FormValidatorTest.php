@@ -6,105 +6,204 @@ namespace Tests\Unit\Validation;
 
 use App\Core\ErrorCode;
 use App\Validation\FormValidator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class FormValidatorTest extends TestCase
 {
-    private FormValidator $validator;
+    private FormValidator $v;
     protected function setUp(): void
     {
-        $this->validator = new FormValidator();
+        $this->v = new FormValidator();
     }
 
-    // ======================
-    // Cas valide (happy path)
-    // ======================
-    public function testValidateRegistrationReturnsEmptyErrorsForValidData(): void
+    // ---------------- normalize ----------------
+
+    public static function normalizeProvider(): array
     {
-        $data = [
-            'username' => 'ValidUser123',
-            'email'    => 'valid@example.com',
-            'password' => 'Str0ng@Password!',
+        return [
+            'null'        => [null, ''],
+            'int'         => [123, ''],
+            'string'      => [' hello ', 'hello'],
+            'empty'       => ['', ''],
+            'spaces_only' => ['   ', ''],
         ];
-        $errors = $this->validator->validateRegistration($data);
-        $this->assertSame([], $errors, 'Aucun message d’erreur attendu pour des données valides.');
     }
 
-    // ======================
-    // Username
-    // ======================
-    public function testInvalidUsernameTooShort(): void
+    #[DataProvider('normalizeProvider')]
+    public function test_normalize(mixed $input, string $expected): void
     {
-        $data = [
-            'username' => 'ab',
-            'email'    => 'valid@example.com',
-            'password' => 'Str0ng@Password!',
+        $this->assertSame($expected, $this->v->normalize($input));
+    }
+
+    // ---------------- required ----------------
+
+    public static function requiredProvider(): array
+    {
+        return [
+            'empty'  => ['', ErrorCode::AUTH_FIELD_REQUIRED],
+            'spaces' => ['   ', ErrorCode::AUTH_FIELD_REQUIRED], // NB: required() ne trim pas; trim est fait par validate()
+            'ok'     => ['x', null],
         ];
-        $errors = $this->validator->validateRegistration($data);
+    }
+
+    #[DataProvider('requiredProvider')]
+    public function test_required_rule(string $value, ?string $expected): void
+    {
+        $rule = $this->v->required();
+        $this->assertSame($expected, $rule($value));
+    }
+
+    // ---------------- email ----------------
+
+    public static function emailRuleProvider(): array
+    {
+        return [
+            'empty'      => ['', ErrorCode::AUTH_EMAIL_INVALID],
+            'bad'        => ['foo@bar', ErrorCode::AUTH_EMAIL_INVALID],
+            'good'       => ['john@example.test', null],
+        ];
+    }
+
+    #[DataProvider('emailRuleProvider')]
+    public function test_email_rule(string $value, ?string $expected): void
+    {
+        $rule = $this->v->email();
+        $this->assertSame($expected, $rule($value));
+    }
+
+    public static function validateEmailFieldProvider(): array
+    {
+        return [
+            'empty'       => ['', ErrorCode::AUTH_EMAIL_INVALID],
+            'spaces'      => ['  ', ErrorCode::AUTH_EMAIL_INVALID],
+            'bad_format'  => ['a@b', ErrorCode::AUTH_EMAIL_INVALID],
+            'ok'          => ['user@example.test', null],
+            'trim_ok'     => ['  user@example.test  ', null],
+        ];
+    }
+
+    #[DataProvider('validateEmailFieldProvider')]
+    public function test_validateEmailField(string $email, ?string $expected): void
+    {
+        $this->assertSame($expected, $this->v->validateEmailField($email));
+    }
+
+    // ---------------- username ----------------
+
+    public static function usernameProvider(): array
+    {
+        return [
+            'too_short'   => ['ab', ErrorCode::AUTH_USERNAME_INVALID],
+            'too_long'    => ['abcdefghijklmnopqrstu', ErrorCode::AUTH_USERNAME_INVALID], // 21
+            'no_letter'   => ['12345', ErrorCode::AUTH_USERNAME_INVALID],
+            'bad_chars'   => ['john-doe', ErrorCode::AUTH_USERNAME_INVALID],
+            'ok_min'      => ['abc', null],
+            'ok_mix'      => ['john_123', null],
+            'ok_max'      => ['abcdefghijklmnopqrst', null], // 20
+        ];
+    }
+
+    #[DataProvider('usernameProvider')]
+    public function test_username_rule(string $value, ?string $expected): void
+    {
+        $rule = $this->v->username();
+        $this->assertSame($expected, $rule($value));
+    }
+
+    // ---------------- password ----------------
+
+    public static function passwordProvider(): array
+    {
+        return [
+            'too_short'     => ['Aa1!Aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_upper'      => ['aa1!aa1!aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_lower'      => ['AA1!AA1!AA1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_digit'      => ['Aa!Aa!Aa!Aa!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_special'    => ['Aa1Aa1Aa1Aa1', ErrorCode::AUTH_PASSWORD_INVALID],
+            'has_space'     => ['Aa1! aa1!aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'valid_strong'  => ['Aa1!Bb2@Cc3#', null],
+        ];
+    }
+
+    #[DataProvider('passwordProvider')]
+    public function test_password_rule(string $value, ?string $expected): void
+    {
+        $rule = $this->v->password();
+        $this->assertSame($expected, $rule($value));
+    }
+
+    // ---------------- minLen / maxLen / inArray / regex ----------------
+
+    public function test_minLen_rule(): void
+    {
+        $min5 = $this->v->minLen(5, 'ERR_MIN');
+        $this->assertSame('ERR_MIN', $min5('foo'));
+        $this->assertNull($min5('hello'));
+    }
+
+    public function test_maxLen_rule(): void
+    {
+        $max5 = $this->v->maxLen(5, 'ERR_MAX');
+        $this->assertNull($max5('hello'));
+        $this->assertSame('ERR_MAX', $max5('hellooo'));
+    }
+
+    public function test_inArray_rule(): void
+    {
+        $rule = $this->v->inArray(['admin','editor'], 'ERR_ROLE');
+        $this->assertNull($rule('admin'));
+        $this->assertSame('ERR_ROLE', $rule('guest'));
+    }
+
+    public function test_regex_rule(): void
+    {
+        $rule = $this->v->regex('/^\d{3}$/', 'ERR_CODE3');
+        $this->assertNull($rule('123'));
+        $this->assertSame('ERR_CODE3', $rule('12a'));
+    }
+
+    // ---------------- validate() moteur générique ----------------
+
+    public function test_validate_generic_engine_applies_normalize_and_stops_on_first_error(): void
+    {
+        $schema = [
+            'name'  => [$this->v->required(), $this->v->minLen(4, 'ERR_MIN4')],
+            'email' => [$this->v->email()],
+        ];
+        // Cas 1 : name vide, email invalide → seul "name" doit remonter (stop au 1er échec)
+        $errors = $this->v->validate(['name' => '  ', 'email' => 'bad'], $schema);
+        $this->assertSame(['name' => ErrorCode::AUTH_FIELD_REQUIRED], $errors);
+        // Cas 2 : name court, email invalide → "name" minLen
+        $errors = $this->v->validate(['name' => 'Bob', 'email' => 'bad'], $schema);
+        $this->assertSame(['name' => 'ERR_MIN4'], $errors);
+        // Cas 3 : name OK, email invalide → "email"
+        $errors = $this->v->validate(['name' => 'John', 'email' => 'bad'], $schema);
+        $this->assertSame(['email' => ErrorCode::AUTH_EMAIL_INVALID], $errors);
+        // Cas 4 : tout OK
+        $errors = $this->v->validate(['name' => 'John', 'email' => 'john@example.test'], $schema);
+        $this->assertSame([], $errors);
+    }
+
+    // ---------------- validateRegistration() ----------------
+
+    public function test_validateRegistration_covers_all_fields_and_rules(): void
+    {
+        // Tous invalides
+        $errors = $this->v->validateRegistration([
+            'username' => 'a',                        // trop court
+            'email'    => 'bad',                      // invalide
+            'password' => 'weak',                     // invalide
+        ]);
         $this->assertArrayHasKey('username', $errors);
-        $this->assertSame(ErrorCode::AUTH_USERNAME_INVALID, $errors['username']);
-    }
-
-    public function testInvalidUsernameWithSpecialChars(): void
-    {
-        $data = [
-            'username' => 'bad$user',
-            'email'    => 'valid@example.com',
-            'password' => 'Str0ng@Password!',
-        ];
-        $errors = $this->validator->validateRegistration($data);
-        $this->assertArrayHasKey('username', $errors);
-    }
-
-    // ======================
-    // Email
-    // ======================
-    public function testInvalidEmailFormat(): void
-    {
-        $data = [
-            'username' => 'ValidUser',
-            'email'    => 'not-an-email',
-            'password' => 'Str0ng@Password!',
-        ];
-        $errors = $this->validator->validateRegistration($data);
         $this->assertArrayHasKey('email', $errors);
-        $this->assertSame(ErrorCode::AUTH_EMAIL_INVALID, $errors['email']);
-    }
-
-    // ======================
-    // Password
-    // ======================
-    public function testInvalidPasswordTooShort(): void
-    {
-        $data = [
-            'username' => 'ValidUser',
-            'email'    => 'valid@example.com',
-            'password' => 'Short1!',
-        ];
-        $errors = $this->validator->validateRegistration($data);
         $this->assertArrayHasKey('password', $errors);
-        $this->assertSame(ErrorCode::AUTH_PASSWORD_INVALID, $errors['password']);
-    }
-
-    public function testInvalidPasswordMissingUppercase(): void
-    {
-        $data = [
-            'username' => 'ValidUser',
-            'email'    => 'valid@example.com',
-            'password' => 'nouppercase123!',
-        ];
-        $errors = $this->validator->validateRegistration($data);
-        $this->assertArrayHasKey('password', $errors);
-    }
-
-    public function testInvalidPasswordWithWhitespace(): void
-    {
-        $data = [
-            'username' => 'ValidUser',
-            'email'    => 'valid@example.com',
-            'password' => 'Str0ng Pass word!',
-        ];
-        $errors = $this->validator->validateRegistration($data);
-        $this->assertArrayHasKey('password', $errors);
+        // Tout OK
+        $errors = $this->v->validateRegistration([
+            'username' => 'john_doe',
+            'email'    => 'john@example.test',
+            'password' => 'Aa1!Bb2@Cc3#',
+        ]);
+        $this->assertSame([], $errors);
     }
 }

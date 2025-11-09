@@ -27,3 +27,9 @@
 
 .env
 .env.test
+
+# --- LOGS
+/Logs/
+/var/log/
+/storage/logs/
+*.log

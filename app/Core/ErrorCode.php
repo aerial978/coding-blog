@@ -4,6 +4,8 @@ namespace App\Core;
 
 final class ErrorCode
 {
+    public const AUTH_FIELD_REQUIRED          = 'auth.field.required';
+
     // ==== Auth - Registration ====
     public const AUTH_USERNAME_EXISTS         = 'auth.registration.username_exists';
     public const AUTH_EMAIL_EXISTS            = 'auth.registration.email_exists';

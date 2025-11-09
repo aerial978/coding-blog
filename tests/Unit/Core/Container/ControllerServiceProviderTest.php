@@ -18,7 +18,7 @@ use App\Model\UserModel;
 use App\Model\UserTokenModel;
 use App\Security\CsrfTokenManager;
 use App\Security\TokenGenerator;
-use App\Service\SecurityService;
+use App\Service\Security\RegistrationService;
 use App\Validation\FormValidator;
 use Cocur\Slugify\Slugify;
 use PHPUnit\Framework\Attributes\Test;
@@ -73,16 +73,16 @@ final class ControllerServiceProviderTest extends TestCase
         $userToken    = $this->createStub(UserTokenModel::class);
         $mailer       = $this->getMockBuilder(\App\Core\Mail\MailerInterface::class)->getMock();
         $sqlHelper    = $this->createStub(SqlHelper::class);
-        $securitySvc  = new SecurityService($validator, $userModel, $userToken, new Slugify(), $mailer, new TokenGenerator(), $sqlHelper);
+        $securitySvc  = new RegistrationService($validator, $userModel, $userToken, new Slugify(), $mailer, new TokenGenerator(), $sqlHelper);
         // Container factice avec les instances déjà construites
         $container = new ArrayContainer([
-            View::class               => $view,
-            UserModel::class          => $userModel,
-            FlashService::class       => $flash,
-            Request::class            => $request,
-            CsrfTokenManager::class   => $csrf,
-            RateLimiterFactory::class => $rateLimiter,
-            SecurityService::class    => $securitySvc,
+            View::class                   => $view,
+            UserModel::class              => $userModel,
+            FlashService::class           => $flash,
+            Request::class                => $request,
+            CsrfTokenManager::class       => $csrf,
+            RateLimiterFactory::class     => $rateLimiter,
+            RegistrationService::class    => $securitySvc,
         ]);
         $defs = ControllerServiceProvider::getDefinitions();
         // Construction réelle des contrôleurs via les closures

@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Controller\ErrorController;
+use App\Http\Middleware\MiddlewareInterface;
 use App\Http\Request;
 
 /**
@@ -22,6 +23,8 @@ class Router
     private ErrorController $errorController;
     private Request $request;
     private ControllerFactoryInterface $controllerFactory;
+    /** @var list<\App\Http\Middleware\MiddlewareInterface> */
+    private array $middlewares = [];
 
     /**
      * @param array<string, array<string, array{0: string, 1: string}>> $routes
@@ -54,6 +57,13 @@ class Router
 
         $path       = (string) parse_url($requestUri, PHP_URL_PATH);
         $cleanedUri = $this->normalizeUri($path);
+
+        $method = $this->request->getMethod();
+        foreach ($this->middlewares as $mw) {
+            if ($mw->handle($this->request, $cleanedUri, $method) === false) {
+                return; // middleware a géré la réponse
+            }
+        }
 
         $this->dispatch($cleanedUri);
     }
@@ -117,5 +127,10 @@ class Router
         } catch (\Throwable $e) {
             echo "<h1>$code - An error has occurred</h1>";
         }
+    }
+
+    public function addMiddleware(MiddlewareInterface $mw): void
+    {
+        $this->middlewares[] = $mw;
     }
 }

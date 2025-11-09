@@ -1,5 +1,0 @@
-[2025-09-02T17:46:10+00:00] error.ERROR: Uncaught exception {"message":"Cannot create service 'App\\Controller\\HomeController': Too few arguments to function App\\Controller\\HomeController::__construct(), 2 passed in C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\Provider\\ControllerServiceProvider.php on line 25 and exactly 3 expected","file":"C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\AppContainer.php","line":50,"trace":"#0 C:\\wamp64\\www\\coding-blog\\app\\Core\\PsrControllerFactory.php(13): App\\Core\\Container\\AppContainer->get('App\\\\Controller\\\\...')
-#1 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(97): App\\Core\\PsrControllerFactory->create('App\\\\Controller\\\\...')
-#2 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/')
-#3 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
-#4 {main}"} 

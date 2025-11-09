@@ -9,88 +9,113 @@ use App\Core\SqlHelper;
 use App\Model\UserModel;
 use App\Model\UserTokenModel;
 use App\Security\Contract\TokenGeneratorInterface;
-use App\Security\TokenGenerator;
-use App\Service\SecurityService;
+use App\Service\Security\AccountConfirmationService;
+use App\Service\Security\ConfirmationResendService;
+use App\Service\Security\Contract\SecurityServiceInterface;
+use App\Service\Security\RegistrationService;
+use App\Service\Security\SecurityService;
 use App\Validation\FormValidator;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
 
 /**
- * Provides service definitions related to user management and security.
+ * Services liés aux utilisateurs et à la sécurité (DAL + services métier).
  *
- * This service provider registers user-related models, token handling,
- * and the security service used for authentication, registration, and
- * account confirmation.
- *
- * It defines how each component is created and how dependencies are wired
- * together in the application container.
+ * Cette version s’appuie sur SystemServiceProvider pour les services transverses
+ * (FormValidator, Slugify, MailerInterface, TokenGeneratorInterface, SqlHelper, …)
+ * et ajoute le binding SecurityServiceInterface → SecurityService.
  */
 final class UserServiceProvider
 {
     /**
-     * Returns the list of container definitions for user-related services.
-     *
-     * Each array entry maps a class name to a factory closure that
-     * instantiates the corresponding service with its dependencies.
-     *
-     * Registered services:
-     * - UserModel: Handles CRUD operations for user data.
-     * - UserTokenModel: Manages user-related tokens (confirmation, reset, etc.).
-     * - TokenGenerator / TokenGeneratorInterface: Provides random secure token generation.
-     * - SecurityService: Coordinates validation, persistence, email sending, and security logic.
-     *
      * @return array<class-string, \Closure(ContainerInterface):object>
-     *     A map of service definitions for dependency injection.
      */
     public static function getDefinitions(): array
     {
         return [
-        UserModel::class => static function (ContainerInterface $container): UserModel {
-            /** @var SqlHelper $sql */
-            $sql = $container->get(SqlHelper::class);
-            return new UserModel($sql); // <-- 1 seul argument si c’est bien la signature réelle
-        },
+            UserModel::class => static function (ContainerInterface $container): UserModel {
+                /** @var SqlHelper $sql */
+                $sql = $container->get(SqlHelper::class);
+                return new UserModel($sql);
+            },
 
-        UserTokenModel::class => static function (ContainerInterface $container): UserTokenModel {
-            /** @var SqlHelper $sql */
-            $sql = $container->get(SqlHelper::class);
-            return new UserTokenModel($sql);
-        },
+            UserTokenModel::class => static function (ContainerInterface $container): UserTokenModel {
+                /** @var SqlHelper $sql */
+                $sql = $container->get(SqlHelper::class);
+                return new UserTokenModel($sql);
+            },
 
-        TokenGenerator::class => static fn (): TokenGenerator => new TokenGenerator(),
+            RegistrationService::class => static function (ContainerInterface $container): RegistrationService {
+                /** @var FormValidator $validator */
+                $validator = $container->get(FormValidator::class);
+                /** @var UserModel $userModel */
+                $userModel = $container->get(UserModel::class);
+                /** @var UserTokenModel $userTokenModel */
+                $userTokenModel = $container->get(UserTokenModel::class);
+                /** @var Slugify $slugify */
+                $slugify = $container->get(Slugify::class);
+                /** @var MailerInterface $mailer */
+                $mailer = $container->get(MailerInterface::class);
+                /** @var TokenGeneratorInterface $tokenGen */
+                $tokenGen = $container->get(TokenGeneratorInterface::class);
+                /** @var SqlHelper $sql */
+                $sql = $container->get(SqlHelper::class);
 
-        TokenGeneratorInterface::class => static function (ContainerInterface $container): TokenGeneratorInterface {
-            /** @var TokenGeneratorInterface $tg */
-            $tg = $container->get(TokenGenerator::class);
-            return $tg;
-        },
+                return new RegistrationService(
+                    $validator,
+                    $userModel,
+                    $userTokenModel,
+                    $slugify,
+                    $mailer,
+                    $tokenGen,
+                    $sql
+                );
+            },
 
-        SecurityService::class => static function (ContainerInterface $container): SecurityService {
-            /** @var FormValidator $validator */
-            $validator = $container->get(FormValidator::class);
-            /** @var UserModel $userModel */
-            $userModel = $container->get(UserModel::class);
-            /** @var UserTokenModel $userTokenModel */
-            $userTokenModel = $container->get(UserTokenModel::class);
-            /** @var Slugify $slugify */
-            $slugify = $container->get(Slugify::class);
-            /** @var MailerInterface $mailer */
-            $mailer = $container->get(MailerInterface::class);
-            /** @var TokenGeneratorInterface $tokenGen */
-            $tokenGen = $container->get(TokenGeneratorInterface::class);
-            /** @var SqlHelper $sql */
-            $sql = $container->get(SqlHelper::class);
+            AccountConfirmationService::class => static function (ContainerInterface $container): AccountConfirmationService {
+                /** @var UserTokenModel $userTokenModel */
+                $userTokenModel = $container->get(UserTokenModel::class);
+                /** @var TokenGeneratorInterface $tokenGen */
+                $tokenGen = $container->get(TokenGeneratorInterface::class);
 
-            return new SecurityService(
-                $validator,
-                $userModel,
-                $userTokenModel,
-                $slugify,
-                $mailer,
-                $tokenGen,
-                $sql
-            );
-        },
+                return new AccountConfirmationService($userTokenModel, $tokenGen);
+            },
+
+            ConfirmationResendService::class => static function (ContainerInterface $container): ConfirmationResendService {
+                /** @var FormValidator $validator */
+                $validator = $container->get(FormValidator::class);
+                /** @var UserModel $userModel */
+                $userModel = $container->get(UserModel::class);
+                /** @var UserTokenModel $userTokenModel */
+                $userTokenModel = $container->get(UserTokenModel::class);
+                /** @var TokenGeneratorInterface $tokenGen */
+                $tokenGen = $container->get(TokenGeneratorInterface::class);
+                /** @var MailerInterface $mailer */
+                $mailer = $container->get(MailerInterface::class);
+
+                return new ConfirmationResendService($validator, $userModel, $userTokenModel, $tokenGen, $mailer);
+            },
+
+            SecurityService::class => static function (ContainerInterface $container): SecurityService {
+                /** @var RegistrationService $registrationService */
+                $registrationService = $container->get(RegistrationService::class);
+                /** @var AccountConfirmationService $accountConfirmation */
+                $accountConfirmation = $container->get(AccountConfirmationService::class);
+                /** @var ConfirmationResendService $confirmationResend */
+                $confirmationResend = $container->get(ConfirmationResendService::class);
+
+                return new SecurityService(
+                    $registrationService,
+                    $accountConfirmation,
+                    $confirmationResend,
+                );
+            },
+
+            SecurityServiceInterface::class => static function (ContainerInterface $container): SecurityServiceInterface {
+                /** @var SecurityService $svc */
+                $svc = $container->get(SecurityService::class);
+                return $svc;
+            },
         ];
     }
 }

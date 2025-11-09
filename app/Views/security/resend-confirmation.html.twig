@@ -1,22 +1,32 @@
 {% extends "templates/layouts/base.html.twig" %}
-
-{% block title %}Renvoyer le lien de confirmation{% endblock %}
+{% import 'templates/macros/form_fields.html.twig' as fields %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1 class="mb-4 text-center">Renvoyer le lien de confirmation</h1>
+  <h1 class="mb-4 text-center">Renvoyer le lien de confirmation</h1>
+  {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
-    {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+  <form id="resendConfirmForm" method="post" action="" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <form method="post" action="">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {{ fields.input(
+      'email',
+      'email',
+      'Adresse e-mail',
+      old.email|default(''),
+      'email',
+      true,
+      'email_error',
+      'form-control',
+      { autocomplete: 'email' }
+    ) }}
 
-        <div class="mb-3">
-            <label for="email" class="form-label">Adresse e-mail</label>
-            <input type="email" class="form-control" id="email" name="email" value="{{ old.email|default('') }}" required autocomplete="email">
-        </div>
-
-        <button type="submit" class="btn btn-primary w-100">Renvoyer le lien</button>
-    </form>
+    <button type="submit" class="btn btn-primary w-100">Renvoyer le lien</button>
+  </form>
 </div>
+
+{% block page_scripts %}
+  <script type="module" src="{{ base_path }}public/assets/js/security/validation.resend-confirmation.js"></script>
+{% endblock %}
+
 {% endblock %}

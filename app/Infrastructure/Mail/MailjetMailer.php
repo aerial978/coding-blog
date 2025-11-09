@@ -9,34 +9,13 @@ use App\Core\Mail\MailerInterface;
 use Mailjet\Client;
 use Mailjet\Resources;
 use Mailjet\Response;
+use RuntimeException;
 
 /**
  * Mailer implementation using the Mailjet API.
- *
- * This class provides real email sending capabilities through the Mailjet service.
- * It loads HTML templates, injects dynamic variables, and delivers messages via
- * Mailjet’s REST API using the official SDK.
- *
- * Typical use cases include registration confirmation, password reset,
- * and other transactional emails.
  */
 final class MailjetMailer implements MailerInterface
 {
-    /**
-     * Constructor.
-     *
-     * Initializes the Mailjet client configuration with API credentials
-     * and default sender information.
-     *
-     * @param string $apiKey
-     *     The public Mailjet API key.
-     * @param string $apiSecret
-     *     The private Mailjet API secret.
-     * @param string $fromEmail
-     *     The sender email address.
-     * @param string $fromName
-     *     The sender display name.
-     */
     public function __construct(
         private string $apiKey,
         private string $apiSecret,
@@ -46,104 +25,134 @@ final class MailjetMailer implements MailerInterface
     }
 
     /**
-     * Sends an email using the Mailjet API and an HTML template.
-     *
-     * The method performs the following steps:
-     * 1. Loads the specified template file.
-     * 2. Replaces placeholder variables with provided values.
-     * 3. Submits the message to Mailjet’s API for delivery.
-     * 4. Logs both success and error events for diagnostic purposes.
-     *
-     * @param string $toEmail
-     *     Recipient’s email address.
-     * @param string $toName
-     *     Recipient’s display name.
-     * @param string $subject
-     *     Subject line of the email.
-     * @param string $template
-     *     Template filename (must exist under `/resources/mail/templates/`).
      * @param array<string,string> $vars
-     *     Key-value pairs of placeholders and their corresponding values.
-     *
-     * @return bool
-     *     True if the email was successfully sent; false otherwise.
      */
     public function send(string $toEmail, string $toName, string $subject, string $template, array $vars = []): bool
     {
         try {
-            $templatePath = dirname(__DIR__, 3) . '/resources/mail/templates/' . $template;
+            $templatePath = $this->resolveTemplatePath($template);
+            $rawHtml      = $this->readTemplate($templatePath);
+            $html         = $this->renderTemplate($rawHtml, $vars);
 
-            if (!file_exists($templatePath)) {
-                Logger::getLogger('mail')->error('Template email introuvable', ['template' => $templatePath]);
-                return false;
-            }
+            $client  = $this->createClient();
+            $payload = $this->buildPayload($toEmail, $toName, $subject, $html);
 
-            $body = file_get_contents($templatePath);
-            if ($body === false) {
-                Logger::getLogger('mail')->error('Lecture template échouée', ['template' => $templatePath]);
-                return false;
-            }
+            $response = $this->postEmail($client, $payload);
 
-            foreach ($vars as $k => $v) {
-                $body = str_replace('{' . $k . '}', (string)$v, $body);
-            }
-
-            $mj      = new Client($this->apiKey, $this->apiSecret, true, ['version' => 'v3.1']);
-            $payload = [
-                'Messages' => [[
-                    'From' => [
-                        'Email' => $this->fromEmail,
-                        'Name'  => $this->fromName,
-                    ],
-                    'To' => [[
-                        'Email' => $toEmail,
-                        'Name'  => $toName,
-                    ]],
-                    'Subject'  => $subject,
-                    'HTMLPart' => $body,
-                ]]
-            ];
-
-            /** @var Response $response */
-            $response = $mj->post(Resources::$Email, ['body' => $payload]);
-
-            if (!$response->success()) {
-                Logger::getLogger('mail')->error('Mailjet HTTP error', [
-                    'status' => $response->getStatus(),
-                    'reason' => $response->getReasonPhrase(),
-                    'body'   => $response->getBody(),
-                ]);
-                return false;
-            }
-
-            /** @var array{Messages?: list<array<string,mixed>>} $data */
-            $data = $response->getData();
-
-            $msg = null;
-            if (isset($data['Messages'][0])) {
-                /** @var array<string,mixed> $msg */
-                $msg = $data['Messages'][0];
-            }
-
-            if (!is_array($msg) || (($msg['Status'] ?? '') !== 'success')) {
-                Logger::getLogger('mail')->error('Mailjet functional error', [
-                    'status'         => $response->getStatus(),
-                    'message_status' => $msg['Status'] ?? null,
-                    'errors'         => $msg['Errors'] ?? null,
-                    'to'             => $toEmail,
-                    'from'           => $this->fromEmail,
-                ]);
-                return false;
-            }
-
-            Logger::getLogger('mail')->info('Mailjet sent', [
-                'to'      => $toEmail,
-                'subject' => $subject,
-            ]);
-            return true;
+            return $this->responseOk($response, $toEmail);
         } catch (\Throwable $e) {
             Logger::getLogger('mail')->error('Mailjet exception', ['exception' => $e->getMessage()]);
             return false;
         }
+    }
+
+    // ─────────────────────────────
+    // Helpers (petites responsabilités)
+    // ─────────────────────────────
+
+    private function resolveTemplatePath(string $template): string
+    {
+        // /app/Infrastructure/Mail -> remonte de 3 niveaux à la racine projet
+        return dirname(__DIR__, 3) . '/resources/mail/templates/' . $template;
+    }
+
+    private function readTemplate(string $path): string
+    {
+        if (!is_file($path)) {
+            Logger::getLogger('mail')->error('Template email introuvable', ['template' => $path]);
+            throw new RuntimeException('Template not found: ' . $path);
+        }
+
+        $body = file_get_contents($path);
+        if ($body === false) {
+            Logger::getLogger('mail')->error('Lecture template échouée', ['template' => $path]);
+            throw new RuntimeException('Template read failed: ' . $path);
+        }
+
+        return $body;
+    }
+
+    /**
+     * @param array<string,string> $vars
+     */
+    private function renderTemplate(string $html, array $vars): string
+    {
+        foreach ($vars as $k => $v) {
+            $html = str_replace('{' . $k . '}', (string) $v, $html);
+        }
+        return $html;
+    }
+
+    private function createClient(): Client
+    {
+        return new Client($this->apiKey, $this->apiSecret, true, ['version' => 'v3.1']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildPayload(string $toEmail, string $toName, string $subject, string $html): array
+    {
+        return [
+            'Messages' => [[
+                'From' => [
+                    'Email' => $this->fromEmail,
+                    'Name'  => $this->fromName,
+                ],
+                'To' => [[
+                    'Email' => $toEmail,
+                    'Name'  => $toName,
+                ]],
+                'Subject'  => $subject,
+                'HTMLPart' => $html,
+            ]],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function postEmail(Client $client, array $payload): Response
+    {
+        /** @var Response $resp */
+        $resp = $client->post(Resources::$Email, ['body' => $payload]);
+        return $resp;
+    }
+
+    private function responseOk(Response $response, string $toEmail): bool
+    {
+        if (!$response->success()) {
+            Logger::getLogger('mail')->error('Mailjet HTTP error', [
+                'status' => $response->getStatus(),
+                'reason' => $response->getReasonPhrase(),
+                'body'   => $response->getBody(),
+            ]);
+            return false;
+        }
+
+        /** @var array{Messages?: list<array<string,mixed>>} $data */
+        $data = $response->getData();
+
+        $messages = $data['Messages'] ?? null;
+        /** @var array<string,mixed>|null $msg */
+        $msg = (is_array($messages) && isset($messages[0])) ? $messages[0] : null;
+
+        if (!is_array($msg) || (($msg['Status'] ?? '') !== 'success')) {
+            Logger::getLogger('mail')->error('Mailjet functional error', [
+                'status'         => $response->getStatus(),
+                'message_status' => $msg['Status'] ?? null,
+                'errors'         => $msg['Errors'] ?? null,
+                'to'             => $toEmail,
+                'from'           => $this->fromEmail,
+            ]);
+            return false;
+        }
+
+        Logger::getLogger('mail')->info('Mailjet sent', [
+            'to'      => $toEmail,
+            'subject' => $msg['Subject'] ?? null,
+        ]);
+
+        return true;
     }
 }

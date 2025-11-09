@@ -1,0 +1,71 @@
+{# -----------------------------------------------------------
+  Macros de champs Bootstrap + ARIA + conteneur d’erreur
+  - Champs simples: input (text/email/password), textarea, select
+  - Conteneur d’erreur optionnel (pour JustValidate): #{{ error_id }}
+  - 'attrs' accepte des attributs HTML supplémentaires (placeholder, autocomplete, data-*, etc.)
+  ----------------------------------------------------------- #}
+
+{% macro input(id, name, label, value, type='text', required=false, error_id=null, class='form-control', attrs={}) %}
+  {% set describedby = error_id ? id ~ '_desc' : null %}
+  <div class="mb-3">
+    <label for="{{ id }}" class="form-label">{{ label }}</label>
+
+    <input
+      id="{{ id }}"
+      name="{{ name }}"
+      type="{{ type }}"
+      value="{{ value|default('') }}"
+      class="{{ class }}"
+      {% if required %}required aria-required="true"{% endif %}
+      {% if error_id %}aria-describedby="{{ error_id }}"{% endif %}
+      {% for k, v in attrs %} {{ k }}="{{ v }}"{% endfor %}
+    />
+
+    {# Conteneur d’erreur (client-side) #}
+    {% if error_id %}
+      <div id="{{ error_id }}" class="form-error" aria-live="polite"></div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro textarea(id, name, label, value, required=false, error_id=null, class='form-control', attrs={}) %}
+  <div class="mb-3">
+    <label for="{{ id }}" class="form-label">{{ label }}</label>
+
+    <textarea
+      id="{{ id }}"
+      name="{{ name }}"
+      class="{{ class }}"
+      {% if required %}required aria-required="true"{% endif %}
+      {% if error_id %}aria-describedby="{{ error_id }}"{% endif %}
+      {% for k, v in attrs %} {{ k }}="{{ v }}"{% endfor %}
+    >{{ value|default('') }}</textarea>
+
+    {% if error_id %}
+      <div id="{{ error_id }}" class="form-error" aria-live="polite"></div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro select(id, name, label, options, selected=null, required=false, error_id=null, class='form-select', attrs={}) %}
+  <div class="mb-3">
+    <label for="{{ id }}" class="form-label">{{ label }}</label>
+
+    <select
+      id="{{ id }}"
+      name="{{ name }}"
+      class="{{ class }}"
+      {% if required %}required aria-required="true"{% endif %}
+      {% if error_id %}aria-describedby="{{ error_id }}"{% endif %}
+      {% for k, v in attrs %} {{ k }}="{{ v }}"{% endfor %}
+    >
+      {% for val, text in options %}
+        <option value="{{ val }}" {% if val == selected %}selected{% endif %}>{{ text }}</option>
+      {% endfor %}
+    </select>
+
+    {% if error_id %}
+      <div id="{{ error_id }}" class="form-error" aria-live="polite"></div>
+    {% endif %}
+  </div>
+{% endmacro %}
