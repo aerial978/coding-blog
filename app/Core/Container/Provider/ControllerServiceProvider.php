@@ -7,13 +7,12 @@ namespace App\Core\Container\Provider;
 use App\Controller\ErrorController;
 use App\Controller\HomeController;
 use App\Controller\SecurityController;
-use App\Core\Factory\RateLimiterFactory;
 use App\Core\FlashService;
 use App\Core\View;
 use App\Http\Request;
 use App\Model\UserModel;
 use App\Security\CsrfTokenManager;
-use App\Service\SecurityService;
+use App\Service\Security\SecurityService;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -70,8 +69,6 @@ final class ControllerServiceProvider
                 $flash = $container->get(FlashService::class);
                 /** @var CsrfTokenManager $csrf */
                 $csrf = $container->get(CsrfTokenManager::class);
-                /** @var RateLimiterFactory $rateLimiterFactory */
-                $rateLimiterFactory = $container->get(RateLimiterFactory::class);
 
                 return new SecurityController(
                     $view,
@@ -79,7 +76,6 @@ final class ControllerServiceProvider
                     $request,
                     $flash,
                     $csrf,
-                    $rateLimiterFactory
                 );
             },
         ];

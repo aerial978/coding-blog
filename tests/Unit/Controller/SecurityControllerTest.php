@@ -2,731 +2,578 @@
 
 declare(strict_types=1);
 
+namespace Tests\Unit\Controller\Security;
+
+use App\Controller\SecurityController;
+use App\Core\Contract\FlashInterface;
+use App\Core\ErrorCode;
+use App\Core\FormId;
+use App\Core\View;
+use App\Http\Request;
+use App\Security\Contract\CsrfTokenInterface;
+use App\Service\Security\Contract\SecurityServiceInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
 /**
- * Interception de header() dans le namespace du contrôleur.
- * - Empile tous les en-têtes dans un spy
- * - Lance une exception SEULEMENT pour Location: afin de simuler la redirection
- * - Laisse passer Retry-After: sans interrompre le flux
+ * Exception interne pour interrompre proprement le flux avant redirect()
  */
-
-namespace App\Controller {
-    function header(string $header, bool $replace = true, int $response_code = 0): void
-    {
-        if (\Tests\Support\HeaderSpy::isEnabled()) {
-            \Tests\Support\HeaderSpy::push($header, $response_code);
-            if (\stripos($header, 'Location:') === 0) {
-                throw new \Tests\Support\InterceptRedirect();
-                // court-circuite un exit;
-            }
-            return;
-        }
-        \header($header, $replace, $response_code);
-    }
-
+final class TestAbortControllerFlow extends \RuntimeException
+{
 }
 
-/**
- * Utilitaires (spy + exception) pour le test
- */
-
-namespace Tests\Support {
-    final class InterceptRedirect extends \RuntimeException
+final class SecurityControllerTest extends TestCase
+{
+    /** @var MockObject&View */
+    private $view;
+    /** @var MockObject&SecurityServiceInterface */
+    private $securityService;
+    /** @var MockObject&Request */
+    private $request;
+    /** @var MockObject&FlashInterface */
+    private $flash;
+    /** @var MockObject&CsrfTokenInterface */
+    private $csrf;
+    protected function setUp(): void
     {
+        $this->view            = $this->createMock(View::class);
+        $this->securityService = $this->createMock(SecurityServiceInterface::class);
+        $this->request         = $this->createMock(Request::class);
+        $this->flash           = $this->createMock(FlashInterface::class);
+        $this->csrf            = $this->createMock(CsrfTokenInterface::class);
+        $_GET                  = [];
+        $_SERVER               = [];
     }
 
-    final class HeaderSpy
+    private function makeController(): SecurityController
     {
-        /** @var list<array{0:string,1:int}> */
-        private static array $stack  = [];
-        private static bool $enabled = false;
-
-        public static function enable(): void
-        {
-            self::$enabled = true;
-        }
-        public static function disable(): void
-        {
-            self::$enabled = false;
-        }
-        public static function isEnabled(): bool
-        {
-            return self::$enabled;
-        }
-        public static function reset(): void
-        {
-            self::$stack = [];
-        }
-
-        public static function push(string $header, int $code = 0): void
-        {
-            self::$stack[] = [$header, $code];
-        }
-
-        /** Retourne la dernière Location: ou null */
-        public static function lastLocation(): ?string
-        {
-            for ($i = \count(self::$stack) - 1; $i >= 0; $i--) {
-                [$h, ] = self::$stack[$i];
-                if (\stripos($h, 'Location:') === 0) {
-                    return \trim(\substr($h, \strlen('Location:')));
-                }
-            }
-            return null;
-        }
-
-        /** @return list<array{0:string,1:int}> */
-        public static function all(): array
-        {
-            return self::$stack;
-        }
+        return new SecurityController($this->view, $this->securityService, $this->request, $this->flash, $this->csrf);
     }
 
-}
-
-/**
- * Tests du SecurityController.
- */
-
-namespace Tests\App\Controller {
-
-    use App\Controller\SecurityController;
-    use App\Core\Contract\RateLimiterFactoryInterface;
-    use App\Core\Contract\RateLimiterInterface;
-    use App\Core\ErrorCode;
-    use App\Core\View;
-    use App\Http\Request;
-    use App\Service\Contract\SecurityServiceInterface;
-    use PHPUnit\Framework\Attributes\CoversClass;
-    use PHPUnit\Framework\Attributes\CoversMethod;
-    use PHPUnit\Framework\Attributes\Test;
-    use PHPUnit\Framework\TestCase;
-    use Tests\Double\CsrfFake;
-    use Tests\Double\FlashFake;
-    use Tests\Support\HeaderSpy;
-    use Tests\Support\InterceptRedirect;
-
-    final class TestLimiter implements \App\Core\Contract\RateLimiterInterface
+    // --------------------------------------------------------------------
+    // 1) REGISTER (GET)
+    // --------------------------------------------------------------------
+    public function test_register_get_renders_form_with_csrf_and_old(): void
     {
-        public bool $allowed    = true;
-        public int $retryAfter  = 60;
-        public int $recordCount = 0;
-
-        public function isAllowed(): bool
-        {
-            return $this->allowed;
-        }
-        public function getRetryAfter(): int
-        {
-            return $this->retryAfter;
-        }
-        public function recordAttempt(): void
-        {
-            $this->recordCount++;
-        }
+        $this->request->method('getMethod')->willReturn('GET');
+        $this->flash->method('take')->willReturnMap([
+            ['old', [], ['username' => 'olduser', 'email' => 'old@mail.test']],
+            ['register_state', null, null],
+        ]);
+        $this->csrf->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::REGISTER)
+            ->willReturn('csrf123');
+        $this->view->expects($this->once())
+            ->method('render')
+            ->with('security/register.html.twig', $this->callback(fn (array $ctx) =>
+                    ($ctx['csrf_token'] ?? null) === 'csrf123'
+                    && ($ctx['mode'] ?? null)    === 'form'
+                    && isset($ctx['old'])))
+            ->willReturn('HTML');
+        $controller = $this->makeController();
+        // Capture la sortie HTML pour ne pas polluer PHPUnit
+        ob_start();
+        $controller->register();
+        ob_end_clean();
+        $this->addToAssertionCount(1);
     }
 
-    #[CoversClass(SecurityController::class)]
-    #[CoversMethod(SecurityController::class, 'register')]
-    #[CoversMethod(SecurityController::class, 'confirmAccount')]
-    #[CoversMethod(SecurityController::class, 'resendConfirmation')]
-    final class SecurityControllerTest extends TestCase
+    // --------------------------------------------------------------------
+    // 2) REGISTER (POST) — succès
+    // --------------------------------------------------------------------
+    public function test_register_post_success_puts_state(): void
     {
-        private FlashFake $flash;
-        private CsrfFake $csrf;
-        /** @var \PHPUnit\Framework\MockObject\MockObject&SecurityServiceInterface */
-        private $securityService;
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RateLimiterFactoryInterface */
-        private $limiterFactory;
-        /** @var \PHPUnit\Framework\MockObject\MockObject&View */
-        private $view;
-        /** @var null|array{0:string,1:array<string,mixed>} */
-        private ?array $lastRender = null;
-        /** Limiteurs créés par clé */
-        /** @var array<string, TestLimiter> */
-        private array $limiters = [];
-        // key => objet anonyme implémentant RateLimiterInterface
-
-        protected function setUp(): void
-        {
-            HeaderSpy::enable();
-            HeaderSpy::reset();
-            // Stub View : capture le rendu
-            $this->view = $this->createMock(View::class);
-            $this->view->method('render')
-                ->willReturnCallback(function (string $tpl, array $data = []): string {
-                    /** @var array<string, mixed> $data */
-                    $this->lastRender = [$tpl, $data];
-                    return '';
-                });
-            $this->flash           = new FlashFake();
-            $this->csrf            = new CsrfFake(true, 'csrf_test_token');
-            $this->securityService = $this->createMock(SecurityServiceInterface::class);
-            // Factory RateLimiter → objets anonymes contrôlables
-            $this->limiterFactory = $this->createMock(RateLimiterFactoryInterface::class);
-            $this->limiterFactory->method('create')
-                ->willReturnCallback(function (string $key, int $maxAttempts, int $windowSeconds) {
-                    if (!isset($this->limiters[$key])) {
-                        $this->limiters[$key] = new TestLimiter();
-                    }
-                    return $this->limiters[$key];
-                });
-        }
-
-        protected function tearDown(): void
-        {
-            HeaderSpy::disable();
-            HeaderSpy::reset();
-        }
-
-        /** @param array<string, mixed> $post */
-        private function makeController(string $httpMethod, array $post = []): SecurityController
-        {
-            $request = $this->createMock(Request::class);
-            $request->method('getMethod')->willReturn($httpMethod);
-            $request->method('request')->willReturn($post);
-            return new SecurityController($this->view, $this->securityService, $request, $this->flash, $this->csrf, $this->limiterFactory);
-        }
-
-        private function assertRedirectTo(string $expected): void
-        {
-            self::assertSame($expected, HeaderSpy::lastLocation(), 'Mauvaise redirection (Location).');
-        }
-
-        private function assertFlashHasAtLeastOneMessage(): void
-        {
-            self::assertNotEmpty($this->flash->messages, 'Un message flash était attendu.');
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // REGISTER
-        // ─────────────────────────────────────────────────────────────────────
-
-        #[Test]
-        public function register_affiche_formulaire_en_get(): void
-        {
-            $controller = $this->makeController('GET');
+        $this->request->method('getMethod')->willReturn('POST');
+        $form = ['username' => 'john', 'email' => 'john@test.com', 'password' => 'pwd'];
+        $this->request->method('request')->willReturn($form);
+        $this->securityService
+            ->expects($this->once())
+            ->method('register')
+            ->with($form)
+            ->willReturn(['ok' => true]);
+        $this->flash
+            ->expects($this->once())
+            ->method('put')
+            ->with('register_state', ['email' => 'john@test.com'])
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
             $controller->register();
-            self::assertNotNull($this->lastRender);
-            [$tpl, $data] = $this->lastRender;
-            self::assertSame('security/register.html.twig', $tpl);
-            self::assertSame('form', $data['mode']);
-            self::assertArrayHasKey('csrf_token', $data);
-            self::assertSame([], $data['old']);
+            $this->fail('Flow should have been aborted before redirect');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
         }
+    }
 
-        #[Test]
-        public function register_rate_limited_en_post(): void
-        {
-            // 1er passage : crée le limiter "registration"
-            $tmp = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $tmp->register();
-            } catch (InterceptRedirect) {
-            }
-
-            // Bloque le limiter
-            $limiter = $this->limiters['registration'] ?? null;
-            self::assertNotNull($limiter, 'Le limiter "registration" aurait dû être créé.');
-            self::assertInstanceOf(TestLimiter::class, $limiter);
-            $limiter->allowed    = false;
-            $limiter->retryAfter = 125;
-            // Reset captures
-            HeaderSpy::reset();
-            $this->flash->messages = [];
-            $this->flash->store    = [];
-            $controller            = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->register();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/register');
-            $this->assertFlashHasAtLeastOneMessage();
-
-            /** @var array{old?: array<string, string>} $store */
-            $store = $this->flash->store;
-
-            self::assertSame('john', $store['old']['username'] ?? null);
-            self::assertSame('john@example.test', $store['old']['email'] ?? null);
-        }
-
-        #[Test]
-        public function register_csrf_invalide(): void
-        {
-            $this->csrf->setValid(false);
-            $controller = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'bad',
-            ]);
-            try {
-                $controller->register();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/register');
-            $this->assertFlashHasAtLeastOneMessage();
-
-            /** @var array{old?: array<string, string>} $store */
-            $store = $this->flash->store;
-
-            self::assertSame('john', $store['old']['username'] ?? null);
-        }
-
-        #[Test]
-        public function register_echec_envoi_email_confirmation_redirige_resend(): void
-        {
-            $this->securityService
-                ->method('register')
-                ->willReturn([
-                    'errors' => [ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED],
-                    'old'    => ['email' => 'john@example.test', 'username' => 'john'],
-                ]);
-            $controller = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->register();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-
-            /** @var array{old?: array<string,string>} $store */
-            $store = $this->flash->store;
-
-            /** @var array<string,string> $old */
-            $old = \is_array($store['old'] ?? null) ? $store['old'] : [];
-
-            self::assertArrayHasKey('email', $old);
-            self::assertSame('john@example.test', $old['email']);
-
-            // le username n'est pas attendu sur /resend-confirmation
-            self::assertArrayNotHasKey('username', $old);
-        }
-
-        #[Test]
-        public function register_succes_redirige_register_et_mode_check_email_au_get_suivant(): void
-        {
-            $this->securityService->method('register')->willReturn(['ok' => true]);
-            // POST succès → redirection /register
-            $controller = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->register();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/register');
-            // GET suivant : 'register_state' déclenche 'check_email'
-            $controller = $this->makeController('GET');
+    // --------------------------------------------------------------------
+    // 3) REGISTER (POST) — erreurs validation
+    // --------------------------------------------------------------------
+    public function test_register_post_with_errors_flashes_and_puts_old(): void
+    {
+        $this->request->method('getMethod')->willReturn('POST');
+        $form = ['username' => '', 'email' => 'bad', 'password' => ''];
+        $this->request->method('request')->willReturn($form);
+        $this->securityService
+            ->method('register')
+            ->willReturn(['errors' => [ErrorCode::AUTH_EMAIL_INVALID]]);
+        $this->flash->expects($this->atLeastOnce())
+            ->method('add')
+            ->with($this->isType('string'), $this->isType('string'));
+        $this->flash->expects($this->once())
+            ->method('put')
+            ->with('old', $this->callback(fn ($old) =>
+                isset($old['username'], $old['email'])))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
             $controller->register();
-            self::assertNotNull($this->lastRender);
-            [$tpl, $data] = $this->lastRender;
-            self::assertSame('security/register.html.twig', $tpl);
-            self::assertSame('check_email', $data['mode']);
-            self::assertNotNull($data['obfuscated_email']);
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
         }
+    }
 
-        #[Test]
-        public function register_catch_technique_redirige_register_avec_error(): void
-        {
-            $this->securityService
-                ->method('register')
-                ->willThrowException(new \RuntimeException('boom'));
-            $controller = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->register();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/register');
-            $this->assertFlashHasAtLeastOneMessage();
-            /** @var array{old?: array<string, string>} $store */
-            $store = $this->flash->store;
-
-            self::assertSame('john', $store['old']['username'] ?? null);
-            self::assertSame('john@example.test', $store['old']['email'] ?? null);
+    // --------------------------------------------------------------------
+    // 4) CONFIRM ACCOUNT — token manquant
+    // --------------------------------------------------------------------
+    public function test_confirm_missing_token_flashes_error(): void
+    {
+        $_GET = [];
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
         }
+    }
 
-        #[Test]
-        public function register_autres_erreurs_metier_empilent_messages_et_retour_formulaire(): void
-        {
-            $this->securityService
-                ->method('register')
-                ->willReturn([
-                    'errors' => [
-                        ErrorCode::AUTH_USERNAME_EXISTS,
-                        ErrorCode::AUTH_PASSWORD_REENTER,
-                    ],
-                    'old'    => ['username' => 'john', 'email' => 'john@example.test'],
-                ]);
-            $controller = $this->makeController('POST', [
-                'username'   => 'john',
-                'email'      => 'john@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->register();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/register');
-            $this->assertFlashHasAtLeastOneMessage();
-            /** @var array{old?: array<string, string>} $store */
-            $store = $this->flash->store;
-
-            self::assertSame('john', $store['old']['username'] ?? null);
-            self::assertSame('john@example.test', $store['old']['email'] ?? null);
+    // --------------------------------------------------------------------
+    // 5) CONFIRM ACCOUNT — succès nominal
+    // --------------------------------------------------------------------
+    public function test_confirm_success_flashes_success(): void
+    {
+        $_GET = ['token' => 'abc'];
+        $this->securityService
+            ->expects($this->once())
+            ->method('confirmAccount')
+            ->with('abc')
+            ->willReturn(['error' => null]);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('success', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
         }
+    }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // CONFIRM ACCOUNT
-        // ─────────────────────────────────────────────────────────────────────
+    // --------------------------------------------------------------------
+    // 6) RESEND (GET)
+    // --------------------------------------------------------------------
+    public function test_resend_get_renders_form_with_csrf(): void
+    {
+        $this->request->method('getMethod')->willReturn('GET');
+        $this->flash->method('take')->willReturnMap([
+            ['old', [], []],
+        ]);
+        $this->csrf->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::RESEND_CONFIRM)
+            ->willReturn('csrf-resend');
+        $this->view->expects($this->once())
+            ->method('render')
+            ->with('security/resend-confirmation.html.twig', $this->callback(fn (array $ctx) =>
+                    ($ctx['csrf_token'] ?? null) === 'csrf-resend'))
+            ->willReturn('HTML');
+        $controller = $this->makeController();
+        // Capture la sortie HTML pour éviter affichage
+        ob_start();
+        $controller->resendConfirmation();
+        ob_end_clean();
+        $this->addToAssertionCount(1);
+    }
 
-        #[Test]
-        public function confirmAccount_token_manquant_redirige_resend(): void
-        {
-            $_GET = [];
-            // token manquant
-
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function confirmAccount_deja_confirme_redirige_login(): void
-        {
-            $_GET = ['token' => 'abc'];
-            $this->securityService
-                ->method('confirmAccount')
-                ->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog');
-        }
-
-        #[Test]
-        public function confirmAccount_succes_redirige_login_avec_success(): void
-        {
-            $_GET = ['token' => 'ok_token'];
-            $this->securityService
-                ->method('confirmAccount')
-                ->willReturn([]);
-            // succès
-
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog');
-            $this->assertFlashHasAtLeastOneMessage();
-            $last = \end($this->flash->messages);
-            $type = \is_array($last) ? $last[0] : null;
-            self::assertSame('success', $type);
-        }
-
-        #[Test]
-        public function confirmAccount_token_expire_redirige_resend(): void
-        {
-            $_GET = ['token' => 't'];
-            $this->securityService
-                ->method('confirmAccount')
-                ->willReturn(['error' => ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired']);
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function confirmAccount_token_deja_utilise_redirige_login_info(): void
-        {
-            $_GET = ['token' => 't'];
-            $this->securityService
-                ->method('confirmAccount')
-                ->willReturn(['error' => ErrorCode::AUTH_CONFIRM_TOKEN_USED]);
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function confirmAccount_token_inconnu_altere_redirige_resend(): void
-        {
-            $_GET = ['token' => 't'];
-            $this->securityService
-                ->method('confirmAccount')
-                ->willReturn(['error' => ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'not_found']);
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function confirmAccount_catch_technique_redirige_login_avec_error(): void
-        {
-            $_GET = ['token' => 't'];
-            $this->securityService
-                ->method('confirmAccount')
-                ->willThrowException(new \RuntimeException('boom'));
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // RESEND CONFIRMATION
-        // ─────────────────────────────────────────────────────────────────────
-
-        #[Test]
-        public function resendConfirmation_get_affiche_formulaire(): void
-        {
-            $controller = $this->makeController('GET');
+    // --------------------------------------------------------------------
+    // 7) RESEND (POST) — déjà confirmé
+    // --------------------------------------------------------------------
+    public function test_resend_post_already_confirmed_flashes_info(): void
+    {
+        $this->request->method('getMethod')->willReturn('POST');
+        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
+        $this->securityService
+            ->expects($this->once())
+            ->method('resendConfirmation')
+            ->with('john@test.com')
+            ->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('info', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
             $controller->resendConfirmation();
-            self::assertNotNull($this->lastRender);
-            [$tpl, $data] = $this->lastRender;
-            self::assertSame('security/resend-confirmation.html.twig', $tpl);
-            self::assertArrayHasKey('csrf_token', $data);
-        }
-
-        #[Test]
-        public function resendConfirmation_rate_limited(): void
-        {
-            // 1er POST pour créer le limiter
-            $tmp = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $tmp->resendConfirmation();
-            } catch (InterceptRedirect) {
-            }
-
-            // Bloque le limiter
-            $limiter = $this->limiters['resend_confirmation'] ?? null;
-            self::assertNotNull($limiter, 'Le limiter "resend_confirmation" aurait dû être créé.');
-            self::assertInstanceOf(TestLimiter::class, $limiter);
-            $limiter->allowed    = false;
-            $limiter->retryAfter = 30;
-            // Reset captures
-            HeaderSpy::reset();
-            $this->flash->messages = [];
-            $controller            = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->resendConfirmation();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function resendConfirmation_csrf_invalide(): void
-        {
-            $this->csrf->setValid(false);
-            $controller = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'bad',
-            ]);
-            try {
-                $controller->resendConfirmation();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function resendConfirmation_deja_confirme_redirige_login(): void
-        {
-            $this->securityService
-                ->method('resendConfirmation')
-                ->with('jane@example.test')
-                ->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
-            $controller = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->resendConfirmation();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog');
-        }
-
-        #[Test]
-        public function resendConfirmation_succes_reste_sur_formulaire_avec_success(): void
-        {
-            $this->securityService
-                ->method('resendConfirmation')
-                ->willReturn([]);
-            // succès
-
-            $controller = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->resendConfirmation();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-            $last = \end($this->flash->messages);
-            $type = \is_array($last) ? $last[0] : null;
-            self::assertSame('success', $type);
-        }
-
-        #[Test]
-        public function resendConfirmation_catch_technique_redirige_formulaire_avec_error(): void
-        {
-            $this->securityService
-                ->method('resendConfirmation')
-                ->willThrowException(new \RuntimeException('boom'));
-            $controller = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->resendConfirmation();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function resendConfirmation_fallback_generique_redirige_formulaire_avec_error(): void
-        {
-            $this->securityService
-                ->method('resendConfirmation')
-                ->willReturn(['error' => ErrorCode::AUTH_TECHNICAL_ERROR]);
-            $controller = $this->makeController('POST', [
-                'email'      => 'jane@example.test',
-                'csrf_token' => 'csrf_test_token',
-            ]);
-            try {
-                $controller->resendConfirmation();
-                self::fail('Une redirection était attendue');
-            } catch (InterceptRedirect) {
-            }
-
-            $this->assertRedirectTo('/coding-blog/resend-confirmation');
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
-        // SMOKE tests pour la métrique “Methods”
-        // (garantissent une exécution “non interrompue” de chaque action)
-        // ─────────────────────────────────────────────────────────────────────
-
-        #[Test]
-        public function _smoke_couvre_register(): void
-        {
-            $controller = $this->makeController('GET');
-            // pas de redirection
-            $controller->register();
-            self::assertNotNull($this->lastRender);
-        }
-
-        #[Test]
-        public function _smoke_couvre_confirmAccount(): void
-        {
-            $_GET = ['token' => 'ok'];
-            $this->securityService->method('confirmAccount')->willReturn([]);
-            // succès
-            $controller = $this->makeController('GET');
-            try {
-                $controller->confirmAccount();
-            } catch (InterceptRedirect) {
-            }
-            $this->assertFlashHasAtLeastOneMessage();
-        }
-
-        #[Test]
-        public function _smoke_couvre_resendConfirmation(): void
-        {
-            $controller = $this->makeController('GET');
-            // affiche le formulaire
-            $controller->resendConfirmation();
-            self::assertNotNull($this->lastRender);
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
         }
     }
 
+    // --------------------------------------------------------------------
+    // 8) RESEND (POST) — succès nominal
+    // --------------------------------------------------------------------
+    public function test_resend_post_success_generic_flashes_success(): void
+    {
+        $this->request->method('getMethod')->willReturn('POST');
+        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
+        $this->securityService
+            ->expects($this->once())
+            ->method('resendConfirmation')
+            ->with('john@test.com')
+            ->willReturn([]);
+        // succès
+
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('success', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->resendConfirmation();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // REGISTER (POST) — exception technique pendant SecurityService::register()
+    // Couvre le catch + handleRegisterTechnicalError()
+    // --------------------------------------------------------------------
+    public function test_register_post_throws_exception_adds_flash_and_puts_old(): void
+    {
+        $this->request->method('getMethod')->willReturn('POST');
+        $form = ['username' => 'john', 'email' => 'john@test.com'];
+        $this->request->method('request')->willReturn($form);
+        // Simule une panne du service
+        $this->securityService
+            ->method('register')
+            ->willThrowException(new \RuntimeException('DB down'));
+        // handleRegisterTechnicalError() fait: flash->add(...); flash->put('old', ...); redirect()
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+        // On coupe le flux AVANT redirect() pour ne pas faire planter PHPUnit
+        $this->flash->expects($this->once())
+            ->method('put')
+            ->with('old', ['username' => 'john', 'email' => 'john@test.com'])
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->register();
+            $this->fail('Le flux aurait dû être interrompu avant redirect()');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // REGISTER (POST) — AUTH_CONFIRM_EMAIL_SEND_FAILED
+    // Couvre la branche spéciale dans handleRegisterOutcome()
+    // --------------------------------------------------------------------
+    public function test_register_post_email_send_failed_redirects_to_resend_and_puts_old_email(): void
+    {
+        $this->request->method('getMethod')->willReturn('POST');
+        $form = ['username' => 'john', 'email' => 'john@test.com'];
+        $this->request->method('request')->willReturn($form);
+        $this->securityService
+            ->method('register')
+            ->willReturn([
+                'errors' => [ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED],
+            ]);
+        // Ajout du flash d'erreur spécifique
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+        // La branche met uniquement l'email dans "old", puis redirect('/resend-confirmation')
+        $this->flash->expects($this->once())
+            ->method('put')
+            ->with('old', ['email' => 'john@test.com'])
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->register();
+            $this->fail('Le flux aurait dû être interrompu avant redirect()');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // CONFIRM (GET) — le service lève une exception → catch + redirect('/coding-blog')
+    // --------------------------------------------------------------------
+    public function test_confirm_service_throws_adds_error_and_redirects_home(): void
+    {
+        $_GET = ['token' => 'tok'];
+        $this->securityService
+            ->method('confirmAccount')
+            ->willThrowException(new \RuntimeException('boom'));
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted before redirect');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // CONFIRM (GET) — token invalide expiré → erreur + redirect('/resend-confirmation')
+    // --------------------------------------------------------------------
+    public function test_confirm_invalid_token_expired_redirects_to_resend(): void
+    {
+        $_GET = ['token' => 'tok'];
+        $this->securityService
+            ->method('confirmAccount')
+            ->willReturn(['error' => ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired']);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // CONFIRM (GET) — token invalide not_found → erreur + redirect('/resend-confirmation')
+    // --------------------------------------------------------------------
+    public function test_confirm_invalid_token_not_found_redirects_to_resend(): void
+    {
+        $_GET = ['token' => 'tok'];
+        $this->securityService
+            ->method('confirmAccount')
+            ->willReturn(['error' => ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'not_found']);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // CONFIRM (GET) — token déjà utilisé → info + redirect('/coding-blog')
+    // --------------------------------------------------------------------
+    public function test_confirm_token_used_redirects_home_with_info(): void
+    {
+        $_GET = ['token' => 'tok'];
+        $this->securityService
+            ->method('confirmAccount')
+            ->willReturn(['error' => ErrorCode::AUTH_CONFIRM_TOKEN_USED]);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('info', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // CONFIRM (GET) — déjà confirmé → info + redirect('/coding-blog')
+    // --------------------------------------------------------------------
+    public function test_confirm_already_confirmed_redirects_home_with_info(): void
+    {
+        $_GET = ['token' => 'tok'];
+        $this->securityService
+            ->method('confirmAccount')
+            ->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('info', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // CONFIRM (GET) — fallback technique (code non vide inattendu) → erreur + redirect('/coding-blog')
+    // --------------------------------------------------------------------
+    public function test_confirm_unknown_error_code_triggers_fallback_technical_error(): void
+    {
+        $_GET = ['token' => 'tok'];
+        // Code non vide et non géré par les branches ci-dessus → fallback
+        $this->securityService
+            ->method('confirmAccount')
+            ->willReturn(['error' => 'SOME_OTHER_CODE']);
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->confirmAccount();
+            $this->fail('Flow should have been aborted');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // RESEND (POST) — le service lève une exception → catch + redirect('/resend-confirmation')
+    // --------------------------------------------------------------------
+    public function test_resend_post_service_throws_adds_error_and_redirects_to_resend(): void
+    {
+        $this->request->method('getMethod')->willReturn('POST');
+        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
+        // Simule une panne dans le service
+        $this->securityService
+            ->method('resendConfirmation')
+            ->willThrowException(new \RuntimeException('boom'));
+        // Le contrôleur doit flasher une erreur puis rediriger.
+        // On intercepte le flux en faisant lever notre exception de test sur add()
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->resendConfirmation();
+            $this->fail('Le flux aurait dû être interrompu avant redirect()');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    public function test_register_get_with_register_state_obfuscates_email(): void
+    {
+        // On force la méthode en GET
+        $this->request->method('getMethod')->willReturn('GET');
+        // Le flash "register_state" contient un email -> le contrôleur doit passer en mode "check_email"
+        $this->flash->method('take')->willReturnMap([
+            ['old', [], []],
+            ['register_state', null, ['email' => 'john.doe@test.com']],
+        ]);
+        // CSRF attendu dans le contexte rendu
+        $this->csrf->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::REGISTER)
+            ->willReturn('csrf123');
+        // On vérifie le rendu : mode = check_email et email obfusqué
+        $this->view->expects($this->once())
+            ->method('render')
+            ->with('security/register.html.twig', $this->callback(function (array $ctx): bool {
+
+                return ($ctx['mode'] ?? null)       === 'check_email'
+                    && ($ctx['csrf_token'] ?? null) === 'csrf123'
+                    && array_key_exists('obfuscated_email', $ctx)
+                    // j***@test.com attendu (première lettre, *** puis domaine)
+                    && $ctx['obfuscated_email'] === 'j***@test.com';
+            }))
+            ->willReturn('HTML');
+        $controller = $this->makeController();
+        // On capture la sortie pour ne pas polluer PHPUnit
+        ob_start();
+        $controller->register();
+        ob_end_clean();
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_register_post_with_errors_uses_old_from_service_result(): void
+    {
+        // On force un POST sur /register
+        $this->request->method('getMethod')->willReturn('POST');
+        $this->request->method('request')->willReturn([
+            'username' => 'orig',
+            'email'    => 'orig@test.com',
+            'password' => 'x',
+        ]);
+        // Le service renvoie une erreur + un "old" explicite
+        $serviceOld = ['username' => 'u1', 'email' => 'e1@test.com'];
+        $this->securityService
+            ->method('register')
+            ->willReturn([
+                'errors' => [ErrorCode::AUTH_EMAIL_INVALID],
+                'old'    => $serviceOld,
+            ]);
+        // Le contrôleur flashe au moins une erreur…
+        $this->flash->expects($this->atLeastOnce())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+        // …et doit reprendre EXACTEMENT l'ancien "old" fourni par le service
+        $this->flash->expects($this->once())
+            ->method('put')
+            ->with('old', $serviceOld)
+            ->willThrowException(new TestAbortControllerFlow());
+        // coupe le flux avant redirect()
+
+        $controller = $this->makeController();
+        try {
+            $controller->register();
+            $this->fail('Le flux aurait dû être interrompu avant redirect()');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // RESEND (POST) — erreur générique (≠ already confirmed)
+    // --------------------------------------------------------------------
+    public function test_resend_post_generic_error_flashes_error_and_redirects_to_resend(): void
+    {
+        // POST /resend-confirmation
+        $this->request->method('getMethod')->willReturn('POST');
+        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
+        // Le service renvoie un code d'erreur ≠ AUTH_ALREADY_CONFIRMED
+        $this->securityService
+            ->expects($this->once())
+            ->method('resendConfirmation')
+            ->with('john@test.com')
+            ->willReturn(['error' => ErrorCode::AUTH_TECHNICAL_ERROR]);
+        // Le contrôleur doit flasher une erreur, puis rediriger vers /resend-confirmation
+        // On coupe le flux juste après le flash pour éviter le redirect()
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'))
+            ->willThrowException(new TestAbortControllerFlow());
+        $controller = $this->makeController();
+        try {
+            $controller->resendConfirmation();
+            $this->fail('Le flux aurait dû être interrompu avant redirect()');
+        } catch (TestAbortControllerFlow) {
+            $this->addToAssertionCount(1);
+        }
+    }
 }

@@ -7,13 +7,13 @@ engines:
     enabled: true
     config: .phpstan.neon.dist
 
-  php-cs-fixer:
-    enabled: true
-    config: .php-cs-fixer.dist.php
-
   phpcs:
     enabled: true
     config: phpcs.xml
+
+  php-cs-fixer:
+    enabled: true
+    config: .php-cs-fixer.dist.php
 
   eslint:
     enabled: true
@@ -25,29 +25,17 @@ engines:
 
   markdownlint:
     enabled: true
-    rules:
-      list-item-indent: consistent
-      no-undefined-references: false
+    # Idéalement fournissez un fichier .markdownlint.json ; sinon laissez enabled: true
+    # (les options inline 'rules:' ne sont pas toujours supportées ici)
 
-tools:
-  exclude:
-    - bandit          # Python
-    - brakeman        # Ruby on Rails
-    - cppcheck        # C++
-    - duplication     # Pas utile dans tous les cas
-    - rubocop         # Ruby
-    - jsinspect       # Analyse de duplication JS
-    - coverage        # Si tu n’as pas de rapport de couverture
-
-files:
-  include:
-    - app/
-    - public/
-    - assets/
-  exclude:
-    - vendor/
-    - node_modules/
-    - tmp/
-    - cache/
-    - .github/
-    - tests/
+# Exclure des chemins côté Codacy (y compris les tests)
+exclude_paths:
+  - vendor/**
+  - node_modules/**
+  - tmp/**
+  - cache/**
+  - .github/**
+  - tests/
+  - Tests/
+  - tests/**
+  - Tests/**

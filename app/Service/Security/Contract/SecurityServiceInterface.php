@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service\Contract;
+namespace App\Service\Security\Contract;
 
 /**
  * Defines the contract for user security and authentication services.

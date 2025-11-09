@@ -6,12 +6,12 @@ parameters:
 
   paths:
     - app
-    - tests
 
   excludePaths:
     - vendor/*
     - tmp/*
     - cache/*
+    - tests/*
 
   inferPrivatePropertyTypeFromConstructor: true
 

@@ -65,5 +65,10 @@ $router = new Router(
     new PsrControllerFactory($psr)
 );
 
+// 7.1) Middlewares applicatifs
+$router->addMiddleware($psr->get(\App\Middleware\RateLimitMiddleware::class));
+$router->addMiddleware($psr->get(\App\Middleware\AuthenticationMiddleware::class));
+$router->addMiddleware($psr->get(\App\Middleware\CsrfMiddleware::class));
+
 // 8) Démarrage
 $router->handleRequest();

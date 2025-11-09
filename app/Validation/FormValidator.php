@@ -6,66 +6,116 @@ namespace App\Validation;
 
 use App\Core\ErrorCode;
 
-/**
-     * Validates user-submitted form data.
-     *
-     * This validator focuses on registration inputs and returns a map of field
-     * names to error codes (from {@see ErrorCode}) when validation fails.
-     * On success, it returns an empty array.
-     */
 final class FormValidator
 {
+    // ——— Patterns (réutilisés partout) ———
+    private const USERNAME_PATTERN = '/^(?=.*[a-zA-Z])[a-zA-Z0-9_]{3,20}$/';
+    private const PASSWORD_PATTERN = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[^\s]{12,}$/';
+    // ——— Normalisation simple ———
+    public function normalize(mixed $value): string
+    {
+        return is_string($value) ? trim($value) : '';
+    }
+
+    // ——— Fabriques de règles (retournent des closures) ———
+
+    /** @return callable(string): (?string) */
+    public function required(string $error = ErrorCode::AUTH_FIELD_REQUIRED): callable
+    {
+        return fn (string $value): ?string => ($value === '' ? $error : null);
+    }
+
+    /** @return callable(string): (?string) */
+    public function email(string $error = ErrorCode::AUTH_EMAIL_INVALID): callable
+    {
+        return fn (string $value): ?string =>
+            ($value === '' || filter_var($value, FILTER_VALIDATE_EMAIL) === false) ? $error : null;
+    }
+
+    /** @return callable(string): (?string) */
+    public function username(string $error = ErrorCode::AUTH_USERNAME_INVALID): callable
+    {
+        return fn (string $value): ?string =>
+            (preg_match(self::USERNAME_PATTERN, $value) === 1 ? null : $error);
+    }
+
+    /** @return callable(string): (?string) */
+    public function password(string $error = ErrorCode::AUTH_PASSWORD_INVALID): callable
+    {
+        return fn (string $value): ?string =>
+            (preg_match(self::PASSWORD_PATTERN, $value) === 1 ? null : $error);
+    }
+
+    /** @return callable(string): (?string) */
+    public function minLen(int $minLen, string $error): callable
+    {
+        return fn (string $value): ?string => (mb_strlen($value) < $minLen ? $error : null);
+    }
+
+    /** @return callable(string): (?string) */
+    public function maxLen(int $maxLen, string $error): callable
+    {
+        return fn (string $value): ?string => (mb_strlen($value) > $maxLen ? $error : null);
+    }
+
+    /** @param list<string> $allowed
+     *  @return callable(string): (?string)
+     */
+    public function inArray(array $allowed, string $error): callable
+    {
+        return fn (string $value): ?string => (in_array($value, $allowed, true) ? null : $error);
+    }
+
+    /** @return callable(string): (?string) */
+    public function regex(string $pattern, string $error): callable
+    {
+        return fn (string $value): ?string => (preg_match($pattern, $value) === 1 ? null : $error);
+    }
+
+    // ——— Moteur générique ———
+
     /**
-     * Validates registration data.
-     *
-     * Validation rules:
-     *  - username: 3–20 chars, letters/digits/underscore, must include at least one letter.
-     *  - email: valid RFC-compliant email format.
-     *  - password: minimum 12 chars, at least one lowercase, one uppercase, one digit,
-     *              one non-alphanumeric, and must contain no whitespace.
-     *
-     * @param array<string, mixed> $data
-     *     Expected keys: 'username', 'email', 'password', 'confirm_password' (optional here).
-     *
-     * @return array<string, string>
-     *     Associative array of field => ErrorCode constant; empty array if valid.
+     * @param array<string,mixed> $data
+     * @param array<string, array<callable(string):(?string)>> $schema
+     * @return array<string,string>  // champ => premier code d'erreur
+     */
+    public function validate(array $data, array $schema): array
+    {
+        $errors = [];
+        foreach ($schema as $field => $rules) {
+            $value = $this->normalize($data[$field] ?? null);
+            foreach ($rules as $rule) {
+                $error = $rule($value);
+                if ($error !== null) {
+                    $errors[$field] = $error;
+                    break;
+                }
+            }
+        }
+        return $errors;
+    }
+
+    // ——— API “use-case” existante, réécrite sur le moteur générique ———
+
+    /** 
+     * @param array<string,mixed> $data
+     * @return array<string,string>
      */
     public function validateRegistration(array $data): array
     {
-        /** @var string $username */
-        $username = is_string($data['username'] ?? null) ? trim($data['username']) : '';
+        return $this->validate($data, [
+            'username' => [$this->required(), $this->username()],
+            'email'    => [$this->email()],
+            'password' => [$this->required(), $this->password()],
+        ]);
+    }
 
-        /** @var string $email */
-        $email = is_string($data['email'] ?? null) ? trim($data['email']) : '';
-
-        /** @var string $password */
-        $password = is_string($data['password'] ?? null) ? $data['password'] : '';
-
-        $errors = [];
-
-        // username: 3–20 chars, lettres/chiffres/underscore, au moins une lettre
-        if ($username === '' || preg_match('/^(?=.*[a-zA-Z])[a-zA-Z0-9_]{3,20}$/', $username) !== 1) {
-            $errors['username'] = ErrorCode::AUTH_USERNAME_INVALID;
-        }
-
-        // email valide
-        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            $errors['email'] = ErrorCode::AUTH_EMAIL_INVALID;
-        }
-
-        // password: min 12, une minuscule, une majuscule, un chiffre, un spécial, pas d’espace
-        if (
-            $password === '' ||
-            preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[^\s]{12,}$/', $password) !== 1
-        ) {
-            $errors['password'] = ErrorCode::AUTH_PASSWORD_INVALID;
-        }
-
-        // (optionnel) garde-fou supplémentaire contre les espaces
-        if ($password !== '' && preg_match('/\s/', $password) === 1) {
-            $errors['password'] = ErrorCode::AUTH_PASSWORD_INVALID;
-        }
-
-        return $errors;
+    /** public: validation e-mail réutilisable (resend, login, forgot…)
+     *  @return ?string
+     */
+    public function validateEmailField(string $email): ?string
+    {
+        $email = $this->normalize($email);
+        return ($this->email())($email);
     }
 }

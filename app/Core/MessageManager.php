@@ -9,13 +9,15 @@ class MessageManager
     public static function get(string $code): string
     {
         $messages = [
+            ErrorCode::AUTH_FIELD_REQUIRED            => 'Champ(s) requis.',
+
             // ==== Auth - Registration ====
-            ErrorCode::AUTH_USERNAME_INVALID          => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",//
-            ErrorCode::AUTH_USERNAME_EXISTS           => "Nom d'utilisateur déjà utilisé.",//
-            ErrorCode::AUTH_EMAIL_INVALID             => 'Adresse e-mail invalide.',//
-            ErrorCode::AUTH_EMAIL_EXISTS              => 'Cette adresse email est déjà associée à un compte.',//
-            ErrorCode::AUTH_PASSWORD_INVALID          => 'Le mot de passe ne respecte pas les règles de sécurité.',//
-            ErrorCode::AUTH_REGISTRATION_FAILED       => 'Une erreur est survenue lors de votre inscription.',//
+            ErrorCode::AUTH_USERNAME_INVALID          => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",
+            ErrorCode::AUTH_USERNAME_EXISTS           => "Nom d'utilisateur déjà utilisé.",
+            ErrorCode::AUTH_EMAIL_INVALID             => 'Adresse e-mail invalide.',
+            ErrorCode::AUTH_EMAIL_EXISTS              => 'Cette adresse email est déjà associée à un compte.',
+            ErrorCode::AUTH_PASSWORD_INVALID          => 'Le mot de passe ne respecte pas les règles de sécurité.',
+            ErrorCode::AUTH_REGISTRATION_FAILED       => 'Une erreur est survenue lors de votre inscription.',
             ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED => 'Impossible d’envoyer l’email de confirmation. Réessayez ci-dessous.',
             ErrorCode::AUTH_ACCOUNT_CONFIRMATION_SENT => 'Un email de confirmation vous a été envoyé pour activer votre compte.',
             ErrorCode::AUTH_PASSWORD_REENTER          => 'Pour votre sécurité, le mot de passe a été effacé.',

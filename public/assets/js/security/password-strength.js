@@ -9,14 +9,22 @@
     const form    = root.closest('form');
     const submit  = form ? form.querySelector('[type="submit"]') : null;
 
+    if (!input || !items.length || !bar || !levelEl) {
+      console.warn('[password-strength] Structure incomplète pour', root);
+      return;
+    }
+
     // Tests critère par critère (on conserve les 5)
-    const tests = {
+    const tests = Object.freeze({
       lower:   v => /[a-z]/.test(v),
       upper:   v => /[A-Z]/.test(v),
       digit:   v => /\d/.test(v),
       special: v => /[^A-Za-z0-9]/.test(v),
       length:  v => v.length >= 12
-    };
+    });
+
+    const ALLOWED_KEYS = new Set(['lower', 'upper', 'digit', 'special', 'length']);
+
 
     // Seuils longueur → couleur/libellé
     function tierFromLength(len) {
@@ -32,8 +40,10 @@
       // 1) Met à jour les critères (couleurs des puces et compteur)
       let passed = 0;
       items.forEach(li => {
-        const name = li.getAttribute('data-check');
-        const ok = (tests[name] ? tests[name](value) : false);
+        const name = String(li.getAttribute('data-check') || '');
+        const ok = (ALLOWED_KEYS.has(name) && Object.hasOwn(tests, name))
+          ? tests[name](value)
+          : false;
         li.classList.toggle('text-success', ok);
         li.classList.toggle('text-danger', !ok);
         if (ok) passed++;
@@ -60,7 +70,11 @@
 
       // 4) ARIA + blocage submit si tu veux garder la règle stricte “5/5”
       if (ariaOut) ariaOut.textContent = `Robustesse ${tier.label}, ${passed} critères sur 5 remplis.`;
-      if (submit) submit.disabled = (passed < 5); // -> pour ne pas bloquer: commente cette ligne
+      if (submit) {
+        const shouldDisable = (passed < 5);
+        submit.disabled = shouldDisable;
+        submit.setAttribute('aria-disabled', String(shouldDisable));
+      }
     }
 
     // Écouteurs
