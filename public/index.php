@@ -13,6 +13,8 @@ use App\Core\Container\AppContainer;
 use App\Controller\ErrorController;
 use App\Http\Request;
 
+date_default_timezone_set('Europe/Paris');
+
 // 1) Env
 EnvLoader::load(__DIR__ . '/../');
 
@@ -69,6 +71,7 @@ $router = new Router(
 $router->addMiddleware($psr->get(\App\Middleware\RateLimitMiddleware::class));
 $router->addMiddleware($psr->get(\App\Middleware\AuthenticationMiddleware::class));
 $router->addMiddleware($psr->get(\App\Middleware\CsrfMiddleware::class));
+$router->addMiddleware($psr->get(\App\Middleware\SecurityHeadersMiddleware::class));
 
 // 8) Démarrage
 $router->handleRequest();

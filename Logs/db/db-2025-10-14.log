@@ -1,1 +1,0 @@
-[2025-10-14T17:13:38+00:00] db.ERROR: PDO error {"dsn":"mysql:host=localhost;dbname=coding-blog_test;charset=utf8mb4","env":"test","message":"SQLSTATE[HY000] [1045] Accès refusé pour l'utilisateur: 'invalid user'@'@localhost' (mot de passe: OUI)"} 

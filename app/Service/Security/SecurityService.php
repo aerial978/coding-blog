@@ -4,30 +4,18 @@ declare(strict_types=1);
 
 namespace App\Service\Security;
 
+use App\Service\Security\Contract\AccountConfirmationServiceInterface;
+use App\Service\Security\Contract\ConfirmationResendServiceInterface;
+use App\Service\Security\Contract\RegistrationServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 
-/**
- * Implements user registration, account confirmation, and confirmation-resend flows.
- *
- * This service coordinates validation, persistence, token generation/storage, and
- * email delivery around user onboarding. It is transaction-aware for operations
- * that must be committed atomically (e.g., user creation + token insertion).
- */
 final class SecurityService implements SecurityServiceInterface
 {
-    private RegistrationService $registration;
-    private AccountConfirmationService $accountConfirmation;
-    private ConfirmationResendService $confirmationResend;
-
     public function __construct(
-        RegistrationService $registration,
-        AccountConfirmationService $accountConfirmation,
-        ConfirmationResendService $confirmationResend,
+        private RegistrationServiceInterface $registration,
+        private AccountConfirmationServiceInterface $accountConfirmation,
+        private ConfirmationResendServiceInterface $confirmationResend,
     ) {
-
-        $this->registration         = $registration;
-        $this->accountConfirmation  = $accountConfirmation;
-        $this->confirmationResend   = $confirmationResend;
     }
 
     public function register(array $form): array

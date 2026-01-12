@@ -1,5 +1,0 @@
-[2025-09-25T16:37:02+00:00] error.ERROR: Uncaught exception {"message":"Cannot create service 'App\\Controller\\SecurityController': Cannot create service 'App\\Service\\SecurityService': syntax error, unexpected token \"*\"","file":"C:\\wamp64\\www\\coding-blog\\app\\Core\\Container\\AppContainer.php","line":50,"trace":"#0 C:\\wamp64\\www\\coding-blog\\app\\Core\\PsrControllerFactory.php(13): App\\Core\\Container\\AppContainer->get('App\\\\Controller\\\\...')
-#1 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(97): App\\Core\\PsrControllerFactory->create('App\\\\Controller\\\\...')
-#2 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/register')
-#3 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
-#4 {main}"} 

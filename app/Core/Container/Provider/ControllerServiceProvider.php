@@ -9,9 +9,13 @@ use App\Controller\HomeController;
 use App\Controller\SecurityController;
 use App\Core\FlashService;
 use App\Core\View;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\UserModel;
 use App\Security\CsrfTokenManager;
+use App\Security\HoneypotValidator;
+use App\Security\SubmissionDelayValidator;
+use App\Security\TurnstileValidator;
 use App\Service\Security\SecurityService;
 use Psr\Container\ContainerInterface;
 
@@ -70,12 +74,31 @@ final class ControllerServiceProvider
                 /** @var CsrfTokenManager $csrf */
                 $csrf = $container->get(CsrfTokenManager::class);
 
+                /**
+                 * IMPORTANT :
+                 * - Si votre SecurityController attend désormais des interfaces (HoneypotValidatorInterface, etc.),
+                 *   vous pouvez aussi récupérer ces interfaces ici.
+                 * - Cette version conserve les classes concrètes : elles doivent implémenter les interfaces attendues.
+                 */
+                /** @var HoneypotValidator $honeypot */
+                $honeypot = $container->get(HoneypotValidator::class);
+                /** @var SubmissionDelayValidator $submissionDelay */
+                $submissionDelay = $container->get(SubmissionDelayValidator::class);
+                /** @var TurnstileValidator $turnstile */
+                $turnstile = $container->get(TurnstileValidator::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
                 return new SecurityController(
                     $view,
                     $securityService,
                     $request,
                     $flash,
                     $csrf,
+                    $honeypot,
+                    $submissionDelay,
+                    $turnstile,
+                    $responder
                 );
             },
         ];

@@ -29,7 +29,7 @@
                 { autocomplete: 'username' }  # attrs
                 ) }}
 
-                {{ fields.input(
+            {{ fields.input(
                 'email',
                 'email',
                 'Email',
@@ -41,6 +41,8 @@
                 { autocomplete: 'email' }
             ) }}
 
+            {{ fields.honeypot(honeypot_name) }}
+
             {% include 'templates/components/password_strength.html.twig' with {
                 id: 'password-field',
                 input_id: 'password',
@@ -48,6 +50,15 @@
                 label: 'Password',
                 required: true
             } %}
+
+            {# Script Turnstile – à mettre une seule fois par page #}
+            <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+            {# Widget Turnstile #}
+            <div class="mb-4 cf-turnstile"
+                data-sitekey="{{ turnstile_site_key }}"
+                data-theme="light">
+            </div>
 
             <button type="submit" class="btn btn-primary w-100">Register</button>
         </form>

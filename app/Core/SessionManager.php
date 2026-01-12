@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Core\Contract\SessionInterface;
+
 /**
  * Provides an abstraction layer for native PHP session handling.
  *
@@ -15,7 +17,7 @@ namespace App\Core;
  * The session must be started externally (e.g., via `session_start()`)
  * before using this class.
  */
-final class SessionManager
+final class SessionManager implements SessionInterface
 {
     /**
      * Stores a value in the session under the given key.

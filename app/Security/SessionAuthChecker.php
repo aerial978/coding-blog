@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
-use App\Core\SessionManager;
+use App\Core\Contract\SessionInterface;
 use App\Http\Request;
 use App\Security\Contract\AuthCheckerInterface;
 
@@ -19,7 +19,7 @@ use App\Security\Contract\AuthCheckerInterface;
  */
 final class SessionAuthChecker implements AuthCheckerInterface
 {
-    public function __construct(private SessionManager $session)
+    public function __construct(private SessionInterface $session)
     {
     }
 

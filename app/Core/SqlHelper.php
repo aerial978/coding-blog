@@ -2,6 +2,7 @@
 
 namespace App\Core;
 
+use App\Core\Contract\SqlHelperInterface;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -12,7 +13,7 @@ use RuntimeException;
  * This class wraps a PDO instance and provides a single `request` method
  * that supports both prepared statements and direct queries.
  */
-class SqlHelper
+class SqlHelper implements SqlHelperInterface
 {
     /**
      * Active database connection instance.

@@ -2,10 +2,10 @@
 
 namespace App\Service;
 
+use InvalidArgumentException;
 use PDO;
 use PDOException;
 use RuntimeException;
-use InvalidArgumentException;
 
 /**
  * Service for importing CSV data into a database table.
@@ -75,7 +75,7 @@ class CsvImportService
         return $handle;
     }
 
-    /** 
+    /**
      * @param resource $handle
      * @return non-empty-list<string>
      */
@@ -92,7 +92,7 @@ class CsvImportService
 
         /** @var non-empty-list<string> $header */
         $header = \array_map(
-            static fn($col): string => \trim((string) $col),
+            static fn ($col): string => \trim((string) $col),
             $header
         );
 
@@ -141,7 +141,7 @@ class CsvImportService
                 $row[$i] = null;
             }
         }
-        
+
         /** @var list<string|null> $row */
         return $row;
     }

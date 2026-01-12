@@ -2,578 +2,835 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Controller\Security;
+namespace Tests\Unit\Controller;
 
 use App\Controller\SecurityController;
 use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\FormId;
 use App\Core\View;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\SubmissionDelayValidatorInterface;
+use App\Security\Contract\TurnstileValidatorInterface;
+use App\Security\Exception\SuspiciousSubmissionException;
 use App\Service\Security\Contract\SecurityServiceInterface;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-
-/**
- * Exception interne pour interrompre proprement le flux avant redirect()
- */
-final class TestAbortControllerFlow extends \RuntimeException
-{
-}
 
 final class SecurityControllerTest extends TestCase
 {
-    /** @var MockObject&View */
-    private $view;
-    /** @var MockObject&SecurityServiceInterface */
-    private $securityService;
-    /** @var MockObject&Request */
-    private $request;
-    /** @var MockObject&FlashInterface */
-    private $flash;
-    /** @var MockObject&CsrfTokenInterface */
-    private $csrf;
     protected function setUp(): void
     {
-        $this->view            = $this->createMock(View::class);
-        $this->securityService = $this->createMock(SecurityServiceInterface::class);
-        $this->request         = $this->createMock(Request::class);
-        $this->flash           = $this->createMock(FlashInterface::class);
-        $this->csrf            = $this->createMock(CsrfTokenInterface::class);
-        $_GET                  = [];
-        $_SERVER               = [];
+        parent::setUp();
+
+        $_SERVER['REMOTE_ADDR']     = '1.2.3.4';
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit';
+        $_ENV['TURNSTILE_SITEKEY']  = 'sitekey';
+        $_GET                       = [];
     }
 
-    private function makeController(): SecurityController
-    {
-        return new SecurityController($this->view, $this->securityService, $this->request, $this->flash, $this->csrf);
+    private function makeController(
+        ?SecurityServiceInterface $service = null,
+        ?Request $request = null,
+        ?FlashInterface $flash = null,
+        ?CsrfTokenInterface $csrf = null,
+        ?HoneypotValidatorInterface $honeypot = null,
+        ?SubmissionDelayValidatorInterface $delay = null,
+        ?TurnstileValidatorInterface $turnstile = null,
+        ?ResponderInterface $responder = null,
+        ?View $view = null,
+    ): SecurityController {
+        $service   ??= $this->createMock(SecurityServiceInterface::class);
+        $request   ??= $this->createMock(Request::class);
+        $flash     ??= $this->createMock(FlashInterface::class);
+        $csrf      ??= $this->createMock(CsrfTokenInterface::class);
+        $honeypot  ??= $this->createMock(HoneypotValidatorInterface::class);
+        $delay     ??= $this->createMock(SubmissionDelayValidatorInterface::class);
+        $turnstile ??= $this->createMock(TurnstileValidatorInterface::class);
+        $responder ??= $this->createMock(ResponderInterface::class);
+        $view      ??= $this->createMock(View::class);
+
+        return new SecurityController(
+            $view,
+            $service,
+            $request,
+            $flash,
+            $csrf,
+            $honeypot,
+            $delay,
+            $turnstile,
+            $responder
+        );
     }
 
-    // --------------------------------------------------------------------
-    // 1) REGISTER (GET)
-    // --------------------------------------------------------------------
-    public function test_register_get_renders_form_with_csrf_and_old(): void
+    // ---------------------------------------------------------------------
+    // REGISTER (GET)
+    // ---------------------------------------------------------------------
+
+    public function testRegisterGetRendersForm(): void
     {
-        $this->request->method('getMethod')->willReturn('GET');
-        $this->flash->method('take')->willReturnMap([
-            ['old', [], ['username' => 'olduser', 'email' => 'old@mail.test']],
-            ['register_state', null, null],
-        ]);
-        $this->csrf->expects($this->once())
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('GET');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->method('take')->willReturnOnConsecutiveCalls([], null);
+
+        $csrf = $this->createMock(CsrfTokenInterface::class);
+        $csrf->expects(self::once())
             ->method('generateToken')
             ->with(FormId::REGISTER)
             ->willReturn('csrf123');
-        $this->view->expects($this->once())
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->expects(self::once())
+            ->method('fieldName')
+            ->willReturn('fax');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->expects(self::once())->method('markFormStart')->with('register');
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())
             ->method('render')
-            ->with('security/register.html.twig', $this->callback(fn (array $ctx) =>
-                    ($ctx['csrf_token'] ?? null) === 'csrf123'
-                    && ($ctx['mode'] ?? null)    === 'form'
-                    && isset($ctx['old'])))
-            ->willReturn('HTML');
-        $controller = $this->makeController();
-        // Capture la sortie HTML pour ne pas polluer PHPUnit
-        ob_start();
+            ->with(
+                'security/register.html.twig',
+                self::callback(static function (array $data): bool {
+                    return ($data['csrf_token'] ?? null)    === 'csrf123'
+                        && ($data['honeypot_name'] ?? null) === 'fax'
+                        && isset($data['turnstile_site_key']);
+                })
+            );
+        $responder->expects(self::never())->method('redirect');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            csrf: $csrf,
+            honeypot: $honeypot,
+            delay: $delay,
+            responder: $responder
+        );
+
         $controller->register();
-        ob_end_clean();
-        $this->addToAssertionCount(1);
     }
 
-    // --------------------------------------------------------------------
-    // 2) REGISTER (POST) — succès
-    // --------------------------------------------------------------------
-    public function test_register_post_success_puts_state(): void
-    {
-        $this->request->method('getMethod')->willReturn('POST');
-        $form = ['username' => 'john', 'email' => 'john@test.com', 'password' => 'pwd'];
-        $this->request->method('request')->willReturn($form);
-        $this->securityService
-            ->expects($this->once())
-            ->method('register')
-            ->with($form)
-            ->willReturn(['ok' => true]);
-        $this->flash
-            ->expects($this->once())
-            ->method('put')
-            ->with('register_state', ['email' => 'john@test.com'])
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->register();
-            $this->fail('Flow should have been aborted before redirect');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
+    // ---------------------------------------------------------------------
+    // REGISTER (POST) - early exits + turnstile + exception
+    // ---------------------------------------------------------------------
 
-    // --------------------------------------------------------------------
-    // 3) REGISTER (POST) — erreurs validation
-    // --------------------------------------------------------------------
-    public function test_register_post_with_errors_flashes_and_puts_old(): void
+    public function testRegisterPostHoneypotTriggersRedirect(): void
     {
-        $this->request->method('getMethod')->willReturn('POST');
-        $form = ['username' => '', 'email' => 'bad', 'password' => ''];
-        $this->request->method('request')->willReturn($form);
-        $this->securityService
-            ->method('register')
-            ->willReturn(['errors' => [ErrorCode::AUTH_EMAIL_INVALID]]);
-        $this->flash->expects($this->atLeastOnce())
-            ->method('add')
-            ->with($this->isType('string'), $this->isType('string'));
-        $this->flash->expects($this->once())
-            ->method('put')
-            ->with('old', $this->callback(fn ($old) =>
-                isset($old['username'], $old['email'])))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->register();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
-
-    // --------------------------------------------------------------------
-    // 4) CONFIRM ACCOUNT — token manquant
-    // --------------------------------------------------------------------
-    public function test_confirm_missing_token_flashes_error(): void
-    {
-        $_GET = [];
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
-
-    // --------------------------------------------------------------------
-    // 5) CONFIRM ACCOUNT — succès nominal
-    // --------------------------------------------------------------------
-    public function test_confirm_success_flashes_success(): void
-    {
-        $_GET = ['token' => 'abc'];
-        $this->securityService
-            ->expects($this->once())
-            ->method('confirmAccount')
-            ->with('abc')
-            ->willReturn(['error' => null]);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('success', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
-
-    // --------------------------------------------------------------------
-    // 6) RESEND (GET)
-    // --------------------------------------------------------------------
-    public function test_resend_get_renders_form_with_csrf(): void
-    {
-        $this->request->method('getMethod')->willReturn('GET');
-        $this->flash->method('take')->willReturnMap([
-            ['old', [], []],
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'    => 'a@b.com',
+            'username' => 'bob',
         ]);
-        $this->csrf->expects($this->once())
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean')->willThrowException(
+            new SuspiciousSubmissionException('honeypot_triggered')
+        );
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())
+            ->method('add')
+            ->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+        $responder->expects(self::never())->method('render');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    public function testRegisterPostMinDelayNotMetRedirects(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'    => 'a@b.com',
+            'username' => 'bob',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed')->willThrowException(
+            new SuspiciousSubmissionException('min_delay_not_met', ['form' => 'register', 'elapsed' => 1, 'min' => 3])
+        );
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('register');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())
+            ->method('add')
+            ->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    public function testRegisterPostMaxDelayExceededRedirects(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'    => 'a@b.com',
+            'username' => 'bob',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed')->willThrowException(
+            new SuspiciousSubmissionException('max_delay_exceeded', ['form' => 'register', 'elapsed' => 999, 'max' => 30])
+        );
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('register');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())
+            ->method('add')
+            ->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    public function testRegisterPostTurnstileFailRedirects(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'                 => 'a@b.com',
+            'username'              => 'bob',
+            'cf-turnstile-response' => 'bad-token',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed');
+
+        $turnstile = $this->createMock(TurnstileValidatorInterface::class);
+        $turnstile->method('validate')->willReturn(false);
+        $turnstile->method('getLastResponse')->willReturn(['error-codes' => ['invalid-input-response']]);
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('register');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())
+            ->method('add')
+            ->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            turnstile: $turnstile,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    public function testRegisterPostServiceThrowsRedirectsAndKeepsOld(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'                 => 'a@b.com',
+            'username'              => 'bob',
+            'cf-turnstile-response' => 'ok',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed');
+
+        $turnstile = $this->createMock(TurnstileValidatorInterface::class);
+        $turnstile->method('validate')->willReturn(true);
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('register')->willThrowException(new \RuntimeException('boom'));
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+        $flash->expects(self::once())->method('put')->with('old', ['username' => 'bob', 'email' => 'a@b.com']);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            turnstile: $turnstile,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    // ---------------------------------------------------------------------
+    // REGISTER (POST) - outcomes (handleRegisterOutcome / handleRegisterErrorsIfAny)
+    // ---------------------------------------------------------------------
+
+    public function testRegisterPostConfirmEmailSendFailedRedirectsToResendAndStoresOldEmail(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'                 => 'a@b.com',
+            'username'              => 'bob',
+            'cf-turnstile-response' => 'ok',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed');
+
+        $turnstile = $this->createMock(TurnstileValidatorInterface::class);
+        $turnstile->method('validate')->willReturn(true);
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('register')->willReturn([
+            'errors' => [ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED],
+            'old'    => ['email' => 'a@b.com'],
+        ]);
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+        $flash->expects(self::once())->method('put')->with('old', ['email' => 'a@b.com']);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            turnstile: $turnstile,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    public function testRegisterPostGenericErrorsRedirectsToRegisterAndRestoresOld(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'                 => 'a@b.com',
+            'username'              => 'bob',
+            'cf-turnstile-response' => 'ok',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed');
+
+        $turnstile = $this->createMock(TurnstileValidatorInterface::class);
+        $turnstile->method('validate')->willReturn(true);
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('register')->willReturn([
+            'errors' => [
+                ErrorCode::AUTH_USERNAME_EXISTS,
+                ErrorCode::AUTH_PASSWORD_REENTER,
+            ],
+            'old' => ['username' => 'bob', 'email' => 'a@b.com'],
+        ]);
+
+        $flash = $this->createMock(FlashInterface::class);
+        // 2 erreurs => 2 add('error', <string>)
+        $flash->expects(self::exactly(2))
+            ->method('add')
+            ->with('error', self::isType('string'));
+        $flash->expects(self::once())
+            ->method('put')
+            ->with('old', ['username' => 'bob', 'email' => 'a@b.com']);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            turnstile: $turnstile,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    public function testRegisterPostSuccessOkRedirectsToRegisterAndStoresRegisterState(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn([
+            'email'                 => 'a@b.com',
+            'username'              => 'bob',
+            'cf-turnstile-response' => 'ok',
+        ]);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed');
+
+        $turnstile = $this->createMock(TurnstileValidatorInterface::class);
+        $turnstile->method('validate')->willReturn(true);
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('register')->willReturn(['ok' => true]);
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())
+            ->method('put')
+            ->with('register_state', ['email' => 'a@b.com']);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/register');
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            honeypot: $honeypot,
+            delay: $delay,
+            turnstile: $turnstile,
+            service: $service,
+            responder: $responder
+        );
+
+        $controller->register();
+    }
+
+    // ---------------------------------------------------------------------
+    // CONFIRM ACCOUNT
+    // ---------------------------------------------------------------------
+
+    public function testConfirmAccountMissingTokenRedirectsToResendConfirmation(): void
+    {
+        $_GET = []; // token absent
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('confirmAccount');
+
+        $controller = $this->makeController(
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->confirmAccount();
+    }
+
+    public function testConfirmAccountServiceThrowsRedirectsHome(): void
+    {
+        $_GET = ['token' => 't'];
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('confirmAccount')->willThrowException(new \RuntimeException('boom'));
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog');
+
+        $controller = $this->makeController(
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->confirmAccount();
+    }
+
+    /**
+     * @dataProvider confirmOutcomesProvider
+     */
+    public function testConfirmAccountOutcomes(string $errorCode, string $reason, string $expectedFlashLevel, string $expectedRedirect): void
+    {
+        $_GET = ['token' => 't'];
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('confirmAccount')->willReturn(array_filter([
+            'error'  => $errorCode !== '' ? $errorCode : null,
+            'reason' => $reason    !== '' ? $reason : null,
+        ], static fn ($v) => $v !== null));
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with($expectedFlashLevel, self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with($expectedRedirect);
+
+        $controller = $this->makeController(
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->confirmAccount();
+    }
+
+    public static function confirmOutcomesProvider(): array
+    {
+        return [
+            'success'           => ['', '', 'success', '/coding-blog'],
+            'invalid_expired'   => [(string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'expired', 'error', '/coding-blog/resend-confirmation'],
+            'invalid_not_found' => [(string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'not_found', 'error', '/coding-blog/resend-confirmation'],
+            'used'              => [(string) ErrorCode::AUTH_CONFIRM_TOKEN_USED, '', 'info', '/coding-blog'],
+            'already'           => [(string) ErrorCode::AUTH_ALREADY_CONFIRMED, '', 'info', '/coding-blog'],
+            'technical_default' => ['some_unknown_error', '', 'error', '/coding-blog'],
+        ];
+    }
+
+    // ---------------------------------------------------------------------
+    // RESEND CONFIRMATION (GET)
+    // ---------------------------------------------------------------------
+
+    public function testResendConfirmationGetRendersForm(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('GET');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->method('take')->willReturn([]); // old vide
+
+        $csrf = $this->createMock(CsrfTokenInterface::class);
+        $csrf->expects(self::once())
             ->method('generateToken')
             ->with(FormId::RESEND_CONFIRM)
-            ->willReturn('csrf-resend');
-        $this->view->expects($this->once())
+            ->willReturn('csrf999');
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->expects(self::once())->method('fieldName')->willReturn('fax');
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->expects(self::once())->method('markFormStart')->with('resend_confirm');
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())
             ->method('render')
-            ->with('security/resend-confirmation.html.twig', $this->callback(fn (array $ctx) =>
-                    ($ctx['csrf_token'] ?? null) === 'csrf-resend'))
-            ->willReturn('HTML');
-        $controller = $this->makeController();
-        // Capture la sortie HTML pour éviter affichage
-        ob_start();
+            ->with(
+                'security/resend-confirmation.html.twig',
+                self::callback(static function (array $data): bool {
+                    return ($data['csrf_token'] ?? null)    === 'csrf999'
+                        && ($data['honeypot_name'] ?? null) === 'fax';
+                })
+            );
+
+        $controller = $this->makeController(
+            request: $request,
+            flash: $flash,
+            csrf: $csrf,
+            honeypot: $honeypot,
+            delay: $delay,
+            responder: $responder
+        );
+
         $controller->resendConfirmation();
-        ob_end_clean();
-        $this->addToAssertionCount(1);
     }
 
-    // --------------------------------------------------------------------
-    // 7) RESEND (POST) — déjà confirmé
-    // --------------------------------------------------------------------
-    public function test_resend_post_already_confirmed_flashes_info(): void
+    // ---------------------------------------------------------------------
+    // RESEND CONFIRMATION (POST)
+    // ---------------------------------------------------------------------
+
+    public function testResendConfirmationPostHoneypotReturnsGenericSuccessAndRedirects(): void
     {
-        $this->request->method('getMethod')->willReturn('POST');
-        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
-        $this->securityService
-            ->expects($this->once())
-            ->method('resendConfirmation')
-            ->with('john@test.com')
-            ->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('info', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->resendConfirmation();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean')->willThrowException(new SuspiciousSubmissionException('honeypot'));
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('resendConfirmation');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('success', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->resendConfirmation();
     }
 
-    // --------------------------------------------------------------------
-    // 8) RESEND (POST) — succès nominal
-    // --------------------------------------------------------------------
-    public function test_resend_post_success_generic_flashes_success(): void
+    public function testResendConfirmationPostMinDelayNotMetInResendModeReturnsGenericSuccessAndRedirects(): void
     {
-        $this->request->method('getMethod')->willReturn('POST');
-        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
-        $this->securityService
-            ->expects($this->once())
-            ->method('resendConfirmation')
-            ->with('john@test.com')
-            ->willReturn([]);
-        // succès
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
 
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('success', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->resendConfirmation();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed')->willThrowException(
+            new SuspiciousSubmissionException('min_delay_not_met', ['form' => 'resend_confirm', 'elapsed' => 1, 'min' => 3])
+        );
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('resendConfirmation');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('success', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->resendConfirmation();
     }
 
-    // --------------------------------------------------------------------
-    // REGISTER (POST) — exception technique pendant SecurityService::register()
-    // Couvre le catch + handleRegisterTechnicalError()
-    // --------------------------------------------------------------------
-    public function test_register_post_throws_exception_adds_flash_and_puts_old(): void
+    public function testResendConfirmationPostMaxDelayExceededRedirectsWithFormExpired(): void
     {
-        $this->request->method('getMethod')->willReturn('POST');
-        $form = ['username' => 'john', 'email' => 'john@test.com'];
-        $this->request->method('request')->willReturn($form);
-        // Simule une panne du service
-        $this->securityService
-            ->method('register')
-            ->willThrowException(new \RuntimeException('DB down'));
-        // handleRegisterTechnicalError() fait: flash->add(...); flash->put('old', ...); redirect()
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'));
-        // On coupe le flux AVANT redirect() pour ne pas faire planter PHPUnit
-        $this->flash->expects($this->once())
-            ->method('put')
-            ->with('old', ['username' => 'john', 'email' => 'john@test.com'])
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->register();
-            $this->fail('Le flux aurait dû être interrompu avant redirect()');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed')->willThrowException(
+            new SuspiciousSubmissionException('max_delay_exceeded', ['form' => 'resend_confirm', 'elapsed' => 999, 'max' => 30])
+        );
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->expects(self::never())->method('resendConfirmation');
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->resendConfirmation();
     }
 
-    // --------------------------------------------------------------------
-    // REGISTER (POST) — AUTH_CONFIRM_EMAIL_SEND_FAILED
-    // Couvre la branche spéciale dans handleRegisterOutcome()
-    // --------------------------------------------------------------------
-    public function test_register_post_email_send_failed_redirects_to_resend_and_puts_old_email(): void
+    public function testResendConfirmationPostServiceThrowsRedirectsWithError(): void
     {
-        $this->request->method('getMethod')->willReturn('POST');
-        $form = ['username' => 'john', 'email' => 'john@test.com'];
-        $this->request->method('request')->willReturn($form);
-        $this->securityService
-            ->method('register')
-            ->willReturn([
-                'errors' => [ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED],
-            ]);
-        // Ajout du flash d'erreur spécifique
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'));
-        // La branche met uniquement l'email dans "old", puis redirect('/resend-confirmation')
-        $this->flash->expects($this->once())
-            ->method('put')
-            ->with('old', ['email' => 'john@test.com'])
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->register();
-            $this->fail('Le flux aurait dû être interrompu avant redirect()');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed'); // OK
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('resendConfirmation')->willThrowException(new \RuntimeException('boom'));
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->resendConfirmation();
     }
 
-    // --------------------------------------------------------------------
-    // CONFIRM (GET) — le service lève une exception → catch + redirect('/coding-blog')
-    // --------------------------------------------------------------------
-    public function test_confirm_service_throws_adds_error_and_redirects_home(): void
+    public function testResendConfirmationPostOutcomeAlreadyConfirmedRedirectsHome(): void
     {
-        $_GET = ['token' => 'tok'];
-        $this->securityService
-            ->method('confirmAccount')
-            ->willThrowException(new \RuntimeException('boom'));
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted before redirect');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed'); // OK
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('resendConfirmation')->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('info', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog');
+
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->resendConfirmation();
     }
 
-    // --------------------------------------------------------------------
-    // CONFIRM (GET) — token invalide expiré → erreur + redirect('/resend-confirmation')
-    // --------------------------------------------------------------------
-    public function test_confirm_invalid_token_expired_redirects_to_resend(): void
+    public function testResendConfirmationPostOutcomeErrorRedirectsBack(): void
     {
-        $_GET = ['token' => 'tok'];
-        $this->securityService
-            ->method('confirmAccount')
-            ->willReturn(['error' => ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired']);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
+
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
+
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed'); // OK
+
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('resendConfirmation')->willReturn(['error' => ErrorCode::AUTH_TECHNICAL_ERROR]);
+
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('error', self::isType('string'));
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
+
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
+
+        $controller->resendConfirmation();
     }
 
-    // --------------------------------------------------------------------
-    // CONFIRM (GET) — token invalide not_found → erreur + redirect('/resend-confirmation')
-    // --------------------------------------------------------------------
-    public function test_confirm_invalid_token_not_found_redirects_to_resend(): void
+    public function testResendConfirmationPostOutcomeSuccessRedirectsBackWithSuccessFlash(): void
     {
-        $_GET = ['token' => 'tok'];
-        $this->securityService
-            ->method('confirmAccount')
-            ->willReturn(['error' => ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'not_found']);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
+        $request = $this->createMock(Request::class);
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('request')->willReturn(['email' => 'a@b.com']);
 
-    // --------------------------------------------------------------------
-    // CONFIRM (GET) — token déjà utilisé → info + redirect('/coding-blog')
-    // --------------------------------------------------------------------
-    public function test_confirm_token_used_redirects_home_with_info(): void
-    {
-        $_GET = ['token' => 'tok'];
-        $this->securityService
-            ->method('confirmAccount')
-            ->willReturn(['error' => ErrorCode::AUTH_CONFIRM_TOKEN_USED]);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('info', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
+        $honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $honeypot->method('assertClean'); // OK
 
-    // --------------------------------------------------------------------
-    // CONFIRM (GET) — déjà confirmé → info + redirect('/coding-blog')
-    // --------------------------------------------------------------------
-    public function test_confirm_already_confirmed_redirects_home_with_info(): void
-    {
-        $_GET = ['token' => 'tok'];
-        $this->securityService
-            ->method('confirmAccount')
-            ->willReturn(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED]);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('info', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
+        $delay = $this->createMock(SubmissionDelayValidatorInterface::class);
+        $delay->method('assertDelayPassed'); // OK
 
-    // --------------------------------------------------------------------
-    // CONFIRM (GET) — fallback technique (code non vide inattendu) → erreur + redirect('/coding-blog')
-    // --------------------------------------------------------------------
-    public function test_confirm_unknown_error_code_triggers_fallback_technical_error(): void
-    {
-        $_GET = ['token' => 'tok'];
-        // Code non vide et non géré par les branches ci-dessus → fallback
-        $this->securityService
-            ->method('confirmAccount')
-            ->willReturn(['error' => 'SOME_OTHER_CODE']);
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->confirmAccount();
-            $this->fail('Flow should have been aborted');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
+        $service = $this->createMock(SecurityServiceInterface::class);
+        $service->method('resendConfirmation')->willReturn([]); // succès silencieux
 
-    // --------------------------------------------------------------------
-    // RESEND (POST) — le service lève une exception → catch + redirect('/resend-confirmation')
-    // --------------------------------------------------------------------
-    public function test_resend_post_service_throws_adds_error_and_redirects_to_resend(): void
-    {
-        $this->request->method('getMethod')->willReturn('POST');
-        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
-        // Simule une panne dans le service
-        $this->securityService
-            ->method('resendConfirmation')
-            ->willThrowException(new \RuntimeException('boom'));
-        // Le contrôleur doit flasher une erreur puis rediriger.
-        // On intercepte le flux en faisant lever notre exception de test sur add()
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->resendConfirmation();
-            $this->fail('Le flux aurait dû être interrompu avant redirect()');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects(self::once())->method('add')->with('success', self::isType('string'));
 
-    public function test_register_get_with_register_state_obfuscates_email(): void
-    {
-        // On force la méthode en GET
-        $this->request->method('getMethod')->willReturn('GET');
-        // Le flash "register_state" contient un email -> le contrôleur doit passer en mode "check_email"
-        $this->flash->method('take')->willReturnMap([
-            ['old', [], []],
-            ['register_state', null, ['email' => 'john.doe@test.com']],
-        ]);
-        // CSRF attendu dans le contexte rendu
-        $this->csrf->expects($this->once())
-            ->method('generateToken')
-            ->with(FormId::REGISTER)
-            ->willReturn('csrf123');
-        // On vérifie le rendu : mode = check_email et email obfusqué
-        $this->view->expects($this->once())
-            ->method('render')
-            ->with('security/register.html.twig', $this->callback(function (array $ctx): bool {
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())->method('redirect')->with('/coding-blog/resend-confirmation');
 
-                return ($ctx['mode'] ?? null)       === 'check_email'
-                    && ($ctx['csrf_token'] ?? null) === 'csrf123'
-                    && array_key_exists('obfuscated_email', $ctx)
-                    // j***@test.com attendu (première lettre, *** puis domaine)
-                    && $ctx['obfuscated_email'] === 'j***@test.com';
-            }))
-            ->willReturn('HTML');
-        $controller = $this->makeController();
-        // On capture la sortie pour ne pas polluer PHPUnit
-        ob_start();
-        $controller->register();
-        ob_end_clean();
-        $this->addToAssertionCount(1);
-    }
+        $controller = $this->makeController(
+            request: $request,
+            honeypot: $honeypot,
+            delay: $delay,
+            service: $service,
+            flash: $flash,
+            responder: $responder
+        );
 
-    public function test_register_post_with_errors_uses_old_from_service_result(): void
-    {
-        // On force un POST sur /register
-        $this->request->method('getMethod')->willReturn('POST');
-        $this->request->method('request')->willReturn([
-            'username' => 'orig',
-            'email'    => 'orig@test.com',
-            'password' => 'x',
-        ]);
-        // Le service renvoie une erreur + un "old" explicite
-        $serviceOld = ['username' => 'u1', 'email' => 'e1@test.com'];
-        $this->securityService
-            ->method('register')
-            ->willReturn([
-                'errors' => [ErrorCode::AUTH_EMAIL_INVALID],
-                'old'    => $serviceOld,
-            ]);
-        // Le contrôleur flashe au moins une erreur…
-        $this->flash->expects($this->atLeastOnce())
-            ->method('add')
-            ->with('error', $this->isType('string'));
-        // …et doit reprendre EXACTEMENT l'ancien "old" fourni par le service
-        $this->flash->expects($this->once())
-            ->method('put')
-            ->with('old', $serviceOld)
-            ->willThrowException(new TestAbortControllerFlow());
-        // coupe le flux avant redirect()
-
-        $controller = $this->makeController();
-        try {
-            $controller->register();
-            $this->fail('Le flux aurait dû être interrompu avant redirect()');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
-    }
-
-    // --------------------------------------------------------------------
-    // RESEND (POST) — erreur générique (≠ already confirmed)
-    // --------------------------------------------------------------------
-    public function test_resend_post_generic_error_flashes_error_and_redirects_to_resend(): void
-    {
-        // POST /resend-confirmation
-        $this->request->method('getMethod')->willReturn('POST');
-        $this->request->method('request')->willReturn(['email' => 'john@test.com']);
-        // Le service renvoie un code d'erreur ≠ AUTH_ALREADY_CONFIRMED
-        $this->securityService
-            ->expects($this->once())
-            ->method('resendConfirmation')
-            ->with('john@test.com')
-            ->willReturn(['error' => ErrorCode::AUTH_TECHNICAL_ERROR]);
-        // Le contrôleur doit flasher une erreur, puis rediriger vers /resend-confirmation
-        // On coupe le flux juste après le flash pour éviter le redirect()
-        $this->flash->expects($this->once())
-            ->method('add')
-            ->with('error', $this->isType('string'))
-            ->willThrowException(new TestAbortControllerFlow());
-        $controller = $this->makeController();
-        try {
-            $controller->resendConfirmation();
-            $this->fail('Le flux aurait dû être interrompu avant redirect()');
-        } catch (TestAbortControllerFlow) {
-            $this->addToAssertionCount(1);
-        }
+        $controller->resendConfirmation();
     }
 }

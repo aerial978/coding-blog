@@ -10,16 +10,14 @@ use App\Core\FormId;
 use App\Core\Logger;
 use App\Core\MessageManager;
 use App\Core\View;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\SubmissionDelayValidatorInterface;
+use App\Security\Contract\TurnstileValidatorInterface;
+use App\Security\Exception\SuspiciousSubmissionException;
 use App\Service\Security\Contract\SecurityServiceInterface;
-
-/**
- * Handles user-facing security flows (registration, email confirmation,
- * and resending confirmation links). The controller is intentionally thin
- * and delegates the business rules to SecurityService.
- */
-// ... entête et use identiques ...
 
 final class SecurityController extends BaseController
 {
@@ -29,6 +27,10 @@ final class SecurityController extends BaseController
         private Request $request,
         FlashInterface $flash,
         private CsrfTokenInterface $csrf,
+        private HoneypotValidatorInterface $honeypot,
+        private SubmissionDelayValidatorInterface $submissionDelay,
+        private TurnstileValidatorInterface $turnstile,
+        private ResponderInterface $responder,
     ) {
         parent::__construct($view, $flash);
     }
@@ -44,8 +46,34 @@ final class SecurityController extends BaseController
         }
 
         $form     = $this->request->request();
-        $email    = $this->strOrEmpty($form['email']    ?? null);
+        $email    = $this->strOrEmpty($form['email'] ?? null);
         $username = $this->strOrEmpty($form['username'] ?? null);
+
+        try {
+            $this->honeypot->assertClean($form);
+        } catch (SuspiciousSubmissionException $e) {
+            $this->flash->add('error', Logger::logCodeAndGetMessage(
+                'auth',
+                'warning',
+                ErrorCode::AUTH_TECHNICAL_ERROR,
+                ['reason' => 'honeypot', 'email' => $email ?: null, 'username' => $username ?: null]
+            ));
+            $this->responder->redirect('/coding-blog/register');
+            return;
+        }
+
+        $contextBase = [
+            'email'    => $email ?: null,
+            'username' => $username ?: null,
+        ];
+
+        if (!$this->assertDelayOrRedirectForRegister('register', '/coding-blog/register', $contextBase)) {
+            return;
+        }
+
+        if (!$this->checkTurnstileOrRedirectForRegister($form, '/coding-blog/register', $contextBase)) {
+            return;
+        }
 
         try {
             $result = $this->securityService->register($form);
@@ -67,7 +95,7 @@ final class SecurityController extends BaseController
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, [
                 'reason' => 'missing_or_empty',
             ]));
-            $this->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect('/coding-blog/resend-confirmation');
             return;
         }
 
@@ -77,7 +105,7 @@ final class SecurityController extends BaseController
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
                 'exception' => $e->getMessage(),
             ]));
-            $this->redirect('/coding-blog');
+            $this->responder->redirect('/coding-blog');
             return;
         }
 
@@ -94,8 +122,29 @@ final class SecurityController extends BaseController
             return;
         }
 
-        $form     = $this->request->request();
-        $email    = $this->strOrEmpty($form['email'] ?? null);
+        $form  = $this->request->request();
+        $email = $this->strOrEmpty($form['email'] ?? null);
+
+        try {
+            $this->honeypot->assertClean($form);
+        } catch (SuspiciousSubmissionException $e) {
+            $this->flash->add('success', Logger::logCodeAndGetMessage(
+                'auth',
+                'warning',
+                ErrorCode::AUTH_RESEND_EMAIL_SENT,
+                ['reason' => 'honeypot', 'email' => $email ?: null]
+            ));
+            $this->responder->redirect('/coding-blog/resend-confirmation');
+            return;
+        }
+
+        $contextBase = [
+            'email' => $email ?: null,
+        ];
+
+        if (!$this->assertDelayOrRedirectForResend('resend_confirm', '/coding-blog/resend-confirmation', $contextBase)) {
+            return;
+        }
 
         try {
             $result = $this->securityService->resendConfirmation($email);
@@ -104,7 +153,7 @@ final class SecurityController extends BaseController
                 'exception' => $e->getMessage(),
                 'email'     => $email,
             ]));
-            $this->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect('/coding-blog/resend-confirmation');
             return;
         }
 
@@ -120,9 +169,6 @@ final class SecurityController extends BaseController
         return $this->request->getMethod() === 'GET';
     }
 
-    /**
-     * @param mixed $value
-     */
     private function strOrEmpty(mixed $value): string
     {
         return is_string($value) ? trim($value) : '';
@@ -134,19 +180,30 @@ final class SecurityController extends BaseController
     {
         $old   = $this->flash->take('old', []);
         $state = $this->flash->take('register_state', null);
-        $mode  = $state ? 'check_email' : 'form';
+
+        if (empty($old)) {
+            $this->submissionDelay->markFormStart('register');
+        }
+
+        $mode = $state ? 'check_email' : 'form';
 
         $stateEmail = is_array($state) && is_string($state['email'] ?? null) ? $state['email'] : null;
         $obfuscated = $stateEmail !== null
             ? (preg_replace('/(^.).*(@.*$)/', '$1***$2', $stateEmail) ?: $stateEmail)
             : null;
 
-        $this->render('security/register.html.twig', $this->withFlashes([
-            'title'            => 'User Registration',
-            'mode'             => $mode,
-            'obfuscated_email' => $obfuscated,
-            'csrf_token'       => $this->csrf->generateToken(FormId::REGISTER),
-            'old'              => is_array($old) ? $old : [],
+        $turnstileSiteKey = is_string($_ENV['TURNSTILE_SITEKEY'] ?? null)
+            ? trim($_ENV['TURNSTILE_SITEKEY'])
+            : '';
+
+        $this->responder->render('security/register.html.twig', $this->withFlashes([
+            'title'              => 'User Registration',
+            'mode'               => $mode,
+            'obfuscated_email'   => $obfuscated,
+            'csrf_token'         => $this->csrf->generateToken(FormId::REGISTER),
+            'old'                => is_array($old) ? $old : [],
+            'honeypot_name'      => $this->honeypot->fieldName(),
+            'turnstile_site_key' => $turnstileSiteKey,
         ]));
     }
 
@@ -158,47 +215,71 @@ final class SecurityController extends BaseController
             'username'  => $username ?: null,
         ]));
         $this->flash->put('old', ['username' => $username, 'email' => $email]);
-        $this->redirect('/coding-blog/register');
+        $this->responder->redirect('/coding-blog/register');
     }
 
-    /** @param array<string,mixed> $result */
+    /**
+     * @param array<string,mixed> $result
+     */
     private function handleRegisterOutcome(array $result, string $email, string $username): void
     {
         $errors = $this->normalizeErrors($result['errors'] ?? null);
 
-        if ($errors !== []) {
-            if (in_array((string) ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, $errors, true)) {
-                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
-                    'email' => $email, 'username' => $username,
-                ]));
-                $this->flash->put('old', ['email' => $email]);
-                $this->redirect('/coding-blog/resend-confirmation');
-                return;
-            }
-
-            foreach ($errors as $code) {
-                $this->flash->add('error', MessageManager::get($code));
-            }
-
-            $old = (isset($result['old']) && is_array($result['old']))
-                ? $result['old']
-                : ['username' => $username, 'email' => $email];
-
-            $this->flash->put('old', $old);
-            $this->redirect('/coding-blog/register');
+        if ($this->handleRegisterErrorsIfAny($errors, $result, $email, $username)) {
             return;
         }
 
+        $this->handleRegisterSuccessFlag($result, $email, $username);
+        $this->responder->redirect('/coding-blog/register');
+    }
+
+    /**
+     * @param list<string> $errors
+     * @param array<string,mixed> $result
+     */
+    private function handleRegisterErrorsIfAny(array $errors, array $result, string $email, string $username): bool
+    {
+        if ($errors === []) {
+            return false;
+        }
+
+        if (in_array((string) ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, $errors, true)) {
+            $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
+                'email'     => $email,
+                'username'  => $username,
+            ]));
+            $this->flash->put('old', ['email' => $email]);
+            $this->responder->redirect('/coding-blog/resend-confirmation');
+            return true;
+        }
+
+        foreach ($errors as $code) {
+            $this->flash->add('error', MessageManager::get($code));
+        }
+
+        $old = (isset($result['old']) && is_array($result['old']))
+            ? $result['old']
+            : ['username' => $username, 'email' => $email];
+
+        $this->flash->put('old', $old);
+        $this->responder->redirect('/coding-blog/register');
+        return true;
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     */
+    private function handleRegisterSuccessFlag(array $result, string $email, string $username): void
+    {
         if (!empty($result['ok'])) {
             $this->flash->put('register_state', ['email' => $email]);
             // @codeCoverageIgnoreStart
             Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_ACCOUNT_CONFIRMATION_SENT, [
-                'email' => $email, 'username' => $username,
+                'email'     => $email,
+                'username'  => $username,
             ]);
             // @codeCoverageIgnoreEnd
         }
-
-        $this->redirect('/coding-blog/register');
     }
 
     // -------- CONFIRM helpers --------
@@ -216,39 +297,66 @@ final class SecurityController extends BaseController
         $code   = $this->stringify($result['error'] ?? null);
         $reason = is_string($result['reason'] ?? null) ? $result['reason'] : '';
 
+        $action = $this->resolveConfirmAction($code, $reason);
+        $this->applyConfirmAction($action);
+    }
+
+    /**
+     * @return 'success'|'invalid_expired'|'invalid_not_found'|'used'|'already'|'technical'
+     */
+    private function resolveConfirmAction(string $code, string $reason): string
+    {
         if ($code === '') {
-            $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_CONFIRMATION_SUCCESS));
-            $this->redirect('/coding-blog');
-            return;
+            return 'success';
         }
-
         if ($code === (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN && $reason === 'expired') {
-            $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, ['reason' => 'expired']));
-            $this->redirect('/coding-blog/resend-confirmation');
-            return;
+            return 'invalid_expired';
         }
-
         if ($code === (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN && $reason === 'not_found') {
-            $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, ['reason' => 'not_found']));
-            $this->redirect('/coding-blog/resend-confirmation');
-            return;
+            return 'invalid_not_found';
         }
-
         if ($code === (string) ErrorCode::AUTH_CONFIRM_TOKEN_USED) {
-            $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_CONFIRM_TOKEN_USED));
-            $this->redirect('/coding-blog');
-            return;
+            return 'used';
         }
-
         if ($code === (string) ErrorCode::AUTH_ALREADY_CONFIRMED) {
-            $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_ALREADY_CONFIRMED));
-            $this->redirect('/coding-blog');
-            return;
+            return 'already';
         }
+        return 'technical';
+    }
 
-        // Fallback technique
-        $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR));
-        $this->redirect('/coding-blog');
+    /**
+     * @param 'success'|'invalid_expired'|'invalid_not_found'|'used'|'already'|'technical' $action
+     */
+    private function applyConfirmAction(string $action): void
+    {
+        $map = [
+            'success' => function (): void {
+                $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_CONFIRMATION_SUCCESS));
+                $this->responder->redirect('/coding-blog');
+            },
+            'invalid_expired' => function (): void {
+                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, ['reason' => 'expired']));
+                $this->responder->redirect('/coding-blog/resend-confirmation');
+            },
+            'invalid_not_found' => function (): void {
+                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, ['reason' => 'not_found']));
+                $this->responder->redirect('/coding-blog/resend-confirmation');
+            },
+            'used' => function (): void {
+                $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_CONFIRM_TOKEN_USED));
+                $this->responder->redirect('/coding-blog');
+            },
+            'already' => function (): void {
+                $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_ALREADY_CONFIRMED));
+                $this->responder->redirect('/coding-blog');
+            },
+            'technical' => function (): void {
+                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR));
+                $this->responder->redirect('/coding-blog');
+            },
+        ];
+
+        $map[$action]();
     }
 
     // -------- RESEND helpers --------
@@ -256,10 +364,16 @@ final class SecurityController extends BaseController
     private function renderResendForm(): void
     {
         $old = $this->flash->take('old', []);
-        $this->render('security/resend-confirmation.html.twig', $this->withFlashes([
-            'title'      => 'Renvoyer le lien de confirmation',
-            'csrf_token' => $this->csrf->generateToken(FormId::RESEND_CONFIRM),
-            'old'        => is_array($old) ? $old : [],
+
+        if (empty($old)) {
+            $this->submissionDelay->markFormStart('resend_confirm');
+        }
+
+        $this->responder->render('security/resend-confirmation.html.twig', $this->withFlashes([
+            'title'         => 'Renvoyer le lien de confirmation',
+            'csrf_token'    => $this->csrf->generateToken(FormId::RESEND_CONFIRM),
+            'old'           => is_array($old) ? $old : [],
+            'honeypot_name' => $this->honeypot->fieldName(),
         ]));
     }
 
@@ -270,20 +384,20 @@ final class SecurityController extends BaseController
 
         if ($code === (string) ErrorCode::AUTH_ALREADY_CONFIRMED) {
             $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_ALREADY_CONFIRMED));
-            $this->redirect('/coding-blog');
+            $this->responder->redirect('/coding-blog');
             return;
         }
 
         if ($code !== '') {
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', $code, ['email' => $email]));
-            $this->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect('/coding-blog/resend-confirmation');
             return;
         }
 
         $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
             'email' => $email,
         ]));
-        $this->redirect('/coding-blog/resend-confirmation');
+        $this->responder->redirect('/coding-blog/resend-confirmation');
     }
 
     // -------- Shared small utils --------
@@ -305,6 +419,149 @@ final class SecurityController extends BaseController
 
     private function stringify(mixed $value): string
     {
-        return is_string($value) || is_int($value) || is_float($value) ? (string)$value : '';
+        return is_string($value) || is_int($value) || is_float($value) ? (string) $value : '';
+    }
+
+    /**
+     * @param array<string,mixed> $contextBase
+     */
+    private function assertDelayOrRedirectForRegister(string $formId, string $redirectPath, array $contextBase): bool
+    {
+        try {
+            $this->submissionDelay->assertDelayPassed($formId);
+            return true;
+        } catch (SuspiciousSubmissionException $e) {
+            $reason  = $e->getReason();
+            $context = $e->getContext();
+
+            $ctx = $contextBase + [
+                'form'    => $context['form']    ?? $formId,
+                'elapsed' => $context['elapsed'] ?? null,
+                'min'     => $context['min']     ?? null,
+                'max'     => $context['max']     ?? null,
+            ];
+            $logCtx = $this->normalizeLogContext($ctx + ['reason' => $reason]);
+
+            if ($reason === 'min_delay_not_met') {
+                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx));
+                $this->responder->redirect($redirectPath);
+                return false;
+            }
+
+            if ($reason === 'max_delay_exceeded') {
+                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_FORM_EXPIRED, $logCtx));
+                $this->responder->redirect($redirectPath);
+                return false;
+            }
+
+            // défaut : technique
+            $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx));
+            $this->responder->redirect($redirectPath);
+            return false;
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $contextBase
+     */
+    private function assertDelayOrRedirectForResend(string $formId, string $redirectPath, array $contextBase): bool
+    {
+        try {
+            $this->submissionDelay->assertDelayPassed($formId);
+            return true;
+        } catch (SuspiciousSubmissionException $e) {
+            $reason  = $e->getReason();
+            $context = $e->getContext();
+
+            $ctx   = $contextBase + [
+                'form'    => $context['form']    ?? $formId,
+                'elapsed' => $context['elapsed'] ?? null,
+                'min'     => $context['min']     ?? null,
+                'max'     => $context['max']     ?? null,
+            ];
+            $logCtx = $this->normalizeLogContext($ctx + ['reason' => $reason]);
+
+            if ($reason === 'min_delay_not_met') {
+                // succès silencieux (politique anti-énumération)
+                $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_RESEND_EMAIL_SENT, $logCtx));
+                $this->responder->redirect($redirectPath);
+                return false;
+            }
+
+            if ($reason === 'max_delay_exceeded') {
+                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_FORM_EXPIRED, $logCtx));
+                $this->responder->redirect($redirectPath);
+                return false;
+            }
+
+            // défaut : succès silencieux (on s’aligne sur votre logique resend)
+            $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_RESEND_EMAIL_SENT, $logCtx));
+            $this->responder->redirect($redirectPath);
+            return false;
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $form
+     * @param array<string,mixed> $contextBase
+     */
+    private function checkTurnstileOrRedirectForRegister(array $form, string $redirectPath, array $contextBase): bool
+    {
+        $token = $this->strOrEmpty($form['cf-turnstile-response'] ?? null);
+        $ip    = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : null;
+
+        if ($this->turnstile->validate($token, $ip)) {
+            return true;
+        }
+
+        $resp = $this->turnstile->getLastResponse();
+        $ctx  = $contextBase + [
+            'reason'    => 'turnstile_failed',
+            'cf_errors' => is_array($resp['error-codes'] ?? null) ? $resp['error-codes'] : null,
+        ];
+        $logCtx = $this->normalizeLogContext($ctx);
+
+        $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx));
+        $this->responder->redirect($redirectPath);
+        return false;
+    }
+
+    /**
+     * @param array<string,mixed> $context
+     * @return array<string, array<int|string, mixed>|bool|float|int|string|\Stringable|null>
+     */
+    private function normalizeLogContext(array $context): array
+    {
+        $out = [];
+
+        foreach ($context as $k => $v) {
+            if (is_string($v) || is_int($v) || is_float($v) || is_bool($v) || $v === null || $v instanceof \Stringable) {
+                $out[$k] = $v;
+                continue;
+            }
+
+            if (is_array($v)) {
+                /** @var array<int|string, mixed> $v */
+                $out[$k] = $v;
+                continue;
+            }
+
+            if (is_object($v)) {
+                $out[$k] = get_debug_type($v);
+                continue;
+            }
+
+            // Ici: ni string/int/float/bool/null/Stringable, ni array, ni objet.
+            // Reste typiquement : resource (ou cas inattendu). On le stringify sans cast.
+            if (is_resource($v)) {
+                $out[$k] = 'resource(' . get_resource_type($v) . ')';
+                continue;
+            }
+
+            // Fallback ultra défensif (devrait rarement arriver)
+            $out[$k] = 'unknown';
+        }
+
+        return $out;
     }
 }

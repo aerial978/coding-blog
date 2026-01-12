@@ -6,6 +6,7 @@ namespace App\Middleware;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\RateLimiterFactoryInterface;
+use App\Core\Contract\RateLimiterInterface;
 use App\Core\ErrorCode;
 use App\Core\Logger;
 use App\Core\MessageManager;
@@ -57,56 +58,83 @@ final class RateLimitMiddleware implements MiddlewareInterface
             'uri'    => $uri,
         ]);
 
-        // Pas de règle → on laisse passer
-        $rule = self::RULES[$method][$uri] ?? null;
+        // 1) Résoudre la règle applicable (sinon, laisser passer)
+        $rule = $this->resolveRule($method, $uri);
         if ($rule === null) {
             return true;
         }
 
-        $max    = (int) $rule['max'];
-        $window = (int) $rule['window'];
+        // 2) Instancier le limiteur pour le bucket route+client
+        [$limiter, $bucket] = $this->buildLimiter($rule, $method, $uri);
 
-        // Clé logique du seau de limitation (par route + client)
-        $bucket = $this->buildBucketKey($method, $uri, $this->clientId());
-
-        // Crée / récupère un limiteur pour ce bucket
-        $limiter = $this->factory->create($bucket, $max, $window);
-
+        // 3) Vérifier/traiter le blocage
         if (!$limiter->isAllowed()) {
-            $retryAfter = $limiter->getRetryAfter();
-            header('Retry-After: ' . $retryAfter);
-
-            // Message dynamique "Réessayez dans {time}"
-            $timeStr = $this->formatRetryTime($retryAfter);
-            $msgTpl  = MessageManager::get(ErrorCode::AUTH_RATE_LIMITED_DYNAMIC);
-            $waitMsg = str_replace('{time}', $timeStr, $msgTpl);
-
-            // Logs + feedback utilisateur + redirection back
-            Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_RATE_LIMITED_DYNAMIC, [
-                'retry_after' => $retryAfter,
-                'bucket'      => $bucket,
-                'method'      => $method,
-                'uri'         => $uri,
-            ]);
-            $this->flash->add('error', $waitMsg);
-
-            // On reste sur la route courante (ou referer)
-            $target = is_string($_SERVER['HTTP_REFERER'] ?? null) && $_SERVER['HTTP_REFERER'] !== ''
-                ? (string) $_SERVER['HTTP_REFERER']
-                : $uri;
-            header('Location: ' . $target, true, 302);
-
-            Logger::getLogger('app')->warning('ratelimit_mw_block', [
-                'uri'    => $uri,
-                'bucket' => $bucket,
-            ]);
-
+            $this->handleBlocked($limiter, $bucket, $method, $uri);
             return false;
         }
 
-        // Enregistre la tentative et continue
+        // 4) Enregistrer la tentative et continuer
         $limiter->recordAttempt();
         return true;
+    }
+
+    /**
+     * Retourne la règle applicable pour (méthode, uri) ou null si non protégée.
+     *
+     * @return array{max:int,window:int}|null
+     */
+    private function resolveRule(string $method, string $uri): ?array
+    {
+        /** @var array{max:int,window:int}|null $rule */
+        $rule = self::RULES[$method][$uri] ?? null;
+        return $rule;
+    }
+
+    /**
+     * @param array{max:int,window:int} $rule
+     * @return array{0:RateLimiterInterface,1:string}
+     */
+    private function buildLimiter(array $rule, string $method, string $uri): array
+    {
+        // Ici $rule['max'] et $rule['window'] sont déjà des int (cf. RULES + resolveRule())
+        $max    = $rule['max'];
+        $window = $rule['window'];
+
+        $bucket  = $this->buildBucketKey($method, $uri, $this->clientId());
+        $limiter = $this->factory->create($bucket, $max, $window);
+
+        return [$limiter, $bucket];
+    }
+
+    private function handleBlocked(RateLimiterInterface $limiter, string $bucket, string $method, string $uri): void
+    {
+        $retryAfter = $limiter->getRetryAfter();
+        header('Retry-After: ' . (string) $retryAfter);
+
+        // Message dynamique "Réessayez dans {time}"
+        $timeStr = $this->formatRetryTime($retryAfter);
+        $msgTpl  = MessageManager::get(ErrorCode::AUTH_RATE_LIMITED_DYNAMIC);
+        $waitMsg = str_replace('{time}', $timeStr, $msgTpl);
+
+        Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_RATE_LIMITED_DYNAMIC, [
+            'retry_after' => $retryAfter,
+            'bucket'      => $bucket,
+            'method'      => $method,
+            'uri'         => $uri,
+        ]);
+
+        $this->flash->add('error', $waitMsg);
+
+        $target = is_string($_SERVER['HTTP_REFERER'] ?? null) && $_SERVER['HTTP_REFERER'] !== ''
+            ? (string) $_SERVER['HTTP_REFERER']
+            : $uri;
+
+        header('Location: ' . $target, true, 302);
+
+        Logger::getLogger('app')->warning('ratelimit_mw_block', [
+            'uri'    => $uri,
+            'bucket' => $bucket,
+        ]);
     }
 
     private function buildBucketKey(string $method, string $uri, string $clientId): string

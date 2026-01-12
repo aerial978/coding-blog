@@ -97,6 +97,23 @@ npm run lint:scss    # Stylelint
 npm run lint:md      # Markdownlint
 ```
 
+## Security
+
+CodingBlog implements a series of robust, defence-in-depth security mechanisms typically found in modern, production-ready applications:
+
+- Honeypot anti-bot field
+- Minimal & maximal submission delay (anti-bot timing control)
+- Cloudflare Turnstile (bot detection & abuse prevention)
+- Registration throttling (IP + User-Agent)
+- Email confirmation resend quotas
+- Disposable email blocking
+- Password blacklist (common password prevention)
+- Secure session tokens used for CSRF protection and form timing validation
+- Rate-limiting middleware
+- Security headers middleware
+- Automatic injection of headers strengthening browser-side security
+- Structured logging (per-domain security logs)
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
