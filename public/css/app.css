@@ -11895,4 +11895,17 @@ h1 {
   border-color: var(--bs-danger, #dc3545);
 }
 
+.honeypot-wrapper {
+  display: none;
+}
+
+.honeypot-field {
+  visibility: hidden;
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  width: 0;
+  overflow: hidden;
+}
+
 /*# sourceMappingURL=app.css.map */

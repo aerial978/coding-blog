@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use App\Core\SqlHelper;
+use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
 
 /**
@@ -13,7 +14,7 @@ use App\Model\Entity\UserEntity;
  * and creation, using the SqlHelper abstraction for safe and reusable
  * database interactions.
  */
-class UserModel
+class UserModel implements UserModelInterface
 {
     protected string $table = 'user';
 

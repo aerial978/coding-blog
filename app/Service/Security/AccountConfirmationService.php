@@ -8,8 +8,9 @@ use App\Core\ErrorCode;
 use App\Core\Logger;
 use App\Model\UserTokenModel;
 use App\Security\Contract\TokenGeneratorInterface;
+use App\Service\Security\Contract\AccountConfirmationServiceInterface;
 
-final class AccountConfirmationService
+final class AccountConfirmationService implements AccountConfirmationServiceInterface
 {
     public function __construct(
         private UserTokenModel $userTokenModel,
@@ -18,18 +19,17 @@ final class AccountConfirmationService
     }
 
     /**
-     * Confirme un compte à partir d’un token “clair”.
+     * Confirm a user account from a “clear” token.
      *
-     * @return array{error?:string, reason?:string}  Vide en cas de succès.
+     * @param string $token The raw confirmation token provided by the user.
+     * @return array{error?:string, reason?:string} Empty array on success.
      */
     public function confirm(string $token): array
     {
         $channel = 'auth';
-
         try {
-            // 1) Hash + validation longueur
+            // 1) Hashing + length validation
             $hashOrErr = $this->hashTokenOrError($token, $channel);
-            
             if (isset($hashOrErr['error'])) {
                 /** @var array{error:string,reason?:string} $out */
                 $out = $hashOrErr['error'];
@@ -41,9 +41,8 @@ final class AccountConfirmationService
             }
             $hash = $hashOrErr['hash'];
 
-            // 2) Chargement du contexte
+            // 2) Load token context from database
             $ctxOrErr = $this->loadContextOrError($hash, $channel);
-
             if (isset($ctxOrErr['error'])) {
                 /** @var array{error:string,reason?:string} $out */
                 $out = $ctxOrErr['error'];
@@ -54,34 +53,19 @@ final class AccountConfirmationService
             $row = $ctxOrErr['row'];
             $ctx = $this->normalizeContext($row);
 
-            // 3) Chaîne de garde-fous métiers
-            $err = $this->guardAlreadyActive($ctx['isActive'], $ctx['userId'], $channel);
+            // 3) Run all business guard checks
+            $err = $this->firstGuardError($ctx, $channel);
             if ($err !== null) {
                 return $err;
             }
 
-            $err = $this->guardExpiredAndUsed($ctx['isExpired'], $ctx['isUsed'], $ctx['userId'], $channel);
-            if ($err !== null) {
-                return $err;
-            }
-
-            $err = $this->guardExpiredBeforeActivation($ctx['isExpired'], $ctx['userId'], $channel);
-            if ($err !== null) {
-                return $err;
-            }
-
-            $err = $this->guardUsedButInactive($ctx['isUsed'], $ctx['userId'], $channel);
-            if ($err !== null) {
-                return $err;
-            }
-
-            // 4) Activation atomique
+            // 4) Atomic activation
             $err = $this->tryActivate($hash, $ctx['userId'], $channel);
             if ($err !== null) {
                 return $err;
             }
 
-            // 5) Succès
+            // 5) Success
             Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_CONFIRMATION_SUCCESS, [
                 'user_id' => $ctx['userId'],
             ]);
@@ -95,6 +79,54 @@ final class AccountConfirmationService
     }
 
     /**
+     * Aggregate all guard checks into a single method to reduce cyclomatic complexity.
+     *
+     * @param array{userId:int,isActive:bool,isExpired:bool,isUsed:bool} $ctx
+     * @param string $channel
+     * @return array{error:string,reason?:string}|null Returns the first error found or null if all checks pass.
+     */
+    private function firstGuardError(array $ctx, string $channel): ?array
+    {
+        if ($ctx['isActive']) {
+            Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_ALREADY_CONFIRMED, [
+                'user_id' => $ctx['userId'],
+                'reason'  => 'status_active',
+            ]);
+            return ['error' => (string) ErrorCode::AUTH_ALREADY_CONFIRMED];
+        }
+
+        if ($ctx['isExpired'] && $ctx['isUsed']) {
+            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, [
+                'reason'  => 'expired_and_used_inconsistent_state',
+                'user_id' => $ctx['userId'],
+            ]);
+            return ['error' => (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired'];
+        }
+
+        if ($ctx['isExpired']) {
+            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, [
+                'reason'  => 'expired_before_activation',
+                'user_id' => $ctx['userId'],
+            ]);
+            return ['error' => (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired'];
+        }
+
+        if ($ctx['isUsed']) {
+            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_CONFIRM_TOKEN_USED, [
+                'user_id' => $ctx['userId'],
+                'reason'  => 'token_used_user_still_inactive',
+            ]);
+            return ['error' => (string) ErrorCode::AUTH_CONFIRM_TOKEN_USED, 'reason' => 'used'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Hash and validate the provided token.
+     *
+     * @param string $token
+     * @param string $channel
      * @return array{
      *   hash?: string,
      *   error?: array{error:string,reason?:string}
@@ -113,6 +145,10 @@ final class AccountConfirmationService
     }
 
     /**
+     * Load token context or return an error if not found.
+     *
+     * @param string $hash
+     * @param string $channel
      * @return array{
      *   row?: array<string,mixed>,
      *   error?: array{error:string,reason?:string}
@@ -130,25 +166,21 @@ final class AccountConfirmationService
         return ['row' => $row];
     }
 
-    /** @param array<string,mixed> $row
-     *  @return array{userId:int,isActive:bool,isExpired:bool,isUsed:bool}
+    /**
+     * Normalize raw database row into a well-defined context array.
+     *
+     * @param array<string,mixed> $row
+     * @return array{userId:int,isActive:bool,isExpired:bool,isUsed:bool}
      */
     private function normalizeContext(array $row): array
     {
-        $userId    = isset($row['user_id']) && is_numeric($row['user_id']) ? (int)$row['user_id'] : 0;
-        $statusRaw = '';
-        if (isset($row['status']) && is_string($row['status'])) {
-            $statusRaw = $row['status'];
-        } elseif (isset($row['status_user']) && is_string($row['status_user'])) {
-            $statusRaw = $row['status_user'];
-        } elseif (isset($row['user_status']) && is_string($row['user_status'])) {
-            $statusRaw = $row['user_status'];
-        }
+        $userId     = $this->intFromNumeric($row, 'user_id', 0);
+        $statusRaw  = $this->firstString($row, ['status', 'status_user', 'user_status']) ?? '';
         $statusNorm = strtolower(trim($statusRaw));
         $isActive   = ($statusNorm === 'active' || $statusNorm === '1');
 
-        $isExpired = isset($row['is_expired']) && is_numeric($row['is_expired']) ? ((int)$row['is_expired'] === 1) : false;
-        $isUsed    = isset($row['used'])       && is_numeric($row['used']) ? ((int)$row['used'] === 1) : false;
+        $isExpired  = $this->boolFromNumeric($row, 'is_expired');
+        $isUsed     = $this->boolFromNumeric($row, 'used');
 
         return [
             'userId'    => $userId,
@@ -158,59 +190,53 @@ final class AccountConfirmationService
         ];
     }
 
-    /** @return array{error:string,reason?:string}|null */
-    private function guardAlreadyActive(bool $isActive, int $userId, string $channel): ?array
+    /**
+     * Return the first value that is a string among the provided keys, or null.
+     *
+     * @param array<string,mixed> $row
+     * @param list<string> $keys
+     */
+    private function firstString(array $row, array $keys): ?string
     {
-        if ($isActive) {
-            Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_ALREADY_CONFIRMED, [
-                'user_id' => $userId,
-                'reason'  => 'status_active',
-            ]);
-            return ['error' => (string) ErrorCode::AUTH_ALREADY_CONFIRMED];
+        foreach ($keys as $key) {
+            $value = $row[$key] ?? null;
+            if (is_string($value)) {
+                return $value;
+            }
         }
         return null;
     }
 
-    /** @return array{error:string,reason?:string}|null */
-    private function guardExpiredAndUsed(bool $isExpired, bool $isUsed, int $userId, string $channel): ?array
+    /**
+     * Read a numeric-like field and cast to int, or default.
+     *
+     * @param array<string,mixed> $row
+     */
+    private function intFromNumeric(array $row, string $key, int $default = 0): int
     {
-        if ($isExpired && $isUsed) {
-            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, [
-                'reason'  => 'expired_and_used_inconsistent_state',
-                'user_id' => $userId,
-            ]);
-            return ['error' => (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired'];
-        }
-        return null;
+        $value = $row[$key] ?? null;
+        return is_numeric($value) ? (int) $value : $default;
     }
 
-    /** @return array{error:string,reason?:string}|null */
-    private function guardExpiredBeforeActivation(bool $isExpired, int $userId, string $channel): ?array
+    /**
+     * Read a numeric-like field (0/1) and cast to bool, default false.
+     *
+     * @param array<string,mixed> $row
+     */
+    private function boolFromNumeric(array $row, string $key): bool
     {
-        if ($isExpired) {
-            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, [
-                'reason'  => 'expired_before_activation',
-                'user_id' => $userId,
-            ]);
-            return ['error' => (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, 'reason' => 'expired'];
-        }
-        return null;
+        $value = $row[$key] ?? null;
+        return is_numeric($value) ? ((int) $value === 1) : false;
     }
 
-    /** @return array{error:string,reason?:string}|null */
-    private function guardUsedButInactive(bool $isUsed, int $userId, string $channel): ?array
-    {
-        if ($isUsed) {
-            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_CONFIRM_TOKEN_USED, [
-                'user_id' => $userId,
-                'reason'  => 'token_used_user_still_inactive',
-            ]);
-            return ['error' => (string) ErrorCode::AUTH_CONFIRM_TOKEN_USED, 'reason' => 'used'];
-        }
-        return null;
-    }
-
-    /** @return array{error:string,reason?:string}|null */
+    /**
+     * Try to atomically activate the user account by token hash.
+     *
+     * @param string $hash
+     * @param int $userId
+     * @param string $channel
+     * @return array{error:string,reason?:string}|null
+     */
     private function tryActivate(string $hash, int $userId, string $channel): ?array
     {
         $ok = $this->userTokenModel->activateByHash($hash);

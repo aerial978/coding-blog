@@ -1,5 +1,0 @@
-[2025-09-14T14:47:19+00:00] error.ERROR: Uncaught exception {"message":"App\\Core\\MessageManager::get(): Argument #1 ($code) must be of type string, array given, called in C:\\wamp64\\www\\coding-blog\\app\\Controller\\SecurityController.php on line 145","file":"C:\\wamp64\\www\\coding-blog\\app\\Core\\MessageManager.php","line":9,"trace":"#0 C:\\wamp64\\www\\coding-blog\\app\\Controller\\SecurityController.php(145): App\\Core\\MessageManager::get(Array)
-#1 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(99): App\\Controller\\SecurityController->register()
-#2 C:\\wamp64\\www\\coding-blog\\app\\Core\\Router.php(58): App\\Core\\Router->dispatch('/register')
-#3 C:\\wamp64\\www\\coding-blog\\public\\index.php(69): App\\Core\\Router->handleRequest()
-#4 {main}"} 

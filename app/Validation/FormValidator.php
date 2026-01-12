@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Validation;
 
 use App\Core\ErrorCode;
+use App\Validation\Contract\FormValidatorInterface;
 
-final class FormValidator
+final class FormValidator implements FormValidatorInterface
 {
     // ——— Patterns (réutilisés partout) ———
     private const USERNAME_PATTERN = '/^(?=.*[a-zA-Z])[a-zA-Z0-9_]{3,20}$/';
@@ -97,21 +98,25 @@ final class FormValidator
 
     // ——— API “use-case” existante, réécrite sur le moteur générique ———
 
-    /** 
+    /**
      * @param array<string,mixed> $data
-     * @return array<string,string>
+     * @return list<string>   // liste plate de codes d'erreurs
      */
     public function validateRegistration(array $data): array
     {
-        return $this->validate($data, [
+        $byField = $this->validate($data, [
             'username' => [$this->required(), $this->username()],
             'email'    => [$this->email()],
             'password' => [$this->required(), $this->password()],
         ]);
+
+        /** @var list<string> $out */
+        $out = array_values($byField); // on aplatit: garde l’ordre d’apparition
+        return $out;
     }
 
-    /** public: validation e-mail réutilisable (resend, login, forgot…)
-     *  @return ?string
+    /**
+     * Validation e-mail réutilisable (resend, login, forgot…)
      */
     public function validateEmailField(string $email): ?string
     {

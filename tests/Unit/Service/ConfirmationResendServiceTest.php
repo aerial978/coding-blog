@@ -2,217 +2,408 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Service;
+namespace Tests\Unit\Service\Security;
 
 use App\Core\ErrorCode;
 use App\Core\Mail\MailerInterface;
-use App\Model\Entity\UserEntity;
-use App\Model\UserModel;
-use App\Model\UserTokenModel;
+use App\Model\Contract\UserModelInterface;
+use App\Model\Contract\UserTokenModelInterface;
+use App\Security\Contract\EmailQuotaServiceInterface;
 use App\Security\Contract\TokenGeneratorInterface;
+use App\Security\EmailQuotaService;
 use App\Service\Security\ConfirmationResendService;
-use App\Validation\FormValidator;
-use DateTimeImmutable;
-use PHPUnit\Framework\Attributes\DataProvider;
+use App\Validation\Contract\FormValidatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class ConfirmationResendServiceTest extends TestCase
 {
-    /** @var MockObject&UserModel */
-    private $userModel;
-    /** @var MockObject&UserTokenModel */
-    private $userTokenModel;
-    /** @var MockObject&TokenGeneratorInterface */
-    private $tokenGen;
-    /** @var MockObject&MailerInterface */
-    private $mailer;
-    private FormValidator $validator;
     protected function setUp(): void
     {
-        $this->userModel      = $this->createMock(UserModel::class);
-        $this->userTokenModel = $this->createMock(UserTokenModel::class);
-        $this->tokenGen       = $this->createMock(TokenGeneratorInterface::class);
-        $this->mailer         = $this->createMock(MailerInterface::class);
-        $this->validator      = new FormValidator();
-        // fonctions pures : pas besoin de mock
+        parent::setUp();
+        $_SERVER['REMOTE_ADDR']     = '1.2.3.4';
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit';
     }
 
-    private function makeService(): ConfirmationResendService
+    public function testResendReturnsErrorWhenEmailInvalid(): void
     {
-        return new ConfirmationResendService($this->validator, $this->userModel, $this->userTokenModel, $this->tokenGen, $this->mailer);
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn('email_invalid');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->expects(self::never())->method('findOneByEmail');
+
+        $service = $this->makeService(validator: $validator, userModel: $userModel);
+
+        $res = $service->resend('not-an-email');
+
+        self::assertSame(['error' => 'email_invalid'], $res);
+    }
+
+    public function testResendIsSilentWhenUnknownUser(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn(null);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->expects(self::never())->method('checkQuota');
+        $quota->expects(self::never())->method('recordEvent');
+
+        $service = $this->makeService(validator: $validator, userModel: $userModel, quota: $quota);
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame([], $res);
+    }
+
+    public function testResendIsSilentWhenQuotaExceeded(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'pending');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => false, 'reason' => 'hour_quota_exceeded']);
+        $quota->expects(self::never())->method('recordEvent');
+
+        $service = $this->makeService(validator: $validator, userModel: $userModel, quota: $quota);
+
+        $res = $service->resend('bob@example.com');
+
+        // anti-énumération: succès silencieux
+        self::assertSame([], $res);
+    }
+
+    public function testResendReturnsAlreadyConfirmedWhenUserIsActive(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'active');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+        $quota->expects(self::never())->method('recordEvent');
+
+        $service = $this->makeService(validator: $validator, userModel: $userModel, quota: $quota);
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED], $res);
+    }
+
+    public function testResendReturnsTechnicalErrorWhenTokenHashInvalidLength(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'pending');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+
+        $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+        $tokenGen->method('hashToken')->willReturn('too-short'); // strlen != 32
+
+        $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        $tokenModel->expects(self::never())->method('createConfirmationToken');
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            quota: $quota,
+            tokenGen: $tokenGen,
+            tokenModel: $tokenModel
+        );
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $res);
+    }
+
+    public function testResendReturnsTechnicalErrorWhenPersistFails(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'pending');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+
+        $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+        $tokenGen->method('hashToken')->willReturn(str_repeat('a', 32));
+
+        $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(false);
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            quota: $quota,
+            tokenGen: $tokenGen,
+            tokenModel: $tokenModel
+        );
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $res);
+    }
+
+    public function testResendReturnsSendFailedWhenMailerThrows(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'pending');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+
+        $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+        $tokenGen->method('hashToken')->willReturn(str_repeat('a', 32));
+
+        $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(true);
+
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->method('send')->willThrowException(new \RuntimeException('mail down'));
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            quota: $quota,
+            tokenGen: $tokenGen,
+            tokenModel: $tokenModel,
+            mailer: $mailer
+        );
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame(['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $res);
+    }
+
+    public function testResendReturnsSendFailedWhenMailerReturnsFalse(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'pending');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+
+        $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+        $tokenGen->method('hashToken')->willReturn(str_repeat('a', 32));
+
+        $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(true);
+
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->method('send')->willReturn(false);
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            quota: $quota,
+            tokenGen: $tokenGen,
+            tokenModel: $tokenModel,
+            mailer: $mailer
+        );
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame(['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $res);
+    }
+
+    public function testHappyPathReturnsEmptyArrayAndRecordsQuotaEvent(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $user = new FakeUser(userId: 10, username: 'bob', status: 'pending');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willReturn($user);
+
+        $quota = $this->createMock(EmailQuotaServiceInterface::class);
+        $quota->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+        $quota->expects(self::once())
+            ->method('recordEvent')
+            ->with(
+                'bob@example.com',
+                EmailQuotaService::TYPE_CONFIRM_RESEND,
+                10,
+                '1.2.3.4',
+                'PHPUnit'
+            )
+            ->willReturn(true);
+
+        $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+        $tokenGen->method('hashToken')->willReturn(str_repeat('a', 32));
+
+        $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        $tokenModel->expects(self::once())
+            ->method('createConfirmationToken')
+            ->willReturn(true);
+
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->expects(self::once())
+            ->method('send')
+            ->willReturn(true);
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            quota: $quota,
+            tokenGen: $tokenGen,
+            tokenModel: $tokenModel,
+            mailer: $mailer
+        );
+
+        $res = $service->resend('  bob@example.com  '); // test trim
+
+        self::assertSame([], $res);
+    }
+
+    public function testResendCatchesThrowableAndReturnsTechnicalError(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateEmailField')->willReturn(null);
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByEmail')->willThrowException(new \RuntimeException('db down'));
+
+        $service = $this->makeService(validator: $validator, userModel: $userModel);
+
+        $res = $service->resend('bob@example.com');
+
+        self::assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $res);
+    }
+
+    private function makeService(
+        ?FormValidatorInterface $validator = null,
+        ?UserModelInterface $userModel = null,
+        ?UserTokenModelInterface $tokenModel = null,
+        ?TokenGeneratorInterface $tokenGen = null,
+        ?MailerInterface $mailer = null,
+        ?EmailQuotaServiceInterface $quota = null,
+    ): ConfirmationResendService {
+        $validator  ??= $this->mockValidatorOk();
+        $userModel  ??= $this->createMock(UserModelInterface::class);
+        $tokenModel ??= $this->createMock(UserTokenModelInterface::class);
+        $tokenGen   ??= $this->mockTokenGenOk();
+        $mailer     ??= $this->mockMailerOk();
+        $quota      ??= $this->mockQuotaOk();
+
+        return new ConfirmationResendService(
+            $validator,
+            $userModel,
+            $tokenModel,
+            $tokenGen,
+            $mailer,
+            $quota
+        );
     }
 
     /**
-     * Crée un stub de UserEntity avec les getters utilisés par le service.
-     * Si UserEntity est "final" non mockable chez vous, remplacez par une
-     * vraie instance construite via son constructeur/setters.
-     *
-     * @return MockObject&UserEntity
+     * @return FormValidatorInterface&MockObject
      */
-    private function mockUserEntity(int $id, string $status = 'pending', ?string $username = 'john')
+    private function mockValidatorOk(): FormValidatorInterface
     {
-        /** @var MockObject&UserEntity $entity */
-        $entity = $this->createStub(UserEntity::class);
-        $entity->method('getUserId')->willReturn($id);
-        $entity->method('getStatus')->willReturn($status);
-        $entity->method('getUsername')->willReturn($username);
-        return $entity;
+        /** @var FormValidatorInterface&MockObject $v */
+        $v = $this->createMock(FormValidatorInterface::class);
+        $v->method('validateEmailField')->willReturn(null);
+        return $v;
     }
 
-    // -------------------- Cas Validation e-mail --------------------
-
-    public static function invalidEmailProvider(): array
+    /**
+     * @return TokenGeneratorInterface&MockObject
+     */
+    private function mockTokenGenOk(): TokenGeneratorInterface
     {
-        return [
-            'empty'      => [''],
-            'spaces'     => ['   '],
-            'bad_format' => ['foo@bar'],
-        ];
+        /** @var TokenGeneratorInterface&MockObject $t */
+        $t = $this->createMock(TokenGeneratorInterface::class);
+        $t->method('generateUrlSafeToken')->willReturn('clear-token');
+        $t->method('hashToken')->willReturn(str_repeat('a', 32));
+        return $t;
     }
 
-    #[DataProvider('invalidEmailProvider')]
-    public function test_resend_returns_error_on_invalid_email(string $email): void
+    /**
+     * @return MailerInterface&MockObject
+     */
+    private function mockMailerOk(): MailerInterface
     {
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_EMAIL_INVALID], $result);
+        /** @var MailerInterface&MockObject $m */
+        $m = $this->createMock(MailerInterface::class);
+        $m->method('send')->willReturn(true);
+        return $m;
     }
 
-    // ---------------------- Cas métier principaux ----------------------
-
-    public function test_resend_user_not_found_returns_generic_success_and_no_mail(): void
+    /**
+     * @return EmailQuotaService&MockObject
+     */
+    private function mockQuotaOk(): EmailQuotaServiceInterface
     {
-        $email = 'nobody@example.test';
-        $this->userModel
-            ->expects($this->once())
-            ->method('findOneByEmail')
-            ->with($email)
-            ->willReturn(null);
-        $this->mailer
-            ->expects($this->never())
-            ->method('send');
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame([], $result, 'Anti-énumération: succès générique attendu');
+        /** @var EmailQuotaService&MockObject $q */
+        $q = $this->createMock(EmailQuotaServiceInterface::class);
+        $q->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+        $q->method('recordEvent')->willReturn(true);
+        return $q;
+    }
+}
+
+/**
+ * Petit double d’entité utilisateur (évite de dépendre d’une vraie entity).
+ */
+final class FakeUser
+{
+    public function __construct(
+        private int $userId,
+        private ?string $username,
+        private ?string $status
+    ) {
     }
 
-    public function test_resend_user_already_active_returns_error_already_confirmed(): void
+    public function getUserId(): int
     {
-        $email = 'active@example.test';
-        $user  = $this->mockUserEntity(10, 'active', 'alice');
-        $this->userModel
-            ->method('findOneByEmail')
-            ->with($email)
-            ->willReturn($user);
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED], $result);
+        return $this->userId;
     }
 
-    public function test_resend_invalid_hash_length_returns_technical_error(): void
+    public function getUsername(): ?string
     {
-        $email = 'john@example.test';
-        $user  = $this->mockUserEntity(42, 'pending', 'john');
-        $this->userModel->method('findOneByEmail')->willReturn($user);
-        $this->tokenGen
-            ->method('generateUrlSafeToken')
-            ->with(32)
-            ->willReturn('dummy-token');
-        // Hash "binaire" de longueur ≠ 32 -> déclenche AUTH_TECHNICAL_ERROR
-        $this->tokenGen
-            ->method('hashToken')
-            ->with('dummy-token')
-            ->willReturn(str_repeat('A', 16));
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $result);
+        return $this->username;
     }
 
-    public function test_resend_persistence_failure_returns_technical_error(): void
+    public function getStatus(): ?string
     {
-        $email = 'john@example.test';
-        $user  = $this->mockUserEntity(42, 'pending', 'john');
-        $this->userModel->method('findOneByEmail')->willReturn($user);
-        $this->tokenGen->method('generateUrlSafeToken')->willReturn('dummy-token');
-        $this->tokenGen->method('hashToken')->willReturn(str_repeat('B', 32));
-        // valide
-
-        $this->userTokenModel
-            ->method('createConfirmationToken')
-            ->with(42, str_repeat('B', 32), $this->isInstanceOf(DateTimeImmutable::class))
-            ->willReturn(false);
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $result);
-    }
-
-    public function test_resend_mailer_exception_returns_send_failed(): void
-    {
-        $email = 'john@example.test';
-        $user  = $this->mockUserEntity(42, 'pending', 'john');
-        $this->userModel->method('findOneByEmail')->willReturn($user);
-        $this->tokenGen->method('generateUrlSafeToken')->willReturn('dummy-token');
-        $this->tokenGen->method('hashToken')->willReturn(str_repeat('C', 32));
-        $this->userTokenModel->method('createConfirmationToken')->willReturn(true);
-        $this->mailer
-            ->method('send')
-            ->willThrowException(new \RuntimeException('smtp down'));
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $result);
-    }
-
-    public function test_resend_mailer_returns_false_returns_send_failed(): void
-    {
-        $email = 'john@example.test';
-        $user  = $this->mockUserEntity(42, 'pending', 'john');
-        $this->userModel->method('findOneByEmail')->willReturn($user);
-        $this->tokenGen->method('generateUrlSafeToken')->willReturn('dummy-token');
-        $this->tokenGen->method('hashToken')->willReturn(str_repeat('D', 32));
-        $this->userTokenModel->method('createConfirmationToken')->willReturn(true);
-        $this->mailer
-            ->method('send')
-            ->willReturn(false);
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $result);
-    }
-
-    public function test_resend_success_nominal_returns_empty_array_and_sends_mail(): void
-    {
-        $email = 'john@example.test';
-        $user  = $this->mockUserEntity(42, 'pending', 'john');
-        $this->userModel->method('findOneByEmail')->willReturn($user);
-        $this->tokenGen->method('generateUrlSafeToken')->willReturn('dummy-token');
-        $this->tokenGen->method('hashToken')->willReturn(str_repeat('E', 32));
-        $this->userTokenModel->method('createConfirmationToken')->willReturn(true);
-        $this->mailer
-            ->expects($this->once())
-            ->method('send')
-            ->with(
-                $email,
-                'john',
-                $this->anything(), // subject
-                $this->anything(), // template
-                $this->callback(fn (array $ctx) => isset($ctx['link']) && is_string($ctx['link']))
-            )
-            ->willReturn(true);
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame([], $result);
-    }
-
-    public function test_resend_unexpected_exception_returns_technical_error(): void
-    {
-        $email = 'boom@example.test';
-        // On simule une panne inattendue au tout début du try
-        $this->userModel
-        ->method('findOneByEmail')
-        ->with($email)
-        ->willThrowException(new \RuntimeException('DB offline'));
-        $service = $this->makeService();
-        $result  = $service->resend($email);
-        $this->assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $result);
+        return $this->status;
     }
 }

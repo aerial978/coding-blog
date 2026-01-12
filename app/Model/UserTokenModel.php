@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use App\Core\SqlHelper;
+use App\Model\Contract\UserTokenModelInterface;
 use InvalidArgumentException;
 
 /**
@@ -15,7 +16,7 @@ use InvalidArgumentException;
  * It is primarily used during account confirmation, password reset,
  * and similar token-based workflows.
  */
-class UserTokenModel
+class UserTokenModel implements UserTokenModelInterface
 {
     /** @var string The database table name for user tokens */
     protected string $table = 'user_token';

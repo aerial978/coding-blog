@@ -35,30 +35,44 @@ export function createFormValidator(formSelector, options = {}) {
     }
   }
 
-  function addRules(fieldSelector, rules = [], opts = {}) {
-    const mapped = rules.map((r) => {
-      switch (r.type) {
-        case 'required':
-          return { rule: 'required', errorMessage: r.message || DEFAULT_MESSAGES.required };
-        case 'email':
-          return { rule: 'email', errorMessage: r.message || DEFAULT_MESSAGES.email };
-        case 'regex':
-          return { rule: 'customRegexp', value: r.value, errorMessage: r.message || DEFAULT_MESSAGES.invalid };
-        case 'custom':
-          return { validator: r.validator, errorMessage: r.message || DEFAULT_MESSAGES.invalid };
-        case 'async':
-          return { validator: r.validator, errorMessage: r.message || DEFAULT_MESSAGES.invalid };
-        default:
-          console.warn(`[validation.factory] Unknown rule type: ${r.type}`);
-          return null;
-      }
-    }).filter(Boolean);
+  function mapRuleFactory(DEFAULT_MESSAGES) {
+    // constructeurs par type de règle
+    const withMsg = (fallback) => (r) => ({ errorMessage: r.message || fallback });
+    const required = (r) => ({ rule: 'required', ...withMsg(DEFAULT_MESSAGES.required)(r) });
+    const email    = (r) => ({ rule: 'email',    ...withMsg(DEFAULT_MESSAGES.email)(r) });
+    const regex    = (r) => ({ rule: 'customRegexp', value: r.value, ...withMsg(DEFAULT_MESSAGES.invalid)(r) });
+    const validator= (r) => ({ validator: r.validator, ...withMsg(DEFAULT_MESSAGES.invalid)(r) });
 
-    if (opts?.errorsContainer) {
-      engine.addField(fieldSelector, mapped, { errorsContainer: opts.errorsContainer });
-    } else {
-      engine.addField(fieldSelector, mapped);
-    }
+    // ‘custom’ et ‘async’ partagent la même forme { validator }
+    const BUILDERS = {
+      required,
+      email,
+      regex,
+      custom: validator,
+      async:  validator,
+    };
+
+    return (r) => {
+      const builder = r && BUILDERS[r.type];
+      if (!builder) {
+        console.warn(`[validation.factory] Unknown rule type: ${r?.type}`);
+        return null;
+      }
+      return builder(r);
+    };
+  }
+
+  function addRules(fieldSelector, rules = [], opts = {}) {
+    const mapRule = mapRuleFactory(DEFAULT_MESSAGES);
+
+    const mapped = rules.map(mapRule).filter(Boolean);
+
+    // Paramètre optionnel unique pour éviter un if/else
+    const thirdArg = (opts && opts.errorsContainer)
+      ? { errorsContainer: opts.errorsContainer }
+      : undefined;
+
+    engine.addField(fieldSelector, mapped, thirdArg);
   }
 
   function enableLiveValidation() {

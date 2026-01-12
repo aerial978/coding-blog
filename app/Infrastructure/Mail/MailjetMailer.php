@@ -121,22 +121,66 @@ final class MailjetMailer implements MailerInterface
 
     private function responseOk(Response $response, string $toEmail): bool
     {
-        if (!$response->success()) {
-            Logger::getLogger('mail')->error('Mailjet HTTP error', [
-                'status' => $response->getStatus(),
-                'reason' => $response->getReasonPhrase(),
-                'body'   => $response->getBody(),
-            ]);
+        // 1) HTTP layer
+        if (!$this->checkHttpSuccess($response)) {
             return false;
         }
 
-        /** @var array{Messages?: list<array<string,mixed>>} $data */
+        // 2) Extract business payload
+        $msg = $this->extractFirstMessage($response);
+
+        // 3) Business status + logging (also logs on failure)
+        return $this->handleFunctionalStatus($msg, $response, $toEmail);
+    }
+
+    /**
+     * Check Mailjet HTTP response and log a detailed error when it is not successful.
+     */
+    private function checkHttpSuccess(Response $response): bool
+    {
+        if ($response->success()) {
+            return true;
+        }
+
+        Logger::getLogger('mail')->error('Mailjet HTTP error', [
+            'status' => $response->getStatus(),
+            'reason' => $response->getReasonPhrase(),
+            'body'   => $response->getBody(),
+        ]);
+        return false;
+    }
+
+    /**
+     * Extract the first "Messages[0]" entry from Mailjet's payload, or null when missing.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function extractFirstMessage(Response $response): ?array
+    {
+        /** @var array<string, mixed> $data */
         $data = $response->getData();
 
         $messages = $data['Messages'] ?? null;
-        /** @var array<string,mixed>|null $msg */
-        $msg = (is_array($messages) && isset($messages[0])) ? $messages[0] : null;
+        if (!is_array($messages)) {
+            return null;
+        }
 
+        $first = $messages[0] ?? null;
+        if (!is_array($first)) {
+            return null;
+        }
+
+        /** @var array<string,mixed> $first */
+        return $first;
+    }
+
+    /**
+     * Validate functional Mailjet status, log accordingly, and return the outcome.
+     *
+     * @param array<string,mixed>|null $msg
+     */
+    private function handleFunctionalStatus(?array $msg, Response $response, string $toEmail): bool
+    {
         if (!is_array($msg) || (($msg['Status'] ?? '') !== 'success')) {
             Logger::getLogger('mail')->error('Mailjet functional error', [
                 'status'         => $response->getStatus(),
@@ -152,7 +196,6 @@ final class MailjetMailer implements MailerInterface
             'to'      => $toEmail,
             'subject' => $msg['Subject'] ?? null,
         ]);
-
         return true;
     }
 }

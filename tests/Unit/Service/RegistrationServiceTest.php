@@ -2,267 +2,706 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Service;
+namespace Tests\Unit\Service\Security;
 
+use App\Core\Contract\SqlHelperInterface;
 use App\Core\ErrorCode;
 use App\Core\Mail\MailerInterface;
-use App\Core\SqlHelper;
-use App\Model\Entity\UserEntity;
-use App\Model\UserModel;
-use App\Model\UserTokenModel;
+use App\Model\Contract\UserModelInterface;
+use App\Model\Contract\UserTokenModelInterface;
+use App\Security\Contract\RegistrationThrottleServiceInterface;
 use App\Security\Contract\TokenGeneratorInterface;
+use App\Security\DisposableEmailChecker;
+use App\Security\PasswordBlacklist;
 use App\Service\Security\RegistrationService;
-use App\Validation\FormValidator;
+use App\Validation\Contract\FormValidatorInterface;
 use Cocur\Slugify\Slugify;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class RegistrationServiceTest extends TestCase
 {
-    private FormValidator $validator;
-    // réel
-    /** @var UserModel&MockObject */
-    private $users;
-    /** @var UserTokenModel&MockObject */
-    private $tokens;
-    private Slugify $slugify;
-    // réel
-    /** @var MailerInterface&MockObject */
-    private $mailer;
-    /** @var TokenGeneratorInterface&MockObject */
-    private $tokensGen;
-    /** @var SqlHelper&MockObject */
-    private $sql;
     protected function setUp(): void
     {
-        $this->validator = new FormValidator();
-        // class finale → on garde réel
-        $this->users     = $this->createMock(UserModel::class);
-        $this->tokens    = $this->createMock(UserTokenModel::class);
-        $this->slugify   = new Slugify();
-        // réel
-        $this->mailer    = $this->createMock(MailerInterface::class);
-        $this->tokensGen = $this->createMock(TokenGeneratorInterface::class);
-        $this->sql       = $this->createMock(SqlHelper::class);
+        parent::setUp();
+        $_SERVER['REMOTE_ADDR']     = '1.2.3.4';
+        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit';
     }
 
-    private function make(): RegistrationService
+    public function testReturnsValidationErrorsEarly(): void
     {
-        return new RegistrationService($this->validator, $this->users, $this->tokens, $this->slugify, $this->mailer, $this->tokensGen, $this->sql);
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn(['some_error']);
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->expects(self::never())->method('createUser');
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame(['some_error'], $res['errors']);
+        self::assertSame(['username' => 'bob', 'email' => 'bob@example.com'], $res['old']);
     }
 
-    private function validForm(): array
+    public function testRejectsBlacklistedPassword(): void
     {
-        return [
-            'username'          => 'John Doe',
-            'email'             => 'john@test.com',
-            'password'          => 'Passw0rd!',
-            'confirm_password'  => 'Passw0rd!',
-        ];
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $blacklist = new PasswordBlacklist(['password123']);
+
+        $service = $this->makeService(
+            validator: $validator,
+            passwordBlacklist: $blacklist
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'password123',
+            'confirm_password' => 'password123',
+        ]);
+
+        self::assertContains(ErrorCode::AUTH_PASSWORD_TOO_COMMON, $res['errors']);
     }
 
-    private function arrangeNoConflictsAndValidArtifacts(): void
+    public function testRejectsDisposableEmailAndOverridesErrors(): void
     {
-        $this->users->method('findOneByUsername')->willReturn(null);
-        $this->users->method('findOneByEmail')->willReturn(null);
-        $this->tokensGen->method('generateUrlSafeToken')->willReturn('tok');
-        // 32 chars to pass length check
-        $this->tokensGen->method('hashToken')->willReturn(str_repeat('a', 32));
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $disposable = new DisposableEmailChecker(['yopmail.com']);
+
+        $service = $this->makeService(
+            validator: $validator,
+            disposableEmailChecker: $disposable
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@yopmail.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([ErrorCode::AUTH_REGISTRATION_EMAIL_DISPOSABLE], $res['errors']);
     }
 
-    // --------------------------
-    // 1) Succès nominal
-    // --------------------------
-    public function test_register_success_returns_ok_true(): void
+    public function testBlocksWhenRegistrationQuotaExceeded(): void
     {
-        $this->arrangeNoConflictsAndValidArtifacts();
-        $this->sql->expects($this->once())->method('beginTransaction');
-        $this->users
-            ->expects($this->once())
-            ->method('createUser')
-            ->with($this->isInstanceOf(UserEntity::class))
-            ->willReturn(123);
-        $this->tokens
-            ->expects($this->once())
-            ->method('createConfirmationToken')
-            ->with(123, $this->isType('string'), $this->isInstanceOf(\DateTimeImmutable::class))
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $throttle = $this->createMock(RegistrationThrottleServiceInterface::class);
+        $throttle->method('checkQuota')->willReturn(['allowed' => false, 'reason' => 'hour_quota_exceeded']);
+        $throttle->expects(self::never())->method('recordSuccess');
+
+        $service = $this->makeService(
+            validator: $validator,
+            throttle: $throttle
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([ErrorCode::AUTH_REGISTRATION_QUOTA_EXCEEDED], $res['errors']);
+    }
+
+    public function testHappyPathCreatesUserTokenSendsMailAndRecordsThrottle(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willReturn(123);
+
+        $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(true);
+
+        $sql = $this->createMock(SqlHelperInterface::class);
+        $sql->expects(self::once())->method('beginTransaction');
+        $sql->expects(self::once())->method('commit');
+        $sql->expects(self::never())->method('rollBack');
+
+        $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->with(32)->willReturn('clear-token');
+        $tokenGen->method('hashToken')->with('clear-token')->willReturn(str_repeat('a', 32)); // longueur 32 OK
+
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->expects(self::once())->method('send')->willReturn(true);
+
+        $throttle = $this->createMock(RegistrationThrottleServiceInterface::class);
+        $throttle->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+        $throttle->expects(self::once())
+            ->method('recordSuccess')
+            ->with(
+                email: 'bob@example.com',
+                userId: 123,
+                ip: '1.2.3.4',
+                userAgent: 'PHPUnit'
+            )
             ->willReturn(true);
-        $this->sql->expects($this->once())->method('commit');
-        $this->mailer->expects($this->once())->method('send')->willReturn(true);
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame(['ok' => true], $res);
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            tokenModel: $tokenModel,
+            sqlHelper: $sql,
+            tokenGen: $tokenGen,
+            mailer: $mailer,
+            throttle: $throttle
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame(['ok' => true], $res);
     }
 
-    // --------------------------
-    // 2) Artefacts invalides (hash ≠ 32) → erreur technique
-    // --------------------------
-    public function test_register_invalid_hash_length_returns_technical_error(): void
-    {
-        $this->users->method('findOneByUsername')->willReturn(null);
-        $this->users->method('findOneByEmail')->willReturn(null);
-        $this->tokensGen->method('generateUrlSafeToken')->willReturn('tok');
-        $this->tokensGen->method('hashToken')->willReturn('short');
-        // != 32
+    private function makeService(
+        ?FormValidatorInterface $validator = null,
+        ?UserModelInterface $userModel = null,
+        ?UserTokenModelInterface $tokenModel = null,
+        ?SqlHelperInterface $sqlHelper = null,
+        ?TokenGeneratorInterface $tokenGen = null,
+        ?MailerInterface $mailer = null,
+        ?RegistrationThrottleServiceInterface $throttle = null,
+        ?PasswordBlacklist $passwordBlacklist = null,
+        ?DisposableEmailChecker $disposableEmailChecker = null,
+    ): RegistrationService {
 
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
-        $this->assertSame(['username' => 'John Doe', 'email' => 'john@test.com'], $res['old']);
+        if ($validator === null) {
+            /** @var FormValidatorInterface&MockObject $validator */
+            $validator = $this->createMock(FormValidatorInterface::class);
+            $validator->method('validateRegistration')->willReturn([]);
+        }
+
+        if ($userModel === null) {
+            /** @var UserModelInterface&MockObject $userModel */
+            $userModel = $this->createMock(UserModelInterface::class);
+            $userModel->method('findOneByUsername')->willReturn(false);
+            $userModel->method('findOneByEmail')->willReturn(false);
+        }
+
+        if ($tokenModel === null) {
+            /** @var UserTokenModelInterface&MockObject $tokenModel */
+            $tokenModel = $this->createMock(UserTokenModelInterface::class);
+        }
+
+        if ($sqlHelper === null) {
+            /** @var SqlHelperInterface&MockObject $sqlHelper */
+            $sqlHelper = $this->createMock(SqlHelperInterface::class);
+        }
+
+        if ($tokenGen === null) {
+            /** @var TokenGeneratorInterface&MockObject $tokenGen */
+            $tokenGen = $this->createMock(TokenGeneratorInterface::class);
+            $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+            $tokenGen->method('hashToken')->willReturn(str_repeat('a', 32));
+        }
+
+        if ($mailer === null) {
+            /** @var MailerInterface&MockObject $mailer */
+            $mailer = $this->createMock(MailerInterface::class);
+            $mailer->method('send')->willReturn(true);
+        }
+
+        if ($throttle === null) {
+            /** @var RegistrationThrottleServiceInterface&MockObject $throttle */
+            $throttle = $this->createMock(RegistrationThrottleServiceInterface::class);
+            $throttle->method('checkQuota')->willReturn(['allowed' => true, 'reason' => null]);
+        }
+
+        $passwordBlacklist      ??= new PasswordBlacklist([]);
+        $disposableEmailChecker ??= new DisposableEmailChecker([]);
+
+        return new RegistrationService(
+            $validator,
+            $userModel,
+            $tokenModel,
+            new Slugify(),
+            $mailer,
+            $tokenGen,
+            $sqlHelper,
+            $throttle,
+            $passwordBlacklist,
+            $disposableEmailChecker
+        );
     }
 
-    // --------------------------
-    // 3) createUser() = 0 → rollback + erreur technique
-    // --------------------------
-    public function test_register_user_creation_zero_triggers_rollback_and_technical_error(): void
+    public function testReturnsTechnicalErrorWhenTokenHashLengthIsInvalid(): void
     {
-        $this->arrangeNoConflictsAndValidArtifacts();
-        $this->sql->expects($this->once())->method('beginTransaction');
-        $this->users->method('createUser')->willReturn(0);
-        $this->sql->expects($this->once())->method('rollBack');
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $tokenGen = $this->createMock(\App\Security\Contract\TokenGeneratorInterface::class);
+        $tokenGen->method('generateUrlSafeToken')->willReturn('clear-token');
+        $tokenGen->method('hashToken')->willReturn('too-short'); // != 32 => art null => technical error
+
+        $service = $this->makeService(
+            validator: $validator,
+            tokenGen: $tokenGen
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+        self::assertSame(['username' => 'bob', 'email' => 'bob@example.com'], $res['old']);
     }
 
-    // --------------------------
-    // 4) createConfirmationToken() = false → rollback + erreur technique
-    // --------------------------
-    public function test_register_token_creation_failure_triggers_rollback_and_technical_error(): void
+    public function testReturnsTechnicalErrorWhenUserCreationFails(): void
     {
-        $this->arrangeNoConflictsAndValidArtifacts();
-        $this->sql->expects($this->once())->method('beginTransaction');
-        $this->users->method('createUser')->willReturn(10);
-        $this->tokens
-            ->method('createConfirmationToken')
-            ->willReturn(false);
-        $this->sql->expects($this->once())->method('rollBack');
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willReturn(0);
+
+        $sql = $this->createMock(\App\Core\Contract\SqlHelperInterface::class);
+        $sql->expects(self::once())->method('beginTransaction');
+        $sql->expects(self::never())->method('commit');
+        $sql->expects(self::once())->method('rollBack');
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            sqlHelper: $sql
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
     }
 
-    // --------------------------
-    // 5) Mailer → false → send_failed
-    // --------------------------
-    public function test_register_mailer_returns_false_yields_send_failed(): void
+    public function testReturnsTechnicalErrorWhenTokenInsertFails(): void
     {
-        $this->arrangeNoConflictsAndValidArtifacts();
-        $this->sql->method('beginTransaction');
-        $this->users->method('createUser')->willReturn(10);
-        $this->tokens->method('createConfirmationToken')->willReturn(true);
-        $this->sql->method('commit');
-        $this->mailer->method('send')->willReturn(false);
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $res['errors']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willReturn(123);
+
+        $tokenModel = $this->createMock(\App\Model\Contract\UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(false);
+
+        $sql = $this->createMock(\App\Core\Contract\SqlHelperInterface::class);
+        $sql->expects(self::once())->method('beginTransaction');
+        $sql->expects(self::never())->method('commit');
+        $sql->expects(self::once())->method('rollBack');
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            tokenModel: $tokenModel,
+            sqlHelper: $sql
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
     }
 
-    // --------------------------
-    // 6) Mailer → exception → send_failed
-    // --------------------------
-    public function test_register_mailer_throws_exception_yields_send_failed(): void
+    public function testReturnsSendFailedWhenMailerThrows(): void
     {
-        $this->arrangeNoConflictsAndValidArtifacts();
-        $this->sql->method('beginTransaction');
-        $this->users->method('createUser')->willReturn(10);
-        $this->tokens->method('createConfirmationToken')->willReturn(true);
-        $this->sql->method('commit');
-        $this->mailer->method('send')->willThrowException(new \RuntimeException('smtp down'));
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $res['errors']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willReturn(123);
+
+        $tokenModel = $this->createMock(\App\Model\Contract\UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(true);
+
+        $sql = $this->createMock(\App\Core\Contract\SqlHelperInterface::class);
+        $sql->method('beginTransaction');
+        $sql->method('commit');
+
+        $mailer = $this->createMock(\App\Core\Mail\MailerInterface::class);
+        $mailer->method('send')->willThrowException(new \RuntimeException('mail down'));
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            tokenModel: $tokenModel,
+            sqlHelper: $sql,
+            mailer: $mailer
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $res['errors']);
     }
 
-    // --------------------------
-    // 7) (Optionnel) PDO duplicate email → mapping spécifique
-    // --------------------------
-    public function test_register_pdo_duplicate_email_maps_to_specific_errors(): void
+    public function testReturnsSendFailedWhenMailerReturnsFalse(): void
     {
-        // Le validateur doit passer, on déclenche l’exception au moment de la détection de collision email
-        $this->users->method('findOneByUsername')->willReturn(null);
-        // Construction correcte de la PDOException
-        // → le code doit être un entier (23000, pas '23000')
-        $e = new \PDOException('Duplicate entry for key unique_email', 23000);
-        // Le champ errorInfo simule une erreur MySQL de type "duplicate entry"
-        $e->errorInfo = ['23000', 1062, 'Duplicate entry ... for key unique_email'];
-        // Simule une exception PDO lors de la vérification de l’email
-        $this->users->method('findOneByEmail')->willThrowException($e);
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        // On attend bien le mapping spécifique défini dans handlePdoRegistrationException()
-        $this->assertSame([ErrorCode::AUTH_EMAIL_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER], $res['errors']);
-        $this->assertSame(['username' => 'John Doe', 'email' => 'john@test.com'], $res['old']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willReturn(123);
+
+        $tokenModel = $this->createMock(\App\Model\Contract\UserTokenModelInterface::class);
+        $tokenModel->method('createConfirmationToken')->willReturn(true);
+
+        $sql = $this->createMock(\App\Core\Contract\SqlHelperInterface::class);
+        $sql->method('beginTransaction');
+        $sql->method('commit');
+
+        $mailer = $this->createMock(\App\Core\Mail\MailerInterface::class);
+        $mailer->method('send')->willReturn(false);
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel,
+            tokenModel: $tokenModel,
+            sqlHelper: $sql,
+            mailer: $mailer
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $res['errors']);
     }
 
-    // --------------------------
-    // 8) Collision username / email → erreurs spécifiques
-    // --------------------------
-    public function test_register_conflict_username_and_email(): void
+    private function pdoDuplicate(int $driverCode, string $message): \PDOException
     {
-        $form = [
-            'username'          => 'john',
-            'email'             => 'john@test.com',
-            'password'          => 'Passw0rd!',
-            'confirm_password'  => 'Passw0rd!',
-        ];
-        // Simule la détection d’un username existant
-        $this->users->method('findOneByUsername')
-            ->with('john')
-            ->willReturn($this->createMock(\App\Model\Entity\UserEntity::class));
-        // Simule aussi une collision email
-        $this->users->method('findOneByEmail')
-            ->with('john@test.com')
-            ->willReturn($this->createMock(\App\Model\Entity\UserEntity::class));
-        $svc = $this->make();
-        $res = $svc->register($form);
-        $this->assertArrayHasKey('errors', $res);
-        $this->assertContains(ErrorCode::AUTH_EMAIL_EXISTS, $res['errors']);
-        $this->assertContains(ErrorCode::AUTH_PASSWORD_REENTER, $res['errors']);
+        $e = new \PDOException('duplicate');
+        // SQLSTATE
+        // PHPUnit/PHP permettent souvent de setCode via constructeur PDOException($msg, $code)
+        // mais ici on reste simple : on met le code via reflection si nécessaire.
+        // Dans la pratique, $e->getCode() renverra '0' si non set.
+        // => on utilise le constructeur pour le SQLSTATE.
+        $e = new \PDOException('duplicate', 0); // code "0" -> pas bon, on force autrement ci-dessous si besoin
+
+        // Astuce fiable : créer avec code SQLSTATE en string
+        $e = new \PDOException('duplicate', 0);
+        // Beaucoup de drivers exposent SQLSTATE dans ->code ; chez vous, la méthode lit getCode().
+        // Si votre PHP refuse le string, on contourne en laissant getCode() à '23000' via Reflection.
+        $ref = new \ReflectionProperty(\Exception::class, 'code');
+        $ref->setAccessible(true);
+        $ref->setValue($e, '23000');
+
+        $e->errorInfo = ['23000', $driverCode, $message];
+        return $e;
     }
 
-    // 9) PDO duplicate *username*  → mapping spécifique
-    public function test_register_pdo_duplicate_username_maps_to_specific_errors(): void
+    public function testCatchesPdoDuplicateEmail(): void
     {
-        // Le validateur doit passer
-        $this->users->method('findOneByEmail')->willReturn(null);
-        // Exception SQLSTATE 23000 / driver 1062 avec "username"
-        $e            = new \PDOException('Duplicate entry ... for key unique_username', 23000);
-        $e->errorInfo = ['23000', 1062, 'Duplicate entry ... for key unique_username'];
-        // Déclenchée lors de la vérif du username
-        $this->users->method('findOneByUsername')->willThrowException($e);
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_USERNAME_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER], $res['errors']);
-        $this->assertSame(['username' => 'John Doe', 'email' => 'john@test.com'], $res['old']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willThrowException(
+            $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'uniq_email'")
+        );
+
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame(
+            [\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR],
+            $res['errors']
+        );
     }
 
-    // 10) PDO duplicate ambigu (ni "email" ni "username") → AUTH_REGISTRATION_FAILED
-    public function test_register_pdo_duplicate_ambiguous_maps_to_registration_failed(): void
+    public function testCatchesPdoDuplicateUsername(): void
     {
-        $this->users->method('findOneByUsername')->willReturn(null);
-        // Toujours 23000/1062 mais message qui ne mentionne ni email ni username
-        $e            = new \PDOException('Duplicate entry ... for key some_other_unique', 23000);
-        $e->errorInfo = ['23000', 1062, 'Duplicate entry ... for key some_other_unique'];
-        $this->users->method('findOneByEmail')->willThrowException($e);
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_REGISTRATION_FAILED], $res['errors']);
-        $this->assertSame(['username' => 'John Doe', 'email' => 'john@test.com'], $res['old']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willThrowException(
+            $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'uniq_username'")
+        );
+
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame(
+            [\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR],
+            $res['errors']
+        );
     }
 
-    // 11) Filet global \Throwable (ex: génération de token) → AUTH_TECHNICAL_ERROR
-    public function test_register_global_throwable_returns_technical_error(): void
+    public function testCatchesPdoDuplicateUnknownIndex(): void
     {
-        // Aucune collision, validation OK
-        $this->users->method('findOneByUsername')->willReturn(null);
-        $this->users->method('findOneByEmail')->willReturn(null);
-        // Provoque une exception *avant* toute transaction
-        $this->tokensGen->method('generateUrlSafeToken')
-            ->willThrowException(new \RuntimeException('boom'));
-        $svc = $this->make();
-        $res = $svc->register($this->validForm());
-        $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
-        $this->assertSame(['username' => 'John Doe', 'email' => 'john@test.com'], $res['old']);
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willThrowException(
+            $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'some_weird_index'")
+        );
+
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+    }
+
+    public function testCatchesPdoOtherErrorAsTechnicalError(): void
+    {
+        $validator = $this->createMock(\App\Validation\Contract\FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willReturn([]);
+
+        $e   = new \PDOException('sql error');
+        $ref = new \ReflectionProperty(\Exception::class, 'code');
+        $ref->setAccessible(true);
+        $ref->setValue($e, '42000'); // autre SQLSTATE
+        $e->errorInfo = ['42000', 9999, 'syntax error'];
+
+        $userModel = $this->createMock(\App\Model\Contract\UserModelInterface::class);
+        $userModel->method('findOneByUsername')->willReturn(false);
+        $userModel->method('findOneByEmail')->willReturn(false);
+        $userModel->method('createUser')->willThrowException($e);
+
+        $service = $this->makeService(
+            validator: $validator,
+            userModel: $userModel
+        );
+
+        $res = $service->register([
+            'username'         => 'bob',
+            'email'            => 'bob@example.com',
+            'password'         => 'SomeStrong#Password1',
+            'confirm_password' => 'SomeStrong#Password1',
+        ]);
+
+        self::assertSame([\App\Core\ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+    }
+
+    private function pdoWithSqlState(string $sqlState, ?int $driverCode, string $message): \PDOException
+    {
+        $e = new \PDOException('pdo');
+
+        // Forcer getCode() à retourner une string SQLSTATE (comportement typique PDO)
+        $ref = new \ReflectionProperty(\Exception::class, 'code');
+        $ref->setAccessible(true);
+        $ref->setValue($e, $sqlState);
+
+        // errorInfo peut être null, ou un array
+        $e->errorInfo = [$sqlState, $driverCode, $message];
+
+        return $e;
+    }
+
+    /**
+     * Appelle une méthode privée de RegistrationService via Reflection.
+     * @return mixed
+     */
+    private function callPrivate(RegistrationService $service, string $method, array $args): mixed
+    {
+        $rm = new \ReflectionMethod($service, $method);
+        $rm->setAccessible(true);
+        return $rm->invokeArgs($service, $args);
+    }
+
+
+    public function testHandlePdoRegistrationExceptionDuplicateEmailViaReflection(): void
+    {
+        $service = $this->makeService();
+
+        $pdo = $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'uniq_email'");
+        $old = ['username' => 'bob', 'email' => 'bob@example.com'];
+
+        $res = $this->callPrivate($service, 'handlePdoRegistrationException', [
+            $pdo,
+            'auth',
+            'bob@example.com',
+            'bob',
+            $old
+        ]);
+
+        self::assertSame(
+            [ErrorCode::AUTH_EMAIL_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER],
+            $res['errors']
+        );
+        self::assertSame($old, $res['old']);
+    }
+
+    public function testHandlePdoRegistrationExceptionDuplicateUsernameViaReflection(): void
+    {
+        $service = $this->makeService();
+
+        $pdo = $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'uniq_username'");
+        $old = ['username' => 'bob', 'email' => 'bob@example.com'];
+
+        $res = $this->callPrivate($service, 'handlePdoRegistrationException', [
+            $pdo,
+            'auth',
+            'bob@example.com',
+            'bob',
+            $old
+        ]);
+
+        self::assertSame(
+            [ErrorCode::AUTH_USERNAME_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER],
+            $res['errors']
+        );
+        self::assertSame($old, $res['old']);
+    }
+
+    public function testHandlePdoRegistrationExceptionDuplicateUnknownIndexViaReflection(): void
+    {
+        $service = $this->makeService();
+
+        $pdo = $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'some_weird_index'");
+        $old = ['username' => 'bob', 'email' => 'bob@example.com'];
+
+        $res = $this->callPrivate($service, 'handlePdoRegistrationException', [
+            $pdo,
+            'auth',
+            'bob@example.com',
+            'bob',
+            $old
+        ]);
+
+        self::assertSame([ErrorCode::AUTH_REGISTRATION_FAILED], $res['errors']);
+        self::assertSame($old, $res['old']);
+    }
+
+    public function testHandlePdoRegistrationExceptionOtherPdoErrorViaReflection(): void
+    {
+        $service = $this->makeService();
+
+        $pdo = $this->pdoWithSqlState('42000', 9999, 'syntax error');
+        $old = ['username' => 'bob', 'email' => 'bob@example.com'];
+
+        $res = $this->callPrivate($service, 'handlePdoRegistrationException', [
+            $pdo,
+            'auth',
+            'bob@example.com',
+            'bob',
+            $old
+        ]);
+
+        self::assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+        self::assertSame($old, $res['old']);
+    }
+
+    public function testRegisterCatchesPdoExceptionAndBuildsSafeOld(): void
+    {
+        $pdo = $this->pdoWithSqlState('23000', 1062, "Duplicate entry 'x' for key 'uniq_email'");
+
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willThrowException($pdo);
+
+        $service = $this->makeService(validator: $validator);
+
+        $res = $service->register([
+        'username' => 'bob',
+        'email'    => 'bob@example.com',
+        // peu importe les autres champs ici
+        ]);
+
+        self::assertSame(
+            [ErrorCode::AUTH_EMAIL_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER],
+            $res['errors']
+        );
+        self::assertSame(['username' => 'bob', 'email' => 'bob@example.com'], $res['old']);
+    }
+
+    public function testRegisterCatchesThrowableAndBuildsSafeOldWithNonStringValues(): void
+    {
+        $validator = $this->createMock(FormValidatorInterface::class);
+        $validator->method('validateRegistration')->willThrowException(new \RuntimeException('boom'));
+
+        $service = $this->makeService(validator: $validator);
+
+        $res = $service->register([
+        'username' => ['not-a-string'],
+        'email'    => null,
+        ]);
+
+        self::assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $res['errors']);
+        self::assertSame(['username' => '', 'email' => ''], $res['old']);
     }
 }
