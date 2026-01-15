@@ -68,80 +68,114 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
     {
         $channel = 'auth';
 
+        // 1) Lookup utilisateur
         $user = $this->userModel->findOneByEmail($email);
-
-        // Garde anti-énumération (et 1er affinage de type pour PHPStan)
-        $res = $this->outIfUnknownUser(is_object($user) ? $user : null, $email, $channel);
+        $res  = $this->guardUnknownUser(is_object($user) ? $user : null, $email, $channel);
         if ($res !== null) {
-            return $res; // ici, c’est toujours []
+            return $res; // [] (politique anti-énumération)
         }
-        /** @var object $user */ // à partir d’ici, on sait que $user est un objet
+        /** @var object $user */
 
-        // Normalisations robustes pour PHPStan (évite "method on mixed")
-        // Status: string|null
-        $tmpStatus = method_exists($user, 'getStatus') ? $user->getStatus() : null;
-        $status    = is_string($tmpStatus) ? $tmpStatus : null;
+        // 2) Normalisations (status, id, name)
+        [$status, $userId, $toName] = $this->extractUserBasics($user);
 
-        // UserId: int (accepte int natif ou string numérique)
-        $tmpId  = method_exists($user, 'getUserId') ? $user->getUserId() : null;
-        $userId = is_int($tmpId)
-            ? $tmpId
-            : ((is_string($tmpId) && ctype_digit($tmpId)) ? (int) $tmpId : 0);
-
-        // toName: string (vide si non disponible)
-        $tmpName = method_exists($user, 'getUsername') ? $user->getUsername() : null;
-        $toName  = is_string($tmpName) ? $tmpName : '';
-
-        // Vérification du quota métier (heures / jours)
-        $quota = $this->quotaService->checkQuota(
-            EmailQuotaService::TYPE_CONFIRM_RESEND,
-            $email
-        );
-
-        if (!$quota['allowed']) {
-            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED, [
-                'email'  => $email,
-                'reason' => 'quota_exceeded_' . $quota['reason'],
-            ]);
-            return []; // succès silencieux
+        // 3) Quota métier
+        $res = $this->guardQuota($email, $channel);
+        if ($res !== null) {
+            return $res; // [] succès silencieux si quota dépassé
         }
 
-        // Déjà actif ?
+        // 4) Déjà actif ?
         $res = $this->outIfAlreadyActive($status, $userId, $email, $channel);
         if ($res !== null) {
-            return $res;
+            return $res; // ['error' => AUTH_ALREADY_CONFIRMED]
         }
 
-        // Artefacts
+        // 5) Artefacts (token, hash, expiry)
         [$token, $hashBin, $expiresAt] = $this->makeNewTokenArtifacts($email);
-        $res                           = $this->outIfHashNull($hashBin);
+        $res = $this->outIfHashNull($hashBin);
         if ($res !== null) {
-            return $res;
+            return $res; // ['error' => TECHNICAL]
         }
         /** @var string $hashBin */
 
-        // Persistance
+        // 6) Persistance
         $ok  = $this->persistNewToken($userId, $hashBin, $expiresAt);
         $res = $this->outIfPersistFailed($ok);
         if ($res !== null) {
             return $res;
         }
 
-        // Envoi
+        // 7) Envoi de l’email
         $sent = $this->sendConfirmationEmail($email, $toName, $token);
         $res  = $this->outIfEmailNotSent($sent);
         if ($res !== null) {
             return $res;
         }
 
-        // Enregistrer l’événement dans la base
-        $ip = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR'])
-            ? $_SERVER['REMOTE_ADDR']
-            : '0.0.0.0';
+        // 8) Enregistrement de l’événement + log succès
+        $this->recordResendEvent($email, $userId);
+        $this->logResendSuccess($channel, $userId, $email);
 
-        $ua = isset($_SERVER['HTTP_USER_AGENT']) && is_string($_SERVER['HTTP_USER_AGENT'])
-            ? $_SERVER['HTTP_USER_AGENT']
-            : 'unknown';
+        return [];
+    }
+
+    /** @return array<string,mixed>|null */
+    private function guardUnknownUser(?object $user, string $email, string $channel): ?array
+    {
+        if ($user !== null) {
+            return null;
+        }
+        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
+            'email'  => $email,
+            'reason' => 'user_not_found',
+        ]);
+        return []; // politique anti-énumération
+    }
+
+    /**
+     * Normalise les champs indispensables issus de $user.
+     * @return array{0: ?string, 1: int, 2: string}  [status, userId, toName]
+     */
+    private function extractUserBasics(object $user): array
+    {
+        $tmpStatus = method_exists($user, 'getStatus') ? $user->getStatus() : null;
+        $status    = is_string($tmpStatus) ? $tmpStatus : null;
+
+        $tmpId  = method_exists($user, 'getUserId') ? $user->getUserId() : null;
+        $userId = is_int($tmpId)
+            ? $tmpId
+            : ((is_string($tmpId) && ctype_digit($tmpId)) ? (int) $tmpId : 0);
+
+        $tmpName = method_exists($user, 'getUsername') ? $user->getUsername() : null;
+        $toName  = is_string($tmpName) ? $tmpName : '';
+
+        return [$status, $userId, $toName];
+    }
+
+    /** Retourne [] si quota dépassé (succès silencieux), sinon null. */
+    private function guardQuota(string $email, string $channel): ?array
+    {
+        $quota = $this->quotaService->checkQuota(
+            EmailQuotaService::TYPE_CONFIRM_RESEND,
+            $email
+        );
+
+        if ($quota['allowed']) {
+            return null;
+        }
+
+        Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED, [
+            'email'  => $email,
+            'reason' => 'quota_exceeded_' . ($quota['reason'] ?? ''),
+        ]);
+        return []; // succès silencieux
+    }
+
+    private function recordResendEvent(string $email, int $userId): void
+    {
+        $ip = is_string($_SERVER['REMOTE_ADDR'] ?? null) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+        $ua = is_string($_SERVER['HTTP_USER_AGENT'] ?? null) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown';
 
         $this->quotaService->recordEvent(
             $email,
@@ -150,27 +184,14 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
             $ip,
             $ua
         );
+    }
 
-        // Succès
+    private function logResendSuccess(string $channel, int $userId, string $email): void
+    {
         Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
             'user_id' => $userId,
             'email'   => $email,
         ]);
-        return [];
-    }
-
-    /** @return array<string,mixed>|null */
-    private function outIfUnknownUser(?object $user, string $email, string $channel): ?array
-    {
-        if ($user !== null) {
-            return null;
-        }
-
-        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
-            'email'  => $email,
-            'reason' => 'user_not_found',
-        ]);
-        return []; // politique anti-énumération
     }
 
     /** @return array{error:string}|null */

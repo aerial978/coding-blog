@@ -10,9 +10,16 @@ return [
         '/register'            => [SecurityController::class, 'register'],
         '/confirm-account'     => [SecurityController::class, 'confirmAccount'],
         '/resend-confirmation' => [SecurityController::class, 'resendConfirmation'],
+        '/login'               => [SecurityController::class, 'login'],
+        '/forgot-password'     => [SecurityController::class, 'forgotPassword'],
+        '/reset-password'      => [SecurityController::class, 'resetPassword'],
     ],
     Router::METHOD_POST => [
         '/register'            => [SecurityController::class, 'register'],
         '/resend-confirmation' => [SecurityController::class, 'resendConfirmation'],
+        '/login'               => [SecurityController::class, 'login'],
+        '/logout'              => [SecurityController::class, 'logout'],
+        '/forgot-password'     => [SecurityController::class, 'forgotPassword'],
+        '/reset-password'      => [SecurityController::class, 'resetPassword'],
     ],
 ];

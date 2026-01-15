@@ -45,27 +45,27 @@ final class SecurityController extends BaseController
             return;
         }
 
-        $form     = $this->request->request();
+        /** @var array<string,mixed> $form */
+        $form = $this->request->request();
+        $this->handleRegisterPost($form);
+    }
+
+    /**
+     * Orchestrateur du POST /register.
+     *
+     * @param array<string,mixed> $form
+     */
+    private function handleRegisterPost(array $form): void
+    {
         $email    = $this->strOrEmpty($form['email'] ?? null);
         $username = $this->strOrEmpty($form['username'] ?? null);
 
-        try {
-            $this->honeypot->assertClean($form);
-        } catch (SuspiciousSubmissionException $e) {
-            $this->flash->add('error', Logger::logCodeAndGetMessage(
-                'auth',
-                'warning',
-                ErrorCode::AUTH_TECHNICAL_ERROR,
-                ['reason' => 'honeypot', 'email' => $email ?: null, 'username' => $username ?: null]
-            ));
-            $this->responder->redirect('/coding-blog/register');
+        // Honeypot (flux register : on notifie l’erreur et on redirige)
+        if (!$this->assertHoneypotOrRedirectForRegister($form, $email, $username, '/coding-blog/register')) {
             return;
         }
 
-        $contextBase = [
-            'email'    => $email ?: null,
-            'username' => $username ?: null,
-        ];
+        $contextBase = $this->buildRegisterContextBase($email, $username);
 
         if (!$this->assertDelayOrRedirectForRegister('register', '/coding-blog/register', $contextBase)) {
             return;
@@ -83,6 +83,49 @@ final class SecurityController extends BaseController
         }
 
         $this->handleRegisterOutcome($result, $email, $username);
+    }
+
+    /**
+     * Honeypot : pour le flux register on affiche une erreur et on redirige vers le formulaire.
+     *
+     * @param array<string,mixed> $form
+     */
+    private function assertHoneypotOrRedirectForRegister(
+        array $form,
+        string $email,
+        string $username,
+        string $redirectPath
+    ): bool {
+        try {
+            $this->honeypot->assertClean($form);
+            return true;
+        } catch (SuspiciousSubmissionException $e) {
+            $this->flash->add('error', Logger::logCodeAndGetMessage(
+                'auth',
+                'warning',
+                ErrorCode::AUTH_TECHNICAL_ERROR,
+                [
+                    'reason'   => 'honeypot',
+                    'email'    => $email ?: null,
+                    'username' => $username ?: null,
+                ]
+            ));
+            $this->responder->redirect($redirectPath);
+            return false;
+        }
+    }
+
+    /**
+     * Construit le contexte de base pour logs/flash.
+     *
+     * @return array<string,mixed>
+     */
+    private function buildRegisterContextBase(string $email, string $username): array
+    {
+        return [
+            'email'    => $email ?: null,
+            'username' => $username ?: null,
+        ];
     }
 
     // -------------------------
@@ -122,11 +165,42 @@ final class SecurityController extends BaseController
             return;
         }
 
+        $this->handleResendConfirmationPost();
+    }
+
+    private function handleResendConfirmationPost(): void
+    {
         $form  = $this->request->request();
         $email = $this->strOrEmpty($form['email'] ?? null);
 
+        // Honeypot (politique resend = succès silencieux)
+        if (!$this->assertHoneypotOrSilentSuccess($form, $email, '/coding-blog/resend-confirmation')) {
+            return;
+        }
+
+        $contextBase = ['email' => $email ?: null];
+
+        if (!$this->assertDelayOrRedirectForResend('resend_confirm', '/coding-blog/resend-confirmation', $contextBase)) {
+            return;
+        }
+
+        $result = $this->callResendConfirmationSafely($email);
+        if ($result === null) {
+            $this->responder->redirect('/coding-blog/resend-confirmation');
+            return;
+        }
+
+        $this->handleResendOutcome($result, $email);
+    }
+
+    /**
+     * @param array<string,mixed> $form
+     */
+    private function assertHoneypotOrSilentSuccess(array $form, string $email, string $redirectPath): bool
+    {
         try {
             $this->honeypot->assertClean($form);
+            return true;
         } catch (SuspiciousSubmissionException $e) {
             $this->flash->add('success', Logger::logCodeAndGetMessage(
                 'auth',
@@ -134,31 +208,78 @@ final class SecurityController extends BaseController
                 ErrorCode::AUTH_RESEND_EMAIL_SENT,
                 ['reason' => 'honeypot', 'email' => $email ?: null]
             ));
-            $this->responder->redirect('/coding-blog/resend-confirmation');
-            return;
+            $this->responder->redirect($redirectPath);
+            return false;
         }
+    }
 
-        $contextBase = [
-            'email' => $email ?: null,
-        ];
-
-        if (!$this->assertDelayOrRedirectForResend('resend_confirm', '/coding-blog/resend-confirmation', $contextBase)) {
-            return;
-        }
-
+    /**
+     * @return array<string,mixed>|null
+     */
+    private function callResendConfirmationSafely(string $email): ?array
+    {
         try {
-            $result = $this->securityService->resendConfirmation($email);
+            return $this->securityService->resendConfirmation($email);
         } catch (\Throwable $e) {
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
                 'exception' => $e->getMessage(),
                 'email'     => $email,
             ]));
-            $this->responder->redirect('/coding-blog/resend-confirmation');
+            return null;
+        }
+    }
+
+    // -------------------------
+    // 4) LOGIN (GET / POST)
+    // -------------------------
+    public function login(): void
+    {
+        if ($this->isGet()) {
+            $this->renderLoginForm();
             return;
         }
 
-        $this->handleResendOutcome($result, $email);
+        // POST placeholder (logic implemented later)
+        $this->responder->redirect('/coding-blog/login');
     }
+
+    // -------------------------
+    // 5) LOGOUT (POST)
+    // -------------------------
+    public function logout(): void
+    {
+        // POST placeholder (logic implemented later)
+        $this->responder->redirect('/coding-blog');
+    }
+
+    // ----------------------------------
+    // 6) FORGOT PASSWORD (GET / POST)
+    // ----------------------------------
+    public function forgotPassword(): void
+    {
+        if ($this->isGet()) {
+            $this->renderForgotPasswordForm();
+            return;
+        }
+
+        // POST placeholder (logic implemented later)
+        $this->responder->redirect('/coding-blog/forgot-password');
+    }
+
+    // ----------------------------------
+    // 7) RESET PASSWORD (GET / POST)
+    // ----------------------------------
+    public function resetPassword(): void
+    {
+        if ($this->isGet()) {
+            $this->renderResetPasswordForm();
+            return;
+        }
+
+        // POST placeholder (logic implemented later)
+        $this->responder->redirect('/coding-blog/reset-password');
+    }
+
 
     // =========================
     // ------- HELPERS ---------
@@ -176,35 +297,108 @@ final class SecurityController extends BaseController
 
     // -------- REGISTER helpers --------
 
+    /**
+     * Orchestrateur minimal, sans branche métier.
+     */
     private function renderRegisterForm(): void
+    {
+        [$old, $state] = $this->consumeRegisterFlashes();
+        $this->markRegisterStartIfEmptyOld($old);
+
+        $mode              = $this->determineRegisterMode($state);
+        $obfuscatedEmail   = $this->obfuscateEmailFromState($state);
+        $turnstileSiteKey  = $this->readTurnstileSiteKey();
+
+        $viewData = $this->buildRegisterViewModel(
+            $mode,
+            $obfuscatedEmail,
+            $old,
+            $turnstileSiteKey
+        );
+
+        $this->responder->render(
+            'security/register.html.twig',
+            $this->withFlashes($viewData)
+        );
+    }
+
+    /**
+     * @return array{0:mixed,1:mixed} [old, state]
+     */
+    private function consumeRegisterFlashes(): array
     {
         $old   = $this->flash->take('old', []);
         $state = $this->flash->take('register_state', null);
 
+        return [$old, $state];
+    }
+
+    /**
+     * Marque le début de remplissage du formulaire si aucun "old" n’existe.
+     */
+    private function markRegisterStartIfEmptyOld(mixed $old): void
+    {
         if (empty($old)) {
             $this->submissionDelay->markFormStart('register');
         }
+    }
 
-        $mode = $state ? 'check_email' : 'form';
+    /**
+     * @return 'check_email'|'form'
+     */
+    private function determineRegisterMode(mixed $state): string
+    {
+        return $state ? 'check_email' : 'form';
+    }
 
-        $stateEmail = is_array($state) && is_string($state['email'] ?? null) ? $state['email'] : null;
-        $obfuscated = $stateEmail !== null
-            ? (preg_replace('/(^.).*(@.*$)/', '$1***$2', $stateEmail) ?: $stateEmail)
+    /**
+     * Obfusque l’email provenant de l’état (si présent), sinon null.
+     */
+    private function obfuscateEmailFromState(mixed $state): ?string
+    {
+        $email = (is_array($state) && is_string($state['email'] ?? null))
+            ? $state['email']
             : null;
 
-        $turnstileSiteKey = is_string($_ENV['TURNSTILE_SITEKEY'] ?? null)
+        if ($email === null) {
+            return null;
+        }
+
+        // Conserve une valeur sûre si preg_replace retourne false.
+        $masked = preg_replace('/(^.).*(@.*$)/', '$1***$2', $email);
+        return $masked !== null ? $masked : $email;
+    }
+
+    /**
+     * Lit la clé Turnstile de l’environnement de manière défensive.
+     */
+    private function readTurnstileSiteKey(): string
+    {
+        return is_string($_ENV['TURNSTILE_SITEKEY'] ?? null)
             ? trim($_ENV['TURNSTILE_SITEKEY'])
             : '';
+    }
 
-        $this->responder->render('security/register.html.twig', $this->withFlashes([
+    /**
+     * Construit le view-model minimal et typé pour le template.
+     *
+     * @return array<string,mixed>
+     */
+    private function buildRegisterViewModel(
+        string $mode,
+        ?string $obfuscatedEmail,
+        mixed $old,
+        string $turnstileSiteKey
+    ): array {
+        return [
             'title'              => 'User Registration',
             'mode'               => $mode,
-            'obfuscated_email'   => $obfuscated,
+            'obfuscated_email'   => $obfuscatedEmail,
             'csrf_token'         => $this->csrf->generateToken(FormId::REGISTER),
             'old'                => is_array($old) ? $old : [],
             'honeypot_name'      => $this->honeypot->fieldName(),
             'turnstile_site_key' => $turnstileSiteKey,
-        ]));
+        ];
     }
 
     private function handleRegisterTechnicalError(\Throwable $exception, string $email, string $username): void
@@ -400,6 +594,61 @@ final class SecurityController extends BaseController
         $this->responder->redirect('/coding-blog/resend-confirmation');
     }
 
+    // -------- LOGIN / RECOVERY helpers --------
+
+    private function renderLoginForm(): void
+    {
+        $old = $this->flash->take('old', []);
+
+        if (empty($old)) {
+            $this->submissionDelay->markFormStart('login');
+        }
+
+        $this->responder->render('security/login.html.twig', $this->withFlashes([
+            'title'         => 'Login',
+            'csrf_token'    => $this->csrf->generateToken(FormId::LOGIN),
+            'old'           => is_array($old) ? $old : [],
+            'honeypot_name' => $this->honeypot->fieldName(),
+        ]));
+    }
+
+    private function renderForgotPasswordForm(): void
+    {
+        $old = $this->flash->take('old', []);
+
+        if (empty($old)) {
+            $this->submissionDelay->markFormStart('forgot_password');
+        }
+
+        $this->responder->render('security/forgot-password.html.twig', $this->withFlashes([
+            'title'         => 'Forgot password',
+            'csrf_token'    => $this->csrf->generateToken(FormId::FORGOT_PASSWORD),
+            'old'           => is_array($old) ? $old : [],
+            'honeypot_name' => $this->honeypot->fieldName(),
+        ]));
+    }
+
+    private function renderResetPasswordForm(): void
+    {
+        $old = $this->flash->take('old', []);
+
+        if (empty($old)) {
+            $this->submissionDelay->markFormStart('reset_password');
+        }
+
+        // Le token sera géré plus tard (GET query + validation + erreurs),
+        // mais on peut déjà le passer au template de manière neutre.
+        $token = $this->getQueryToken();
+
+        $this->responder->render('security/reset-password.html.twig', $this->withFlashes([
+            'title'         => 'Reset password',
+            'csrf_token'    => $this->csrf->generateToken(FormId::RESET_PASSWORD),
+            'old'           => is_array($old) ? $old : [],
+            'honeypot_name' => $this->honeypot->fieldName(),
+            'token'         => $token,
+        ]));
+    }
+
     // -------- Shared small utils --------
 
     /** @return list<string> */
@@ -423,6 +672,17 @@ final class SecurityController extends BaseController
     }
 
     /**
+     * @param 'success'|'error'|'info'|'warning' $flashType
+     * @param array<string, array<int|string, mixed>|bool|float|int|string|\Stringable|null> $logCtx
+     */
+    private function flashAndRedirect(string $flashType, string $errorCode, array $logCtx, string $redirectPath): bool
+    {
+        $this->flash->add($flashType, Logger::logCodeAndGetMessage('auth', 'warning', $errorCode, $logCtx));
+        $this->responder->redirect($redirectPath);
+        return false;
+    }
+
+    /**
      * @param array<string,mixed> $contextBase
      */
     private function assertDelayOrRedirectForRegister(string $formId, string $redirectPath, array $contextBase): bool
@@ -440,24 +700,15 @@ final class SecurityController extends BaseController
                 'min'     => $context['min']     ?? null,
                 'max'     => $context['max']     ?? null,
             ];
+
             $logCtx = $this->normalizeLogContext($ctx + ['reason' => $reason]);
 
-            if ($reason === 'min_delay_not_met') {
-                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx));
-                $this->responder->redirect($redirectPath);
-                return false;
-            }
+            $errorCode = match ($reason) {
+                'max_delay_exceeded' => ErrorCode::AUTH_FORM_EXPIRED,
+                default              => ErrorCode::AUTH_TECHNICAL_ERROR, // inclut min_delay_not_met + fallback
+            };
 
-            if ($reason === 'max_delay_exceeded') {
-                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_FORM_EXPIRED, $logCtx));
-                $this->responder->redirect($redirectPath);
-                return false;
-            }
-
-            // défaut : technique
-            $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx));
-            $this->responder->redirect($redirectPath);
-            return false;
+            return $this->flashAndRedirect('error', $errorCode, $logCtx, $redirectPath);
         }
     }
 
@@ -470,35 +721,46 @@ final class SecurityController extends BaseController
             $this->submissionDelay->assertDelayPassed($formId);
             return true;
         } catch (SuspiciousSubmissionException $e) {
-            $reason  = $e->getReason();
-            $context = $e->getContext();
-
-            $ctx   = $contextBase + [
-                'form'    => $context['form']    ?? $formId,
-                'elapsed' => $context['elapsed'] ?? null,
-                'min'     => $context['min']     ?? null,
-                'max'     => $context['max']     ?? null,
-            ];
-            $logCtx = $this->normalizeLogContext($ctx + ['reason' => $reason]);
-
-            if ($reason === 'min_delay_not_met') {
-                // succès silencieux (politique anti-énumération)
-                $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_RESEND_EMAIL_SENT, $logCtx));
-                $this->responder->redirect($redirectPath);
-                return false;
-            }
-
-            if ($reason === 'max_delay_exceeded') {
-                $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_FORM_EXPIRED, $logCtx));
-                $this->responder->redirect($redirectPath);
-                return false;
-            }
-
-            // défaut : succès silencieux (on s’aligne sur votre logique resend)
-            $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_RESEND_EMAIL_SENT, $logCtx));
-            $this->responder->redirect($redirectPath);
-            return false;
+            return $this->handleResendDelayViolation($e, $formId, $redirectPath, $contextBase);
         }
+    }
+
+    /**
+     * @param array<string,mixed> $contextBase
+     */
+    private function handleResendDelayViolation(
+        SuspiciousSubmissionException $exception,
+        string $formId,
+        string $redirectPath,
+        array $contextBase
+    ): bool {
+        $reason  = $exception->getReason();
+        $context = $exception->getContext();
+
+        $ctx = $contextBase + [
+            'form'    => $context['form']    ?? $formId,
+            'elapsed' => $context['elapsed'] ?? null,
+            'min'     => $context['min']     ?? null,
+            'max'     => $context['max']     ?? null,
+        ];
+
+        $logCtx = $this->normalizeLogContext($ctx + ['reason' => $reason]);
+
+        // Politique resend : succès silencieux sauf form expired
+        [$flashType, $errorCode] = $this->resolveResendDelayPolicy($reason);
+
+        return $this->flashAndRedirect($flashType, $errorCode, $logCtx, $redirectPath);
+    }
+
+    /**
+     * @return array{0:'success'|'error',1:string}
+     */
+    private function resolveResendDelayPolicy(string $reason): array
+    {
+        return match ($reason) {
+            'max_delay_exceeded' => ['error',   ErrorCode::AUTH_FORM_EXPIRED],
+            default              => ['success', ErrorCode::AUTH_RESEND_EMAIL_SENT],
+        };
     }
 
     /**
@@ -508,21 +770,37 @@ final class SecurityController extends BaseController
     private function checkTurnstileOrRedirectForRegister(array $form, string $redirectPath, array $contextBase): bool
     {
         $token = $this->strOrEmpty($form['cf-turnstile-response'] ?? null);
-        $ip    = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : null;
+        $ip    = (isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR']))
+            ? $_SERVER['REMOTE_ADDR']
+            : null;
 
         if ($this->turnstile->validate($token, $ip)) {
             return true;
         }
 
+        return $this->handleRegisterTurnstileFailure($redirectPath, $contextBase);
+    }
+
+    /**
+     * @param array<string,mixed> $contextBase
+     */
+    private function handleRegisterTurnstileFailure(string $redirectPath, array $contextBase): bool
+    {
         $resp = $this->turnstile->getLastResponse();
-        $ctx  = $contextBase + [
+
+        $ctx = $contextBase + [
             'reason'    => 'turnstile_failed',
             'cf_errors' => is_array($resp['error-codes'] ?? null) ? $resp['error-codes'] : null,
         ];
+
         $logCtx = $this->normalizeLogContext($ctx);
 
-        $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx));
+        $this->flash->add(
+            'error',
+            Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, $logCtx)
+        );
         $this->responder->redirect($redirectPath);
+
         return false;
     }
 
@@ -535,33 +813,43 @@ final class SecurityController extends BaseController
         $out = [];
 
         foreach ($context as $k => $v) {
-            if (is_string($v) || is_int($v) || is_float($v) || is_bool($v) || $v === null || $v instanceof \Stringable) {
-                $out[$k] = $v;
-                continue;
-            }
-
-            if (is_array($v)) {
-                /** @var array<int|string, mixed> $v */
-                $out[$k] = $v;
-                continue;
-            }
-
-            if (is_object($v)) {
-                $out[$k] = get_debug_type($v);
-                continue;
-            }
-
-            // Ici: ni string/int/float/bool/null/Stringable, ni array, ni objet.
-            // Reste typiquement : resource (ou cas inattendu). On le stringify sans cast.
-            if (is_resource($v)) {
-                $out[$k] = 'resource(' . get_resource_type($v) . ')';
-                continue;
-            }
-
-            // Fallback ultra défensif (devrait rarement arriver)
-            $out[$k] = 'unknown';
+            $out[$k] = $this->normalizeLogValue($v);
         }
 
         return $out;
+    }
+
+    /**
+     * Normalise une valeur arbitraire en un type "loggable" sans fuite d'information.
+     *
+     * @return array<int|string, mixed>|bool|float|int|string|\Stringable|null
+     */
+    private function normalizeLogValue(mixed $value): array|bool|float|int|string|\Stringable|null
+    {
+        if (
+            is_string($value)
+            || is_int($value)
+            || is_float($value)
+            || is_bool($value)
+            || $value === null
+            || $value instanceof \Stringable
+        ) {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            /** @var array<int|string, mixed> $value */
+            return $value;
+        }
+
+        if (is_object($value)) {
+            return get_debug_type($value);
+        }
+
+        if (is_resource($value)) {
+            return 'resource(' . get_resource_type($value) . ')';
+        }
+
+        return 'unknown';
     }
 }

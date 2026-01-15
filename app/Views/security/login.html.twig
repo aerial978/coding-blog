@@ -1,0 +1,50 @@
+{% extends "templates/layouts/base.html.twig" %}
+{% import 'templates/macros/form_fields.html.twig' as fields %}
+
+{% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4 text-center">Connexion</h1>
+  {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+
+  <form id="loginForm" method="post" action="" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {{ fields.input(
+      'identifier',
+      'text',
+      'Email ou nom d’utilisateur',
+      old.identifier|default(''),
+      'identifier',
+      true,
+      'identifier_error',
+      'form-control',
+      { autocomplete: 'username' }
+    ) }}
+
+    {{ fields.input(
+      'password',
+      'password',
+      'Mot de passe',
+      '',
+      'password',
+      true,
+      'password_error',
+      'form-control',
+      { autocomplete: 'current-password' }
+    ) }}
+
+    {{ fields.honeypot(honeypot_name) }}
+
+    <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+
+    <div class="text-center mt-3">
+      <a href="{{ base_path }}forgot-password">Mot de passe oublié ?</a>
+    </div>
+  </form>
+</div>
+
+{% block page_scripts %}
+  <script type="module" src="{{ base_path }}public/assets/js/security/validation.login.js"></script>
+{% endblock %}
+
+{% endblock %}

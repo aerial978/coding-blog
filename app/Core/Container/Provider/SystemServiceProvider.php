@@ -166,9 +166,50 @@ final class SystemServiceProvider
      */
     private static function getSecurityDefinitions(): array
     {
+        return array_merge(
+            self::getSecurityCoreServices(),
+            self::getSecurityBindings(),
+            self::getSecurityMiddlewares()
+        );
+    }
+
+    /**
+     * Services "concrets" de sécurité (classes).
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getSecurityCoreServices(): array
+    {
         return [
             TokenGenerator::class => static fn (): TokenGenerator => new TokenGenerator(),
 
+            HoneypotValidator::class => static function (): HoneypotValidator {
+                $field = self::getEnvString('HONEYPOT_FIELD', 'fax');
+                return new HoneypotValidator($field);
+            },
+
+            TurnstileValidator::class => static function (): TurnstileValidator {
+                $secret = self::getEnvString('TURNSTILE_SECRET', '');
+                return new TurnstileValidator($secret);
+            },
+
+            // Auth checker concret
+            SessionAuthChecker::class => static function (ContainerInterface $container): SessionAuthChecker {
+                /** @var SessionManager $session */
+                $session = $container->get(SessionManager::class);
+                return new SessionAuthChecker($session);
+            },
+        ];
+    }
+
+    /**
+     * Bindings interface -> impl.
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getSecurityBindings(): array
+    {
+        return [
             TokenGeneratorInterface::class => static function (ContainerInterface $container): TokenGeneratorInterface {
                 /** @var TokenGenerator $tg */
                 $tg = $container->get(TokenGenerator::class);
@@ -182,22 +223,11 @@ final class SystemServiceProvider
             },
 
             AuthCheckerInterface::class => static function (ContainerInterface $container): AuthCheckerInterface {
-                /** @var SessionManager $session */
-                $session = $container->get(SessionManager::class);
-                return new SessionAuthChecker($session);
+                /** @var SessionAuthChecker $auth */
+                $auth = $container->get(SessionAuthChecker::class);
+                return $auth;
             },
 
-            HoneypotValidator::class => static function (): HoneypotValidator {
-                $field = self::getEnvString('HONEYPOT_FIELD', 'fax');
-                return new HoneypotValidator($field);
-            },
-
-            TurnstileValidator::class => static function (): TurnstileValidator {
-                $secret = self::getEnvString('TURNSTILE_SECRET', '');
-                return new TurnstileValidator($secret);
-            },
-
-            // Bindings interfaces
             HoneypotValidatorInterface::class => static function (ContainerInterface $container): HoneypotValidatorInterface {
                 /** @var HoneypotValidator $hp */
                 $hp = $container->get(HoneypotValidator::class);
@@ -215,14 +245,26 @@ final class SystemServiceProvider
                 $ts = $container->get(TurnstileValidator::class);
                 return $ts;
             },
+        ];
+    }
 
-            // Middlewares
-            AuthenticationMiddleware::class => static function (ContainerInterface $container): AuthenticationMiddleware {
+    /**
+     * Middlewares.
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getSecurityMiddlewares(): array
+    {
+        return [
+                AuthenticationMiddleware::class => static function (ContainerInterface $container): AuthenticationMiddleware {
                 /** @var AuthCheckerInterface $auth */
                 $auth = $container->get(AuthCheckerInterface::class);
                 /** @var FlashService $flash */
                 $flash = $container->get(FlashService::class);
-                return new AuthenticationMiddleware($auth, $flash);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new AuthenticationMiddleware($auth, $flash, $responder);
             },
 
             CsrfMiddleware::class => static function (ContainerInterface $container): CsrfMiddleware {
@@ -241,9 +283,7 @@ final class SystemServiceProvider
                 return new RateLimitMiddleware($factory, $flash);
             },
 
-            SecurityHeadersMiddleware::class => static function (): SecurityHeadersMiddleware {
-                return new SecurityHeadersMiddleware();
-            },
+            SecurityHeadersMiddleware::class => static fn (): SecurityHeadersMiddleware => new SecurityHeadersMiddleware(),
         ];
     }
 

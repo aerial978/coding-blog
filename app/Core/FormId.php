@@ -17,6 +17,8 @@ final class FormId
     // Authentification
     public const REGISTER        = 'register_form';
     public const RESEND_CONFIRM  = 'resend_confirm_form';
-
+    public const LOGIN           = 'login_form';
+    public const FORGOT_PASSWORD = 'forgot_password_form';
+    public const RESET_PASSWORD  = 'reset_password_form';
     // Admin
 }

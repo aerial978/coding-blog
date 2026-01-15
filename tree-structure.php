@@ -1,6 +1,11 @@
 <?php
 
-function afficherArborescenceComplete(string $chemin, string $prefixe = '')
+declare(strict_types=1);
+
+/**
+ * Affiche l’arborescence complète d’un dossier.
+ */
+function afficherArborescenceComplete(string $chemin, string $prefixe = ''): void
 {
     if (!is_dir($chemin)) {
         echo "Chemin invalide : $chemin" . PHP_EOL;
@@ -8,8 +13,15 @@ function afficherArborescenceComplete(string $chemin, string $prefixe = '')
     }
 
     $elements = scandir($chemin);
+    if ($elements === false) {
+        echo "Impossible de lire le dossier : $chemin" . PHP_EOL;
+        return;
+    }
+
     foreach ($elements as $element) {
-        if ($element === '.' || $element === '..') continue;
+        if ($element === '.' || $element === '..') {
+            continue;
+        }
 
         $cheminComplet = $chemin . DIRECTORY_SEPARATOR . $element;
         echo $prefixe . '|-- ' . $element . PHP_EOL;
@@ -20,13 +32,27 @@ function afficherArborescenceComplete(string $chemin, string $prefixe = '')
     }
 }
 
-function afficherProjetsMetiers(string $racine, array $dossiersCibles)
+/**
+ * Affiche la structure "métier" d’un projet (fichiers racine + dossiers ciblés).
+ *
+ * @param array<int,string> $dossiersCibles
+ */
+function afficherProjetsMetiers(string $racine, array $dossiersCibles): void
 {
-    echo "Projet's tree structure : " . realpath($racine) . PHP_EOL . PHP_EOL;
+    $racineReelle = realpath($racine) ?: $racine;
+    echo "Projet's tree structure : " . $racineReelle . PHP_EOL . PHP_EOL;
 
     $elements = scandir($racine);
+    if ($elements === false) {
+        echo "Impossible de lire le dossier : $racine" . PHP_EOL;
+        return;
+    }
+
     foreach ($elements as $element) {
-        if ($element === '.' || $element === '..') continue;
+        if ($element === '.' || $element === '..') {
+            continue;
+        }
+
         $cheminComplet = $racine . DIRECTORY_SEPARATOR . $element;
 
         if (is_file($cheminComplet)) {
@@ -44,8 +70,18 @@ function afficherProjetsMetiers(string $racine, array $dossiersCibles)
     }
 }
 
-$dossiersAAfficher = ['app', 'assets', 'bin', 'data', 'Logs', 'public', 'resources', 'tests', 'var'];
+/**
+ * Point d’entrée CLI (évite les effets de bord lors d’un include/require).
+ */
+function main(): void
+{
+    $dossiersAAfficher = ['app', 'assets', 'bin', 'data', 'Logs', 'public', 'resources', 'tests', 'var'];
+    $cheminDuProjet    = __DIR__;
 
-$cheminDuProjet = __DIR__;
+    afficherProjetsMetiers($cheminDuProjet, $dossiersAAfficher);
+}
 
-afficherProjetsMetiers($cheminDuProjet, $dossiersAAfficher);
+// Exécute uniquement si le fichier est lancé directement (pas inclus).
+if (PHP_SAPI === 'cli' && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    main();
+}
