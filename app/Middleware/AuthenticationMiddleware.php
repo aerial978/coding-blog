@@ -21,6 +21,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     /** @var string[] Liste des routes protégées */
     private const PROTECTED_ROUTES = [
         '/change-password',
+        '/account',
     ];
 
     public function __construct(

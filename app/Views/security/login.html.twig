@@ -6,12 +6,11 @@
   <h1 class="mb-4 text-center">Connexion</h1>
   {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
-  <form id="loginForm" method="post" action="" novalidate>
+  <form id="loginForm" method="post" action="" novalidate data-turnstile="{{ turnstile_enabled ? '1' : '0' }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
     {{ fields.input(
       'identifier',
-      'text',
+      'identifier',
       'Email ou nom d’utilisateur',
       old.identifier|default(''),
       'identifier',
@@ -35,6 +34,11 @@
 
     {{ fields.honeypot(honeypot_name) }}
 
+    {% include 'templates/components/turnstile_widget.html.twig' with {
+        turnstile_enabled: turnstile_enabled,
+        turnstile_site_key: turnstile_site_key
+    } %}
+
     <button type="submit" class="btn btn-primary w-100">Se connecter</button>
 
     <div class="text-center mt-3">
@@ -44,7 +48,8 @@
 </div>
 
 {% block page_scripts %}
-  <script type="module" src="{{ base_path }}public/assets/js/security/validation.login.js"></script>
+<script type="module" src="{{ base_path }}/public/assets/js/security/validation.login.js"></script>
+<script src="{{ base_path }}/public/assets/js/security/turnstile.js" defer></script>
 {% endblock %}
 
 {% endblock %}

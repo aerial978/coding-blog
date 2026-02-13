@@ -56,4 +56,6 @@ interface SecurityServiceInterface
          *     An associative array containing operation results or error messages.
          */
     public function resendConfirmation(string $email): array;
+
+    public function login (array $form): array;
 }

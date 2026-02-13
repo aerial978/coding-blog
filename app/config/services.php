@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Container\Provider\AuthServiceProvider;
 use App\Core\Container\Provider\ControllerServiceProvider;
 use App\Core\Container\Provider\HttpServiceProvider;
 use App\Core\Container\Provider\SystemServiceProvider;
@@ -12,5 +13,5 @@ return array_merge(
     HttpServiceProvider::getDefinitions(),
     UserServiceProvider::getDefinitions(),
     ControllerServiceProvider::getDefinitions(),
-    HttpServiceProvider::getDefinitions(),
+    AuthServiceProvider::getDefinitions(),
 );

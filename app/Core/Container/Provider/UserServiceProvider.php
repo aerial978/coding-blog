@@ -20,9 +20,15 @@ use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\RegistrationService;
 use App\Service\Security\SecurityService;
-use App\Validation\FormValidator;
+use App\Service\Security\Contract\LoginServiceInterface;
+use App\Service\Security\LoginService;
+use App\Core\Contract\SessionInterface;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
+use App\Core\Contract\SqlHelperInterface;
+use App\Model\Contract\UserModelInterface;
+use App\Model\Contract\UserTokenModelInterface;
+use App\Validation\Contract\FormValidatorInterface;
 
 /**
  * Services liés aux utilisateurs et à la sécurité (DAL + services métier).
@@ -51,27 +57,27 @@ final class UserServiceProvider
     private static function getModelDefinitions(): array
     {
         return [
-            UserModel::class => static function (ContainerInterface $container): UserModel {
-                /** @var SqlHelper $sql */
-                $sql = $container->get(SqlHelper::class);
+            UserModelInterface::class => static function (ContainerInterface $container): UserModelInterface {
+                /** @var SqlHelperInterface $sql */
+                $sql = $container->get(SqlHelperInterface::class);
                 return new UserModel($sql);
             },
 
-            UserTokenModel::class => static function (ContainerInterface $container): UserTokenModel {
-                /** @var SqlHelper $sql */
-                $sql = $container->get(SqlHelper::class);
+            UserTokenModelInterface::class => static function (ContainerInterface $container): UserTokenModelInterface {
+                /** @var SqlHelperInterface $sql */
+                $sql = $container->get(SqlHelperInterface::class);
                 return new UserTokenModel($sql);
             },
 
             RegistrationEventModel::class => static function (ContainerInterface $container): RegistrationEventModel {
-                /** @var SqlHelper $sql */
-                $sql = $container->get(SqlHelper::class);
+                /** @var SqlHelperInterface $sql */
+                $sql = $container->get(SqlHelperInterface::class);
                 return new RegistrationEventModel($sql);
             },
 
             EmailEventModel::class => static function (ContainerInterface $container): EmailEventModel {
-                /** @var SqlHelper $sql */
-                $sql = $container->get(SqlHelper::class);
+                /** @var SqlHelperInterface $sql */
+                $sql = $container->get(SqlHelperInterface::class);
                 return new EmailEventModel($sql);
             },
         ];
@@ -135,13 +141,13 @@ final class UserServiceProvider
     {
         return [
             RegistrationService::class => static function (ContainerInterface $c): RegistrationService {
-                /** @var FormValidator $validator */           $validator = $c->get(FormValidator::class);
-                /** @var UserModel $userModel */               $userModel = $c->get(UserModel::class);
-                /** @var UserTokenModel $userTokenModel */     $userTokenModel = $c->get(UserTokenModel::class);
+                /** @var FormValidatorInterface $validator */ $validator = $c->get(FormValidatorInterface::class);
+                /** @var UserModelInterface $userModel */ $userModel = $c->get(UserModelInterface::class);
+                /** @var UserTokenModelInterface $userTokenModel */ $userTokenModel = $c->get(UserTokenModelInterface::class);
+                /** @var SqlHelperInterface $sql */ $sql = $c->get(SqlHelperInterface::class);
                 /** @var Slugify $slugify */                   $slugify = $c->get(Slugify::class);
                 /** @var MailerInterface $mailer */            $mailer = $c->get(MailerInterface::class);
                 /** @var TokenGeneratorInterface $tokenGen */  $tokenGen = $c->get(TokenGeneratorInterface::class);
-                /** @var SqlHelper $sql */                     $sql = $c->get(SqlHelper::class);
                 /** @var RegistrationThrottleService $thr */   $thr = $c->get(RegistrationThrottleService::class);
                 /** @var PasswordBlacklist $blacklist */       $blacklist = $c->get(PasswordBlacklist::class);
                 /** @var DisposableChecker $disp */            $disp = $c->get(DisposableChecker::class);
@@ -161,15 +167,15 @@ final class UserServiceProvider
             },
 
             AccountConfirmationService::class => static function (ContainerInterface $c): AccountConfirmationService {
-                /** @var UserTokenModel $userTokenModel */     $userTokenModel = $c->get(UserTokenModel::class);
+                /** @var UserTokenModelInterface $userTokenModel */ $userTokenModel = $c->get(UserTokenModelInterface::class);
                 /** @var TokenGeneratorInterface $tokenGen */  $tokenGen = $c->get(TokenGeneratorInterface::class);
                 return new AccountConfirmationService($userTokenModel, $tokenGen);
             },
 
             ConfirmationResendService::class => static function (ContainerInterface $c): ConfirmationResendService {
-                /** @var FormValidator $validator */           $validator = $c->get(FormValidator::class);
-                /** @var UserModel $userModel */               $userModel = $c->get(UserModel::class);
-                /** @var UserTokenModel $userTokenModel */     $userTokenModel = $c->get(UserTokenModel::class);
+                /** @var FormValidatorInterface $validator */ $validator = $c->get(FormValidatorInterface::class);
+                /** @var UserModelInterface $userModel */ $userModel = $c->get(UserModelInterface::class);
+                /** @var UserTokenModelInterface $userTokenModel */ $userTokenModel = $c->get(UserTokenModelInterface::class);
                 /** @var TokenGeneratorInterface $tokenGen */  $tokenGen = $c->get(TokenGeneratorInterface::class);
                 /** @var MailerInterface $mailer */            $mailer = $c->get(MailerInterface::class);
                 /** @var EmailQuotaService $quota */           $quota = $c->get(EmailQuotaService::class);
@@ -184,12 +190,27 @@ final class UserServiceProvider
                 );
             },
 
+            LoginService::class => static function (ContainerInterface $c): LoginService {
+                /** @var FormValidatorInterface $validator */ $validator = $c->get(FormValidatorInterface::class);
+                /** @var UserModelInterface $userModel */     $userModel = $c->get(UserModelInterface::class);
+                /** @var SessionInterface $session */  $session = $c->get(SessionInterface::class);
+
+                return new LoginService(
+                    $validator,
+                    $userModel,
+                    $session,
+                );
+            },
+
+
             SecurityService::class => static function (ContainerInterface $c): SecurityService {
                 /** @var RegistrationService $registration */                $registration = $c->get(RegistrationService::class);
                 /** @var AccountConfirmationService $accountConfirmation */  $accountConfirmation = $c->get(AccountConfirmationService::class);
                 /** @var ConfirmationResendService $confirmationResend */    $confirmationResend = $c->get(ConfirmationResendService::class);
+                /** @var LoginService $login */                              $login = $c->get(LoginService::class);
 
-                return new SecurityService($registration, $accountConfirmation, $confirmationResend);
+
+                return new SecurityService($registration, $accountConfirmation, $confirmationResend, $login);
             },
         ];
     }
@@ -200,9 +221,15 @@ final class UserServiceProvider
     private static function getInterfaceBindings(): array
     {
         return [
-            SecurityServiceInterface::class => static function (ContainerInterface $container): object {
+            SecurityServiceInterface::class => static function (ContainerInterface $container): SecurityServiceInterface {
                 /** @var SecurityService $service */
                 $service = $container->get(SecurityService::class);
+                return $service;
+            },
+
+            LoginServiceInterface::class => static function (ContainerInterface $container): LoginServiceInterface {
+                /** @var LoginService $service */
+                $service = $container->get(LoginService::class);
                 return $service;
             },
         ];

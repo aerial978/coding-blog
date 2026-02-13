@@ -6,7 +6,7 @@ namespace App\Security;
 
 use App\Core\Contract\RateLimiterInterface;
 use App\Core\Logger;
-use App\Core\SessionManager;
+use App\Core\Contract\SessionInterface;
 
 /**
  * Session-based rate limiter service.
@@ -43,7 +43,7 @@ final class RateLimiterService implements RateLimiterInterface
      */
     public function __construct(
         private string $actionKey, // ex: 'registration'
-        private SessionManager $session,
+        private SessionInterface $session,
         private int $limit = 5, // ex: 5 tentatives
         private int $window = 300,        // 300s = 5min
     ) {

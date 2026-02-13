@@ -8,6 +8,7 @@ use App\Service\Security\Contract\AccountConfirmationServiceInterface;
 use App\Service\Security\Contract\ConfirmationResendServiceInterface;
 use App\Service\Security\Contract\RegistrationServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
+use App\Service\Security\Contract\LoginServiceInterface;
 
 final class SecurityService implements SecurityServiceInterface
 {
@@ -15,6 +16,7 @@ final class SecurityService implements SecurityServiceInterface
         private RegistrationServiceInterface $registration,
         private AccountConfirmationServiceInterface $accountConfirmation,
         private ConfirmationResendServiceInterface $confirmationResend,
+        private LoginServiceInterface $login,
     ) {
     }
 
@@ -31,5 +33,10 @@ final class SecurityService implements SecurityServiceInterface
     public function resendConfirmation(string $email): array
     {
         return $this->confirmationResend->resend($email);
+    }
+
+    public function login(array $form): array
+    {
+        return $this->login->login($form);
     }
 }

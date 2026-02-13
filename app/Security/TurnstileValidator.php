@@ -38,6 +38,11 @@ final class TurnstileValidator implements TurnstileValidatorInterface
         }
 
         if ($token === null || $token === '') {
+            $this->lastResponse = [
+                'success'     => false,
+                'error-codes' => ['missing-input-response'],
+                'diagnostic'  => 'empty_token',
+            ];
             return false;
         }
 
@@ -58,23 +63,41 @@ final class TurnstileValidator implements TurnstileValidatorInterface
         ];
 
         $context  = stream_context_create($opts);
-        $response = file_get_contents(
+        
+        $response = @file_get_contents(
             'https://challenges.cloudflare.com/turnstile/v0/siteverify',
             false,
             $context
         );
 
         if ($response === false) {
+            $err = error_get_last();
+
+            $this->lastResponse = [
+                'success' => false,
+                'error-codes' => ['turnstile_request_failed'],
+                'diagnostic' => is_array($err) && isset($err['message']) ? (string) $err['message'] : 'unknown_error',
+            ];
+
             return false;
         }
 
         /** @var array<string,mixed>|null $data */
         $data = json_decode($response, true);
-        if (is_array($data)) {
-            $this->lastResponse = $data;
+
+        if (!is_array($data)) {
+            $this->lastResponse = [
+                'success' => false,
+                'error-codes' => ['turnstile_bad_response'],
+                'diagnostic' => 'invalid_json',
+            ];
+            return false;
         }
 
+        $this->lastResponse = $data;
+
         return !empty($data['success']);
+
     }
 
     /**

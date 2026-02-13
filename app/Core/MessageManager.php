@@ -38,7 +38,11 @@ class MessageManager
             ErrorCode::AUTH_RESEND_EMAIL_FAILED       => 'Impossible d’envoyer le lien de confirmation pour le moment.',
             ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED     => 'Vous avez demandé trop de renvois de confirmation. Veuillez patienter avant de réessayer.',
 
+            // ==== Auth - Login ====
+            ErrorCode::AUTH_INVALID_CREDENTIALS       => 'Identifiants invalides.',
+
             // ==== Technique générale ====
+            ErrorCode::AUTH_RETRY                     => 'Veuillez réessayer.',
             ErrorCode::AUTH_TECHNICAL_ERROR           => 'Une erreur technique est survenue. Merci de réessayer plus tard.',
             ErrorCode::AUTH_FORM_EXPIRED              => 'Pour des raisons de sécurité, ce formulaire a expiré. Merci de recommencer.',
         ];

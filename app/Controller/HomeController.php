@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Core\FlashService;
 use App\Core\View;
-use App\Model\UserModel;
+use App\Model\Contract\UserModelInterface;
 
 class HomeController extends BaseController
 {
@@ -15,7 +15,7 @@ class HomeController extends BaseController
      *
      * @param UserModel $userModel The model used to interact with user data.
      */
-    public function __construct(View $view, private UserModel $userModel, FlashService $flash)
+    public function __construct(View $view, private UserModelInterface $userModel, FlashService $flash)
     {
         parent::__construct($view, $flash);
     }

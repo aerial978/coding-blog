@@ -17,6 +17,7 @@ final class CsrfMiddleware implements MiddlewareInterface
     /** @var array<string,string> route POST => FormId */
     private const PROTECTED_POST_ROUTES = [
         '/register'            => FormId::REGISTER,
+        '/login'               => FormId::LOGIN,
         '/resend-confirmation' => FormId::RESEND_CONFIRM,
     ];
 

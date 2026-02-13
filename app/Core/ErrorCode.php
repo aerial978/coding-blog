@@ -33,6 +33,9 @@ final class ErrorCode
     public const AUTH_RESEND_EMAIL_FAILED       = 'auth.resend.email_failed';
     public const AUTH_RESEND_QUOTA_EXCEEDED     = 'auth.resend.email_exceeded';
 
+    public const AUTH_INVALID_CREDENTIALS       = 'auth.login.invalid_credentials';
+
+    public const AUTH_RETRY                     = 'auth.retry';
     public const AUTH_TECHNICAL_ERROR           = 'auth.technical_error';
     public const AUTH_FORM_EXPIRED              = 'auth.form.expired';
 }
