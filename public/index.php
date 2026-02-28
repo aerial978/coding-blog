@@ -69,7 +69,6 @@ $router = new Router(
 
 // 7.1) Middlewares applicatifs
 $router->addMiddleware($psr->get(\App\Middleware\SecurityHeadersMiddleware::class));
-$router->addMiddleware($psr->get(\App\Middleware\RateLimitMiddleware::class));
 $router->addMiddleware($psr->get(\App\Middleware\CsrfMiddleware::class));
 $router->addMiddleware($psr->get(\App\Middleware\AuthenticationMiddleware::class));
 

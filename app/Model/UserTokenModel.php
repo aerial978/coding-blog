@@ -136,6 +136,19 @@ class UserTokenModel implements UserTokenModelInterface
         );
     }
 
+    public function createPasswordResetToken(
+        int $userId,
+        string $hashBinary32,
+        \DateTimeInterface $expiresAt
+    ): bool {
+        return $this->createToken(
+            $userId,
+            'password_reset',
+            $hashBinary32,
+            $expiresAt
+        );
+    }
+
     public function findConfirmationContextByHash(string $hashBinary32): ?array
     {
         return $this->findContextByHashAndPurpose(
@@ -163,6 +176,56 @@ class UserTokenModel implements UserTokenModelInterface
 
         $st = $this->sqlHelper->request($sql, [
             ':hash' => $hashBinary32,
+        ]);
+
+        return $st->rowCount() >= 1;
+    }
+
+    /**
+     * Returns true if the user already has an active (unused + not expired) token
+     * for the given purpose.
+     */
+    public function hasActiveUnusedToken(int $userId, string $purpose): bool
+    {
+        $sql = "
+            SELECT 1
+            FROM {$this->table}
+            WHERE user_id = :user_id
+              AND purpose = :purpose
+              AND used = 0
+              AND expires_at > NOW()
+            LIMIT 1
+        ";
+
+        $st = $this->sqlHelper->request($sql, [
+            ':user_id' => $userId,
+            ':purpose' => $purpose,
+        ]);
+
+        return (bool) $st->fetchColumn();
+    }
+
+    public function hasActiveUnusedPasswordResetToken(int $userId): bool
+    {
+        return $this->hasActiveUnusedToken($userId, 'password_reset');
+    }
+
+    public function invalidatePasswordResetToken(int $userId): bool
+    {
+        $sql = "
+            UPDATE {$this->table}
+            SET
+                used    = 1,
+                used_at = NOW()
+            WHERE
+                user_id = :user_id
+                AND purpose = 'password_reset'
+                AND used = 0
+                AND expires_at > NOW()
+        ";
+
+        $st = $this->sqlHelper->request($sql, [
+            ':user_id' => $userId,
         ]);
 
         return $st->rowCount() >= 1;

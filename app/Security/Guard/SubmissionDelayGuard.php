@@ -49,7 +49,16 @@ final class SubmissionDelayGuard
         $default = $opt['default'] ?? ['flash' => 'error', 'code' => ErrorCode::AUTH_TECHNICAL_ERROR];
 
         try {
-            $this->submissionDelay->assertDelayPassed($formId);
+            $min = isset($opt['min_sec']) && (is_int($opt['min_sec']) || (is_string($opt['min_sec']) && ctype_digit($opt['min_sec'])))
+                ? (int) $opt['min_sec']
+                : null;
+
+            $max = isset($opt['max_sec']) && (is_int($opt['max_sec']) || (is_string($opt['max_sec']) && ctype_digit($opt['max_sec'])))
+                ? (int) $opt['max_sec']
+                : null;
+
+            $this->submissionDelay->assertDelayPassed($formId, $min, $max);
+
             return true;
         } catch (SuspiciousSubmissionException $e) {
             $reason  = $e->getReason();

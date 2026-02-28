@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Http\Request;
-use App\Handler\Auth\RegisterGetHandler;
-use App\Handler\Auth\RegisterPostHandler;
+use App\Handler\Auth\ForgotPasswordGetHandler;
+use App\Handler\Auth\ForgotPasswordPostHandler;
 
-final class RegisterController
+final class ForgotPasswordController
 {
     public function __construct(
         private Request $request,
-        private RegisterGetHandler $getHandler,
-        private RegisterPostHandler $postHandler,
+        private ForgotPasswordGetHandler $getHandler,
+        private ForgotPasswordPostHandler $postHandler,
     ) {
     }
 
-    public function register(): void
+    public function ForgotPassword(): void
     {
         if ($this->request->getMethod() === 'GET') {
             $this->getHandler->handle();

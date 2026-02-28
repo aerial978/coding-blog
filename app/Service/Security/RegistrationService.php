@@ -336,7 +336,10 @@ final class RegistrationService implements RegistrationServiceInterface
                 $username,
                 'Confirmation de votre compte',
                 'confirmation.html',
-                ['username' => $username, 'link' => $link]
+                [
+                    'username' => $username, 
+                    'link' => $link
+                ]
             );
         } catch (\Throwable $mailEx) {
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [

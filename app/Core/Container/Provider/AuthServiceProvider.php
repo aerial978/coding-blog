@@ -26,6 +26,9 @@ use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
 use App\Log\LogContextNormalizer;
 use App\Support\ErrorListNormalizer;
+use App\Handler\Auth\ForgotPasswordGetHandler;
+use App\Handler\Auth\ForgotPasswordPostHandler; // plus tard, quand vous l’aurez créé
+
 
 final class AuthServiceProvider
 {
@@ -135,6 +138,28 @@ final class AuthServiceProvider
 
             LoginPostHandler::class => static function (ContainerInterface $c): LoginPostHandler {
                 return new LoginPostHandler(
+                    $c->get(SecurityServiceInterface::class),
+                    $c->get(FlashInterface::class),
+                    $c->get(ResponderInterface::class),
+                    $c->get(HoneypotGuard::class),
+                    $c->get(SubmissionDelayGuard::class),
+                    $c->get(RateLimitGuard::class),
+                );
+            },
+
+            ForgotPasswordGetHandler::class => static function (ContainerInterface $c): ForgotPasswordGetHandler {
+                return new ForgotPasswordGetHandler(
+                    $c->get(View::class),
+                    $c->get(FlashInterface::class),
+                    $c->get(ResponderInterface::class),
+                    $c->get(CsrfTokenInterface::class),
+                    $c->get(HoneypotValidatorInterface::class),
+                    $c->get(SubmissionDelayValidatorInterface::class),
+                );
+            },
+
+            ForgotPasswordPostHandler::class => static function (ContainerInterface $c): ForgotPasswordPostHandler {
+                return new ForgotPasswordPostHandler(
                     $c->get(SecurityServiceInterface::class),
                     $c->get(FlashInterface::class),
                     $c->get(ResponderInterface::class),

@@ -35,6 +35,11 @@ final class ErrorCode
 
     public const AUTH_INVALID_CREDENTIALS       = 'auth.login.invalid_credentials';
 
+    public const AUTH_PASSWORD_RESET_REQUESTED       = 'auth.password_reset.requested';
+    public const AUTH_PASSWORD_RESET_EMAIL_SEND_FAILED = 'auth.password_reset.send_failed';
+    public const AUTH_PASSWORD_RESET_QUOTA_EXCEEDED     = 'auth.resend.email_exceeded';
+
+
     public const AUTH_RETRY                     = 'auth.retry';
     public const AUTH_TECHNICAL_ERROR           = 'auth.technical_error';
     public const AUTH_FORM_EXPIRED              = 'auth.form.expired';

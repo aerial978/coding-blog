@@ -19,6 +19,8 @@ final class CsrfMiddleware implements MiddlewareInterface
         '/register'            => FormId::REGISTER,
         '/login'               => FormId::LOGIN,
         '/resend-confirmation' => FormId::RESEND_CONFIRM,
+        "/forgot-password"     => FormId::FORGOT_PASSWORD,
+        // "/reset-password"     => FormId::RESET_PASSWORD,
     ];
 
     public function __construct(

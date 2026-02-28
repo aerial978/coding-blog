@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Core\Container\Provider;
 
 use App\Core\Mail\MailerInterface;
-use App\Core\SqlHelper;
 use App\Model\EmailEventModel;
 use App\Model\RegistrationEventModel;
 use App\Model\UserModel;
@@ -28,7 +27,9 @@ use Psr\Container\ContainerInterface;
 use App\Core\Contract\SqlHelperInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
+use App\Service\Security\ForgotPasswordService;
 use App\Validation\Contract\FormValidatorInterface;
+use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 
 /**
  * Services liés aux utilisateurs et à la sécurité (DAL + services métier).
@@ -202,15 +203,33 @@ final class UserServiceProvider
                 );
             },
 
+            ForgotPasswordService::class => static function (ContainerInterface $c): ForgotPasswordService {
+                /** @var FormValidatorInterface $validator */ $validator = $c->get(FormValidatorInterface::class);
+                /** @var UserModelInterface $userModel */     $userModel = $c->get(UserModelInterface::class);
+                /** @var UserTokenModelInterface $userTokenModel */ $userTokenModel = $c->get(UserTokenModelInterface::class);
+                /** @var TokenGeneratorInterface $tokenGen */  $tokenGen = $c->get(TokenGeneratorInterface::class);
+                /** @var MailerInterface $mailer */            $mailer = $c->get(MailerInterface::class);
+                /** @var EmailQuotaService $quota */           $quota = $c->get(EmailQuotaService::class);
+
+                return new ForgotPasswordService(
+                    $validator,
+                    $userModel,
+                    $userTokenModel,
+                    $tokenGen,
+                    $mailer,
+                    $quota,
+                );
+            },
 
             SecurityService::class => static function (ContainerInterface $c): SecurityService {
                 /** @var RegistrationService $registration */                $registration = $c->get(RegistrationService::class);
                 /** @var AccountConfirmationService $accountConfirmation */  $accountConfirmation = $c->get(AccountConfirmationService::class);
                 /** @var ConfirmationResendService $confirmationResend */    $confirmationResend = $c->get(ConfirmationResendService::class);
                 /** @var LoginService $login */                              $login = $c->get(LoginService::class);
+                 /** @var ForgotPasswordService $forgotPassword */           $forgotPassword = $c->get(ForgotPasswordService::class);
 
 
-                return new SecurityService($registration, $accountConfirmation, $confirmationResend, $login);
+                return new SecurityService($registration, $accountConfirmation, $confirmationResend, $login, $forgotPassword);
             },
         ];
     }
@@ -230,6 +249,12 @@ final class UserServiceProvider
             LoginServiceInterface::class => static function (ContainerInterface $container): LoginServiceInterface {
                 /** @var LoginService $service */
                 $service = $container->get(LoginService::class);
+                return $service;
+            },
+
+            ForgotPasswordServiceInterface::class => static function (ContainerInterface $container): ForgotPasswordServiceInterface {
+                /** @var ForgotPasswordService $service */
+                $service = $container->get(ForgotPasswordService::class);
                 return $service;
             },
         ];

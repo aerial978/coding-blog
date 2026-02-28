@@ -50,6 +50,12 @@ final class RateLimitGuard
      */
     public function assertAllowed(array $opt): bool
     {
+        // temporaire
+        Logger::getLogger('auth')->info('rl_guard_hit', [
+            'file' => __FILE__,
+            'key'  => $opt['key'] ?? null,
+        ]);
+    
         $key       = $opt['key'];
         $limit     = $opt['limit'];
         $windowSec = $opt['window_sec'];
@@ -79,11 +85,23 @@ final class RateLimitGuard
             : 'security_flags';
 
         if (isset($opt['set_flags']) && is_array($opt['set_flags'])) {
-            // fusionner avec l’existant pour éviter d’écraser d’autres flags
             $existing = $this->flash->take($flagsBag, []);
             $existing = is_array($existing) ? $existing : [];
-            
-            $this->flash->put($flagsBag, $existing + $opt['set_flags']);
+
+            $merged = $existing + $opt['set_flags'];
+            $this->flash->put($flagsBag, $merged);
+
+            Logger::getLogger('auth')->info('rl_set_flags', [
+                'bag'      => $flagsBag,
+                'existing' => $existing,
+                'set'      => $opt['set_flags'],
+                'merged'   => $merged,
+            ]);
+        } else {
+            Logger::getLogger('auth')->info('rl_no_set_flags', [
+                'bag' => $flagsBag,
+                'opt_keys' => array_keys($opt),
+            ]);
         }
 
         // Log technique (inchangé)

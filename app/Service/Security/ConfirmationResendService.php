@@ -156,20 +156,16 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
     /** Retourne [] si quota dépassé (succès silencieux), sinon null. */
     private function guardQuota(string $email, string $channel): ?array
     {
-        $quota = $this->quotaService->checkQuota(
-            EmailQuotaService::TYPE_CONFIRM_RESEND,
-            $email
-        );
+        $quota = $this->quotaService->checkQuota(EmailQuotaService::TYPE_CONFIRM_RESEND,$email);
 
-        if ($quota['allowed']) {
-            return null;
+        if (!$quota['allowed']) {
+            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED, [
+                'email'  => $email,
+                'reason' => 'quota_exceeded_' . ($quota['reason'] ?? ''),
+            ]);
+
+            return []; // succès silencieux
         }
-
-        Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED, [
-            'email'  => $email,
-            'reason' => 'quota_exceeded_' . ($quota['reason'] ?? ''),
-        ]);
-        return []; // succès silencieux
     }
 
     private function recordResendEvent(string $email, int $userId): void

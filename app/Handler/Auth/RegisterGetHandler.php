@@ -106,7 +106,7 @@ final class RegisterGetHandler extends BaseController
         string $turnstileSiteKey
     ): array {
         return [
-            'title'              => 'User Registration',
+            'title'              => 'User registration',
             'mode'               => $mode,
             'obfuscated_email'   => $obfuscatedEmail,
             'csrf_token'         => $this->csrf->generateToken(FormId::REGISTER),

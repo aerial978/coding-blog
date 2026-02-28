@@ -12,7 +12,6 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Security\Guard\HoneypotGuard;
 use App\Security\Guard\RateLimitGuard;
 use App\Security\Guard\SubmissionDelayGuard;
-use App\Core\Logger;
 
 final class LoginPostHandler
 {

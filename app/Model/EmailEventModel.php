@@ -36,6 +36,7 @@ final class EmailEventModel implements EmailEventModelInterface
         ];
 
         $st = $this->sqlHelper->request($sql, $params);
+        
         return $st->rowCount() === 1;
     }
 

@@ -22,7 +22,6 @@ use App\Infrastructure\Mail\DummyMailer;
 use App\Infrastructure\Mail\MailjetMailer;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
-use App\Middleware\RateLimitMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
@@ -328,7 +327,7 @@ final class SystemServiceProvider
     private static function getSecurityMiddlewares(): array
     {
         return [
-                AuthenticationMiddleware::class => static function (ContainerInterface $container): AuthenticationMiddleware {
+            AuthenticationMiddleware::class => static function (ContainerInterface $container): AuthenticationMiddleware {
                 /** @var AuthCheckerInterface $auth */
                 $auth = $container->get(AuthCheckerInterface::class);
                 /** @var FlashInterface $flash */
@@ -346,15 +345,6 @@ final class SystemServiceProvider
                 $flash = $container->get(FlashInterface::class);
 
                 return new CsrfMiddleware($csrf, $flash);
-            },
-
-            RateLimitMiddleware::class => static function (ContainerInterface $container): RateLimitMiddleware {
-                /** @var RateLimiterFactory $factory */
-                $factory = $container->get(RateLimiterFactory::class);
-                /** @var FlashInterface $flash */
-                $flash = $container->get(FlashInterface::class);
-
-                return new RateLimitMiddleware($factory, $flash);
             },
 
             SecurityHeadersMiddleware::class => static fn (): SecurityHeadersMiddleware => new SecurityHeadersMiddleware(),
@@ -376,6 +366,11 @@ final class SystemServiceProvider
         $fromEmail = self::getEnvString('MAIL_FROM_EMAIL', 'no-reply@example.test');
         $fromName  = self::getEnvString('MAIL_FROM_NAME', 'Coding Blog');
         $transport = strtolower(self::getEnvString('MAILER_TRANSPORT', 'dummy'));
+
+        Logger::getLogger('auth')->info('mailer_transport_debug', [
+            'transport' => $transport,
+            'from'      => $fromEmail,
+        ]);
 
         if ($transport === 'mailjet') {
             $apiKey    = self::getEnvString('MJ_APIKEY_PUBLIC', '');

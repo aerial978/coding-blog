@@ -22,7 +22,6 @@ final class ResendConfirmationPostHandler
         private HoneypotGuard $honeypotGuard,
         private SubmissionDelayGuard $submissionDelayGuard,
         private RateLimitGuard $rateLimitGuard,
-        // étape suivante : injecter HoneypotGuard, SubmissionDelayGuard, RateLimitGuard…
     ) {
     }
 
@@ -31,6 +30,8 @@ final class ResendConfirmationPostHandler
      */
     public function handle(array $form): void
     {
+        Logger::getLogger('auth')->info('resend_post_handler_entry');
+
         $email = $this->strOrEmpty($form['email'] ?? null);
 
         $contextBase = ['email' => $email ?: null];
@@ -47,6 +48,8 @@ final class ResendConfirmationPostHandler
                 'email' => $email ?: null,
                 // 'reason' n'est pas nécessaire ici : le guard l’ajoute déjà ('honeypot')
             ],
+            'flags_bag' => 'security_flags',
+            'set_flags' => ['turnstile_resend' => true],
         ])) {
             return;
         }
@@ -59,6 +62,9 @@ final class ResendConfirmationPostHandler
                 'max_delay_exceeded' => ['flash' => 'error',   'code' => ErrorCode::AUTH_FORM_EXPIRED],
             ],
             'default'   => ['flash' => 'success', 'code' => ErrorCode::AUTH_RESEND_EMAIL_SENT],
+            
+            'flags_bag' => 'security_flags',
+            'set_flags' => ['turnstile_resend' => true],
         ])) {
             return;
         }
@@ -73,11 +79,13 @@ final class ResendConfirmationPostHandler
                 'email'  => $email ?: null,
                 'reason' => 'rate_limited', // utile pour vos logs, optionnel
             ],
+            'flags_bag' => 'security_flags',
+            'set_flags' => ['turnstile_resend' => true],
 
-            // Opt-in : anti-énumération => succès silencieux
+            /* Opt-in : anti-énumération => succès silencieux
             'silent_success'            => true,
             'silent_success_flash_type' => 'success',
-            'silent_success_code'       => ErrorCode::AUTH_RESEND_EMAIL_SENT,
+            'silent_success_code'       => ErrorCode::AUTH_RESEND_EMAIL_SENT,*/
         ])) {
             return;
         }

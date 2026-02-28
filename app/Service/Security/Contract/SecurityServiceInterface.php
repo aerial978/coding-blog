@@ -57,5 +57,7 @@ interface SecurityServiceInterface
          */
     public function resendConfirmation(string $email): array;
 
-    public function login (array $form): array;
+    public function login(array $form): array;
+
+    public function forgotPassword(string $identifier): array;
 }

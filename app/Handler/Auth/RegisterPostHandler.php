@@ -45,7 +45,7 @@ final class RegisterPostHandler
             'form'       => $form,
             'redirect'   => '/coding-blog/register',
             'flash_type' => 'error',
-            'code'       => ErrorCode::AUTH_TECHNICAL_ERROR,
+            'code'       => ErrorCode::AUTH_RETRY,
             'log_level'  => 'warning',
             'log_channel'=> 'auth',
             'context'    => $contextBase,

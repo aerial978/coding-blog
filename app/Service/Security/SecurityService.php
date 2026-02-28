@@ -9,6 +9,7 @@ use App\Service\Security\Contract\ConfirmationResendServiceInterface;
 use App\Service\Security\Contract\RegistrationServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
+use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 
 final class SecurityService implements SecurityServiceInterface
 {
@@ -17,6 +18,7 @@ final class SecurityService implements SecurityServiceInterface
         private AccountConfirmationServiceInterface $accountConfirmation,
         private ConfirmationResendServiceInterface $confirmationResend,
         private LoginServiceInterface $login,
+        private ForgotPasswordServiceInterface $forgotPassword,
     ) {
     }
 
@@ -38,5 +40,10 @@ final class SecurityService implements SecurityServiceInterface
     public function login(array $form): array
     {
         return $this->login->login($form);
+    }
+
+    public function forgotPassword(string $identifier): array
+    {
+        return $this->forgotPassword->requestReset($identifier);
     }
 }

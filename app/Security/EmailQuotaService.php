@@ -11,7 +11,7 @@ use App\Security\Contract\EmailQuotaServiceInterface;
 final class EmailQuotaService implements EmailQuotaServiceInterface
 {
     public const TYPE_CONFIRM_RESEND = 'confirm_resend';
-    // Vous pourrez ajouter: const TYPE_PASSWORD_RESET = 'password_reset', etc.
+    public const TYPE_PASSWORD_RESET = 'password_reset';
 
     /**
      * Règles de quotas métier par type.
@@ -21,6 +21,10 @@ final class EmailQuotaService implements EmailQuotaServiceInterface
      */
     private const LIMITS = [
         self::TYPE_CONFIRM_RESEND => [
+            'per_hour' => 3,
+            'per_day'  => 10,
+        ],
+            self::TYPE_PASSWORD_RESET => [
             'per_hour' => 3,
             'per_day'  => 10,
         ],

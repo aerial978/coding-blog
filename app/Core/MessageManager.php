@@ -41,6 +41,11 @@ class MessageManager
             // ==== Auth - Login ====
             ErrorCode::AUTH_INVALID_CREDENTIALS       => 'Identifiants invalides.',
 
+            // ==== Auth - Forgot Password ====
+            ErrorCode::AUTH_PASSWORD_RESET_REQUESTED         => 'Si un compte existe pour cet identifiant, un email de réinitialisation vient d’être envoyé.',
+            ErrorCode::AUTH_PASSWORD_RESET_EMAIL_SEND_FAILED => 'Impossible d’envoyer l’email de réinitialisation pour le moment.',
+            ErrorCode::AUTH_PASSWORD_RESET_QUOTA_EXCEEDED     => 'Vous avez demandé trop de nouveau mot de passe. Veuillez patienter avant de réessayer.',
+
             // ==== Technique générale ====
             ErrorCode::AUTH_RETRY                     => 'Veuillez réessayer.',
             ErrorCode::AUTH_TECHNICAL_ERROR           => 'Une erreur technique est survenue. Merci de réessayer plus tard.',

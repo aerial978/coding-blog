@@ -6,7 +6,7 @@
   <h1 class="mb-4 text-center">Renvoyer le lien de confirmation</h1>
   {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
-  <form id="resendConfirmForm" method="post" action="" novalidate>
+  <form id="resendConfirmForm" method="post" action="" novalidate data-turnstile="{{ turnstile_enabled ? '1' : '0' }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
     {{ fields.input(
@@ -23,12 +23,18 @@
 
     {{ fields.honeypot(honeypot_name) }}
 
+    {% include 'templates/components/turnstile_widget.html.twig' with {
+        turnstile_enabled: turnstile_enabled,
+        turnstile_site_key: turnstile_site_key
+    } %}
+
     <button type="submit" class="btn btn-primary w-100">Renvoyer le lien</button>
   </form>
 </div>
 
 {% block page_scripts %}
-  <script type="module" src="{{ base_path }}public/assets/js/security/validation.resend-confirmation.js"></script>
+<script type="module" src="{{ base_path }}public/assets/js/security/validation.resend-confirmation.js"></script>
+<script src="{{ base_path }}/public/assets/js/security/turnstile.js" defer></script>
 {% endblock %}
 
 {% endblock %}

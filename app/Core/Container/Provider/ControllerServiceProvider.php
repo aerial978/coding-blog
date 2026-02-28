@@ -34,6 +34,9 @@ use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Controller\LoginController;
 use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
+use App\Controller\ForgotPasswordController;
+use App\Handler\Auth\ForgotPasswordGetHandler;
+use App\Handler\Auth\ForgotPasswordPostHandler;
 
 /**
  * Provides controller definitions for the dependency injection container.
@@ -80,9 +83,6 @@ final class ControllerServiceProvider
                 return new ErrorController($view, $flash);
             },
 
-            // -----------------------------
-            // RegisterController (NOUVEAU)
-            // -----------------------------
             RegisterController::class => static function (ContainerInterface $container): RegisterController {
                 /** @var Request $request */
                 $request = $container->get(Request::class);
@@ -98,7 +98,6 @@ final class ControllerServiceProvider
 
                 return new RegisterController(
                     $request,
-                    $responder,
                     $getHandler,
                     $postHandler
                 );
@@ -143,7 +142,20 @@ final class ControllerServiceProvider
                 /** @var LoginPostHandler $postHandler */
                 $postHandler = $container->get(LoginPostHandler::class);
 
-                return new LoginController($request, $responder, $getHandler, $postHandler);
+                return new LoginController($request, $getHandler, $postHandler);
+            },
+
+            ForgotPasswordController::class => static function (ContainerInterface $container): ForgotPasswordController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var ForgotPasswordGetHandler $getHandler */
+                $getHandler = $container->get(ForgotPasswordGetHandler::class);
+
+                /** @var ForgotPasswordPostHandler $postHandler */
+                $postHandler = $container->get(ForgotPasswordPostHandler::class);
+
+                return new ForgotPasswordController($request, $getHandler, $postHandler);
             },
 
             DebugController::class => static function (ContainerInterface $container): object {
