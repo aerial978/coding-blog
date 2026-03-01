@@ -13,4 +13,6 @@ interface UserTokenModelInterface
     public function hasActiveUnusedPasswordResetToken(int $userId): bool;
 
     public function invalidatePasswordResetToken(int $userId): bool;
+
+    public function findPasswordResetContextByHash(string $hashBinary32): ?array;
 }

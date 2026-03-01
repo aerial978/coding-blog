@@ -8,6 +8,7 @@ use App\Controller\ConfirmAccountController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\LoginController;
 use App\Controller\ForgotPasswordController;
+use App\Controller\ResetPasswordController;
 use App\Core\Router;
 
 return [
@@ -18,6 +19,7 @@ return [
         '/resend-confirmation' => [ResendConfirmationController::class, 'resendConfirmation'],
         '/login'               => [LoginController::class, 'login'],
         '/forgot-password'     => [ForgotPasswordController::class, 'forgotPassword'],
+        '/reset-password'      => [ResetPasswordController::class, 'resetPassword'],
         '/debug/whoami'        => [DebugController::class, 'whoami'],
         '/account'             => [AccountController::class, 'index'],
     ],

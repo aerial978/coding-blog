@@ -121,42 +121,6 @@ class UserTokenModel implements UserTokenModelInterface
         return $row ?: null;
     }
 
-    /* Confirmation */
-
-    public function createConfirmationToken(
-        int $userId,
-        string $hashBinary32,
-        \DateTimeInterface $expiresAt
-    ): bool {
-        return $this->createToken(
-            $userId,
-            'confirmation',
-            $hashBinary32,
-            $expiresAt
-        );
-    }
-
-    public function createPasswordResetToken(
-        int $userId,
-        string $hashBinary32,
-        \DateTimeInterface $expiresAt
-    ): bool {
-        return $this->createToken(
-            $userId,
-            'password_reset',
-            $hashBinary32,
-            $expiresAt
-        );
-    }
-
-    public function findConfirmationContextByHash(string $hashBinary32): ?array
-    {
-        return $this->findContextByHashAndPurpose(
-            $hashBinary32,
-            'confirmation'
-        );
-    }
-
     public function activateByHash(string $hashBinary32): bool
     {
         $sql = "
@@ -205,11 +169,6 @@ class UserTokenModel implements UserTokenModelInterface
         return (bool) $st->fetchColumn();
     }
 
-    public function hasActiveUnusedPasswordResetToken(int $userId): bool
-    {
-        return $this->hasActiveUnusedToken($userId, 'password_reset');
-    }
-
     public function invalidatePasswordResetToken(int $userId): bool
     {
         $sql = "
@@ -229,5 +188,30 @@ class UserTokenModel implements UserTokenModelInterface
         ]);
 
         return $st->rowCount() >= 1;
+    }
+
+    public function createConfirmationToken(int $userId, string $hashBinary32, \DateTimeInterface $expiresAt): bool 
+    {
+        return $this->createToken($userId, 'confirmation', $hashBinary32, $expiresAt);
+    }
+
+    public function createPasswordResetToken(int $userId, string $hashBinary32, \DateTimeInterface $expiresAt): bool 
+    {
+        return $this->createToken($userId, 'password_reset', $hashBinary32, $expiresAt);
+    }
+
+    public function hasActiveUnusedPasswordResetToken(int $userId): bool
+    {
+        return $this->hasActiveUnusedToken($userId, 'password_reset');
+    }
+
+    public function findConfirmationContextByHash(string $hashBinary32): ?array
+    {
+        return $this->findContextByHashAndPurpose($hashBinary32, 'confirmation');
+    }
+
+    public function findPasswordResetContextByHash(string $hashBinary32): ?array
+    {
+        return $this->findContextByHashAndPurpose($hashBinary32,'password_reset');
     }
 }

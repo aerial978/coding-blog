@@ -6,20 +6,12 @@ namespace App\Core\Container\Provider;
 
 use App\Controller\ErrorController;
 use App\Controller\HomeController;
-use App\Controller\SecurityController;
 use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use Psr\Container\ContainerInterface;
 use App\Core\Contract\FlashInterface;
-use App\Service\Security\Contract\SecurityServiceInterface;
-use App\Security\Contract\CsrfTokenInterface;
-use App\Core\Contract\RateLimiterFactoryInterface;
-use App\Security\Contract\HoneypotValidatorInterface;
-use App\Security\Contract\SubmissionDelayValidatorInterface;
-use App\Security\Contract\TurnstileValidatorInterface;
 use App\Model\Contract\UserModelInterface;
-use App\Service\Security\LoginService;
 use App\Controller\DebugController;
 use App\Core\Contract\SessionInterface;
 use App\Controller\AccountController;
@@ -28,15 +20,17 @@ use App\Handler\Auth\RegisterGetHandler;          // <-- AJOUT
 use App\Handler\Auth\RegisterPostHandler;         // <-- AJOUT
 use App\Controller\ConfirmAccountController;
 use App\Controller\ResendConfirmationController;
+use App\Controller\ForgotPasswordController;
+use App\Controller\ResetPasswordController;
 use App\Handler\Auth\ConfirmAccountHandler;
 use App\Handler\Auth\ResendConfirmationGetHandler;    
 use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Controller\LoginController;
 use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
-use App\Controller\ForgotPasswordController;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
+use App\Handler\Auth\ResetPasswordGetHandler;
 
 /**
  * Provides controller definitions for the dependency injection container.
@@ -156,6 +150,16 @@ final class ControllerServiceProvider
                 $postHandler = $container->get(ForgotPasswordPostHandler::class);
 
                 return new ForgotPasswordController($request, $getHandler, $postHandler);
+            },
+
+            ResetPasswordController::class => static function (ContainerInterface $c): ResetPasswordController {
+                /** @var Request $request */
+                $request = $c->get(Request::class);
+
+                /** @var ResetPasswordGetHandler $getHandler */
+                $getHandler = $c->get(ResetPasswordGetHandler::class);
+
+                return new ResetPasswordController($request, $getHandler);
             },
 
             DebugController::class => static function (ContainerInterface $container): object {

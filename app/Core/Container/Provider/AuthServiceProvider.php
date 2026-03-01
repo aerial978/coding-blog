@@ -27,8 +27,8 @@ use App\Handler\Auth\LoginPostHandler;
 use App\Log\LogContextNormalizer;
 use App\Support\ErrorListNormalizer;
 use App\Handler\Auth\ForgotPasswordGetHandler;
-use App\Handler\Auth\ForgotPasswordPostHandler; // plus tard, quand vous l’aurez créé
-
+use App\Handler\Auth\ForgotPasswordPostHandler;
+use App\Handler\Auth\ResetPasswordGetHandler;
 
 final class AuthServiceProvider
 {
@@ -166,6 +166,19 @@ final class AuthServiceProvider
                     $c->get(HoneypotGuard::class),
                     $c->get(SubmissionDelayGuard::class),
                     $c->get(RateLimitGuard::class),
+                );
+            },
+
+            ResetPasswordGetHandler::class => static function (ContainerInterface $c): ResetPasswordGetHandler {
+                return new ResetPasswordGetHandler(
+                    $c->get(View::class),
+                    $c->get(FlashInterface::class),
+                    $c->get(ResponderInterface::class),
+                    $c->get(\App\Model\Contract\UserTokenModelInterface::class),
+                    $c->get(\App\Security\Contract\TokenGeneratorInterface::class),
+                    $c->get(\App\Security\Contract\SubmissionDelayValidatorInterface::class),
+                    $c->get(\App\Security\Contract\CsrfTokenInterface::class),
+                    $c->get(\App\Security\Contract\HoneypotValidatorInterface::class),
                 );
             },
         ];
