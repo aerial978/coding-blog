@@ -10,6 +10,13 @@ interface SessionInterface
 
     public function get(string $key, mixed $default = null): mixed;
 
+    public function has(string $key): bool;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function all(): array;
+
     public function remove(string $key): void;
 
     public function clear(): void;

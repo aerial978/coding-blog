@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace App\Core\Container\Provider;
 
-use App\Core\Database;
-use App\Core\Contract\RateLimiterFactoryInterface;
-use App\Core\Factory\RateLimiterFactory;
 use App\Core\Contract\FlashInterface;
+use App\Core\Contract\RateLimiterFactoryInterface;
+use App\Core\Contract\SessionInterface;
+use App\Core\Contract\SqlHelperInterface;
+use App\Core\Database;
+use App\Core\Factory\RateLimiterFactory;
 use App\Core\FlashService;
 use App\Core\Logger;
 use App\Core\Mail\MailerInterface;
 use App\Core\SessionManager;
-use App\Core\Contract\SessionInterface;
 use App\Core\SqlHelper;
 use App\Core\View;
+use App\Handler\Auth\ConfirmAccountHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Http\Responder;
 use App\Infrastructure\Mail\DummyMailer;
 use App\Infrastructure\Mail\MailjetMailer;
+use App\Log\LogContextNormalizer;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
@@ -35,14 +38,11 @@ use App\Security\SessionAuthChecker;
 use App\Security\SubmissionDelayValidator;
 use App\Security\TokenGenerator;
 use App\Security\TurnstileValidator;
+use App\Support\ErrorListNormalizer;
+use App\Validation\Contract\FormValidatorInterface;
 use App\Validation\FormValidator;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
-use App\Core\Contract\SqlHelperInterface;
-use App\Validation\Contract\FormValidatorInterface;
-use App\Handler\Auth\ConfirmAccountHandler;
-use App\Log\LogContextNormalizer;
-use App\Support\ErrorListNormalizer;
 
 final class SystemServiceProvider
 {
@@ -131,10 +131,10 @@ final class SystemServiceProvider
         return [
             FormValidator::class => static fn (): FormValidator => new FormValidator(),
 
-            FormValidatorInterface::class => static function (ContainerInterface $c): FormValidatorInterface {
-                /** @var FormValidator $v */
-                $v = $c->get(FormValidator::class);
-                return $v;
+            FormValidatorInterface::class => static function (ContainerInterface $container): FormValidatorInterface {
+                /** @var FormValidator $formValidator */
+                $formValidator = $container->get(FormValidator::class);
+                return $formValidator;
             },
 
             Slugify::class => static fn (): Slugify => new Slugify(),
@@ -155,15 +155,15 @@ final class SystemServiceProvider
                 return $session;
             },
 
-            FlashService::class => static function (ContainerInterface $c): FlashService {
+            FlashService::class => static function (ContainerInterface $container): FlashService {
                 /** @var SessionInterface $session */
-                $session = $c->get(SessionInterface::class);
+                $session = $container->get(SessionInterface::class);
                 return new FlashService($session);
             },
 
-            FlashInterface::class => static function (ContainerInterface $c): FlashInterface {
+            FlashInterface::class => static function (ContainerInterface $container): FlashInterface {
                 /** @var FlashService $flash */
-                $flash = $c->get(FlashService::class);
+                $flash = $container->get(FlashService::class);
                 return $flash;
             },
 

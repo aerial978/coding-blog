@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Http\Request;
 use App\Handler\Auth\ResendConfirmationGetHandler;
 use App\Handler\Auth\ResendConfirmationPostHandler;
+use App\Http\Request;
 
 final class ResendConfirmationController
 {

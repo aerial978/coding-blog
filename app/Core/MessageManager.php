@@ -41,10 +41,14 @@ class MessageManager
             // ==== Auth - Login ====
             ErrorCode::AUTH_INVALID_CREDENTIALS       => 'Identifiants invalides.',
 
-            // ==== Auth - Forgot Password ====
-            ErrorCode::AUTH_PASSWORD_RESET_REQUESTED         => 'Si un compte existe pour cet identifiant, un email de réinitialisation vient d’être envoyé.',
-            ErrorCode::AUTH_PASSWORD_RESET_EMAIL_SEND_FAILED => 'Impossible d’envoyer l’email de réinitialisation pour le moment.',
-            ErrorCode::AUTH_PASSWORD_RESET_QUOTA_EXCEEDED     => 'Vous avez demandé trop de nouveau mot de passe. Veuillez patienter avant de réessayer.',
+            // ==== Auth - Forgot Reset Password ====
+            ErrorCode::AUTH_PASSWORD_RESET_REQUESTED            => 'Si un compte existe pour cet identifiant, un email de réinitialisation vient d’être envoyé.',
+            ErrorCode::AUTH_PASSWORD_RESET_EMAIL_SEND_FAILED    => 'Impossible d’envoyer l’email de réinitialisation pour le moment.',
+            ErrorCode::AUTH_PASSWORD_RESET_QUOTA_EXCEEDED       => 'Vous avez demandé trop de nouveau mot de passe. Veuillez patienter avant de réessayer.',
+            ErrorCode::AUTH_PASSWORD_RESET_TOKEN_INVALID        => 'Lien invalide ou expiré. Veuillez refaire une demande de réinitialisation de mot de passe.',
+            ErrorCode::AUTH_PASSWORD_RESET_SUCCESS              => 'Votre mot de passe a été mis à jour. Vous pouvez vous connecter.',
+            ErrorCode::AUTH_PASSWORD_RESET_PASSWORD_INVALID     => 'Le mot de passe ne respecte pas les règles de sécurité.',
+            ErrorCode::AUTH_PASSWORD_RESET_CONFIRM_MISMATCH     => 'La confirmation du mot de passe ne correspond pas.',
 
             // ==== Technique générale ====
             ErrorCode::AUTH_RETRY                     => 'Veuillez réessayer.',

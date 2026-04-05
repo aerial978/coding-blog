@@ -9,8 +9,8 @@
     "stylelint-scss": "^6.12.1"
   },
   "scripts": {
-    "lint:js": "eslint public/js/",
-    "lint:js:fix": "eslint public/js/ --fix",
+    "lint:js": "eslint public/assets/js/**/*.js",
+    "lint:js:fix": "eslint public/assets/js/**/*.js/ --fix",
     "lint:scss": "stylelint \"assets/scss/**/*.scss\"",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#vendor\"",
     "scss:watch": "sass --load-path=node_modules assets/scss/app.scss public/css/app.css --watch",

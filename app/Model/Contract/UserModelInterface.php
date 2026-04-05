@@ -9,6 +9,11 @@ use App\Model\Entity\UserEntity;
 interface UserModelInterface
 {
     /**
+     * @return list<UserEntity>
+     */
+    public function findAll(): array;
+
+    /**
      * Utilisé pour l'unicité à l'inscription (peut retourner partiel).
      */
     public function findOneByUsername(string $username): ?UserEntity;

@@ -35,10 +35,13 @@ final class ErrorCode
 
     public const AUTH_INVALID_CREDENTIALS       = 'auth.login.invalid_credentials';
 
-    public const AUTH_PASSWORD_RESET_REQUESTED       = 'auth.password_reset.requested';
-    public const AUTH_PASSWORD_RESET_EMAIL_SEND_FAILED = 'auth.password_reset.send_failed';
-    public const AUTH_PASSWORD_RESET_QUOTA_EXCEEDED     = 'auth.resend.email_exceeded';
-
+    public const AUTH_PASSWORD_RESET_REQUESTED          = 'auth.password.reset.requested';
+    public const AUTH_PASSWORD_RESET_EMAIL_SEND_FAILED  = 'auth.password.reset.send_failed';
+    public const AUTH_PASSWORD_RESET_QUOTA_EXCEEDED     = 'auth.password.resend.email_exceeded';
+    public const AUTH_PASSWORD_RESET_TOKEN_INVALID      = 'auth.password.reset.tokeen.invalid';
+    public const AUTH_PASSWORD_RESET_SUCCESS            = 'auth.password.reset.success';
+    public const AUTH_PASSWORD_RESET_PASSWORD_INVALID   = 'auth.password.reset.password.invalid';
+    public const AUTH_PASSWORD_RESET_CONFIRM_MISMATCH   = 'auth.password.reset.confirm.mismatch';
 
     public const AUTH_RETRY                     = 'auth.retry';
     public const AUTH_TECHNICAL_ERROR           = 'auth.technical_error';

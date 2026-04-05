@@ -14,5 +14,21 @@ interface UserTokenModelInterface
 
     public function invalidatePasswordResetToken(int $userId): bool;
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findConfirmationContextByHash(string $hashBinary32): ?array;
+
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findPasswordResetContextByHash(string $hashBinary32): ?array;
+
+    public function activateByHash(string $hashBinary32): bool;
+
+    /**
+     * Met à jour user.password et marque le token password_reset comme used=1
+     * en une seule requête (JOIN) pour éviter les incohérences.
+     */
+    public function consumePasswordResetTokenAndUpdatePassword(string $hashBinary32, string $passwordHash): bool;
 }

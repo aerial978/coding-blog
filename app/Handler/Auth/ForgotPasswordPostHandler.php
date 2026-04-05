@@ -8,23 +8,28 @@ use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\MessageManager;
 use App\Http\Contract\ResponderInterface;
-use App\Security\Guard\HoneypotGuard;
-use App\Security\Guard\RateLimitGuard;
-use App\Security\Guard\SubmissionDelayGuard;
-use App\Security\Guard\TurnstileGuard;
+use App\Security\Guard\Contract\HoneypotGuardInterface;
+use App\Security\Guard\Contract\RateLimitGuardInterface;
+use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
+use App\Security\Guard\Contract\TurnstileGuardInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 
 final class ForgotPasswordPostHandler
 {
+    private const REDIRECT       = '/coding-blog/forgot-password';
+    private const FORM_ID        = 'forgot_password';
+    private const TURNSTILE_FLAG = 'turnstile_forgot';
+    private const RATE_LIMIT_KEY = 'forgot_password';
+
     public function __construct(
         private SecurityServiceInterface $securityService,
         private FlashInterface $flash,
         private ResponderInterface $responder,
-        private HoneypotGuard $honeypotGuard,
-        private SubmissionDelayGuard $submissionDelayGuard,
-        private RateLimitGuard $rateLimitGuard,
+        private HoneypotGuardInterface $honeypotGuard,
+        private SubmissionDelayGuardInterface $submissionDelayGuard,
+        private RateLimitGuardInterface $rateLimitGuard,
         // Optionnel : si vous voulez du "step-up" immédiat. Sinon, supprimez + retirez l'appel.
-        private ?TurnstileGuard $turnstileGuard = null,
+        private ?TurnstileGuardInterface $turnstileGuard = null,
     ) {
     }
 
@@ -35,102 +40,168 @@ final class ForgotPasswordPostHandler
     {
         $identifier = $this->strOrEmpty($form['identifier'] ?? $form['email'] ?? null);
 
-        // Base de contexte log (jamais de donnée sensible en clair si vous n’êtes pas sûr)
-        $contextBase = [
-            'form'       => 'forgot_password',
-            'identifier' => $identifier !== '' ? $identifier : null,
-        ];
-
-        // 1) Honeypot
-        if (!$this->honeypotGuard->assertClean([
-            'form'       => $form,
-            'redirect'   => '/coding-blog/forgot-password',
-            'flash_type' => 'error',
-            'code'       => ErrorCode::AUTH_RETRY, // neutre côté UI
-            'log_level'  => 'warning',
-            'log_channel'=> 'auth',
-            'context'    => $contextBase,
-
-            // Turnstile adaptatif
-            'flags_bag'  => 'security_flags',
-            'set_flags'  => ['turnstile_forgot' => true],
-        ])) {
+        if ($identifier === '') {
+            $this->rejectEmptyIdentifier();
             return;
         }
 
-        // 2) Submission delay
-        if (!$this->submissionDelayGuard->assertPassed([
-            'form_id'   => 'forgot_password',
-            'redirect'  => '/coding-blog/forgot-password',
-            'context'   => $contextBase,
-            'policy'    => [
-                // utile : le formulaire a expiré (max dépassé)
+        $context = $this->makeContext($identifier);
+
+        /** @var array{
+         *   form: array<string, mixed>,
+         *   redirect: string,
+         *   flash_type: 'error',
+         *   code: string,
+         *   log_level: 'warning',
+         *   log_channel: string,
+         *   context: array<string, mixed>,
+         *   flags_bag?: string,
+         *   set_flags?: array<string, mixed>
+         * } $options
+         */
+        $options = array_merge([
+            'form'        => $form,
+            'redirect'    => self::REDIRECT,
+            'flash_type'  => 'error',
+            'code'        => ErrorCode::AUTH_RETRY,
+            'log_level'   => 'warning',
+            'log_channel' => 'auth',
+            'context'     => $context,
+        ], $this->turnstileStepUp());
+
+        if (!$this->honeypotGuard->assertClean($options)) {
+            return;
+        }
+
+        /** @var array{
+         *   form_id: string,
+         *   redirect: string,
+         *   context: array<string, mixed>,
+         *   policy: array<string, array{flash: 'error'|'info'|'success'|'warning', code: string}>,
+         *   default: array{flash: 'error'|'info'|'success'|'warning', code: string},
+         *   min_sec: int,
+         *   flags_bag?: string,
+         *   set_flags?: array<string, mixed>
+         * } $options
+         */
+        $options = array_merge([
+            'form_id'  => self::FORM_ID,
+            'redirect' => self::REDIRECT,
+            'context'  => $context,
+            'policy'   => [
                 'max_delay_exceeded' => ['flash' => 'error', 'code' => ErrorCode::AUTH_FORM_EXPIRED],
             ],
-            // défaut neutre
-            'default'   => ['flash' => 'error', 'code' => ErrorCode::AUTH_RETRY],
+            'default'  => ['flash' => 'error', 'code' => ErrorCode::AUTH_RETRY],
+            'min_sec'  => 3,
+        ], $this->turnstileStepUp());
 
-            'min_sec' => 3,
-
-            // Turnstile adaptatif
-            'flags_bag' => 'security_flags',
-            'set_flags' => ['turnstile_forgot' => true],
-        ])) {
+        if (!$this->submissionDelayGuard->assertPassed($options)) {
             return;
         }
 
-        // 3) Rate limit (forgot password)
-        // Plus strict que login, typiquement 3/15min ou 5/1h selon votre politique
-        if (!$this->rateLimitGuard->assertAllowed([
-            'key'          => 'forgot_password',
-            'limit'        => 3,
-            'window_sec'   => 600, // 10 min
-            'redirect'     => '/coding-blog/forgot-password',
-            'route_for_log'=> '/forgot-password',
-            'flash_type'   => 'error',
-            'put_old'      => ['identifier' => $identifier],
-            'log_ctx'      => $contextBase,
+        /** @var array{
+         *   key: string,
+         *   limit: int,
+         *   window_sec: int,
+         *   redirect: string,
+         *   route_for_log: string,
+         *   flash_type: 'error',
+         *   put_old: array<string, string>,
+         *   log_ctx: array<string, mixed>,
+         *   flags_bag?: string,
+         *   set_flags?: array<string, mixed>
+         * } $options
+         */
+        $options = array_merge([
+            'key'           => self::RATE_LIMIT_KEY,
+            'limit'         => 3,
+            'window_sec'    => 600,
+            'redirect'      => self::REDIRECT,
+            'route_for_log' => '/forgot-password',
+            'flash_type'    => 'error',
+            'put_old'       => ['identifier' => $identifier],
+            'log_ctx'       => $context,
+        ], $this->turnstileStepUp());
 
-            // Turnstile adaptatif
-            'flags_bag'    => 'security_flags',
-            'set_flags'    => ['turnstile_forgot' => true],
-        ])) {
+        if (!$this->rateLimitGuard->assertAllowed($options)) {
             return;
         }
 
-        // 4) Turnstile (step-up)
-        // Si vous voulez exiger Turnstile uniquement quand la page l’affiche :
-        // - votre GET met data-turnstile="1" quand flag présent
-        // - le widget génère cf-turnstile-response
-        // Ici : si TurnstileGuard existe, on peut le vérifier ; sinon on ignore.
-        if ($this->turnstileGuard !== null) {
-            $turnstileTokenPresent = is_string($form['cf-turnstile-response'] ?? null)
-                && trim((string) $form['cf-turnstile-response']) !== '';
-
-            // Option : vérifier seulement si un token est présent (donc widget affiché)
-            // => évite de casser si Turnstile pas affiché
-            if ($turnstileTokenPresent) {
-                if (!$this->turnstileGuard->assertValid([
-                    'form'        => $form,
-                    'redirect'    => '/coding-blog/forgot-password',
-                    'context'     => $contextBase,
-                    'token_field' => 'cf-turnstile-response',
-                ])) {
-                    return;
-                }
-            }
+        if (!$this->assertTurnstileIfPresent($form, $context)) {
+            return;
         }
 
-        // 5) Service : toujours neutre
         $this->securityService->forgotPassword($identifier);
+        $this->replyNeutralSuccess($identifier);
+    }
 
-        // UI neutre systématique (anti-énumération)
+    private function rejectEmptyIdentifier(): void
+    {
+        $this->flash->add('error', MessageManager::get(ErrorCode::AUTH_FIELD_REQUIRED));
+        $this->flash->put('old', ['identifier' => '']);
+        $this->responder->redirect(self::REDIRECT);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function makeContext(string $identifier): array
+    {
+        return [
+            'form'       => self::FORM_ID,
+            'identifier' => $identifier !== '' ? $identifier : null,
+        ];
+    }
+
+    private function replyNeutralSuccess(string $identifier): void
+    {
         $this->flash->add('success', MessageManager::get(ErrorCode::AUTH_PASSWORD_RESET_REQUESTED));
-
-        // Conserver l’identifier (option UX)
         $this->flash->put('old', ['identifier' => $identifier]);
+        $this->responder->redirect(self::REDIRECT);
+    }
 
-        $this->responder->redirect('/coding-blog/forgot-password');
+    /**
+     * @param array<string,mixed> $form
+     * @param array<string,mixed> $context
+     */
+    private function assertTurnstileIfPresent(array $form, array $context): bool
+    {
+        if ($this->turnstileGuard === null) {
+            return true;
+        }
+
+        $flags = $this->flash->take('security_flags', []);
+        $flags = is_array($flags) ? $flags : [];
+
+        $turnstileRequired = !empty($flags[self::TURNSTILE_FLAG]);
+
+        // on remet les flags pour le GET suivant si besoin
+        $this->flash->put('security_flags', $flags);
+
+        if (!$turnstileRequired) {
+            return true;
+        }
+
+        return $this->turnstileGuard->assertValid([
+            'form'        => $form,
+            'redirect'    => self::REDIRECT,
+            'context'     => $context,
+            'token_field' => 'cf-turnstile-response',
+        ]);
+    }
+
+    /**
+     * @return array{
+     *   flags_bag: string,
+     *   set_flags: array<string, mixed>
+     * }
+     */
+    private function turnstileStepUp(): array
+    {
+        return [
+            'flags_bag' => 'security_flags',
+            'set_flags' => [self::TURNSTILE_FLAG => true],
+        ];
     }
 
     private function strOrEmpty(mixed $value): string

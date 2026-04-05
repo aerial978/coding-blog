@@ -63,8 +63,8 @@ final class TurnstileValidator implements TurnstileValidatorInterface
         ];
 
         $context  = stream_context_create($opts);
-        
-        $response = @file_get_contents(
+
+        $response = file_get_contents(
             'https://challenges.cloudflare.com/turnstile/v0/siteverify',
             false,
             $context
@@ -74,9 +74,9 @@ final class TurnstileValidator implements TurnstileValidatorInterface
             $err = error_get_last();
 
             $this->lastResponse = [
-                'success' => false,
+                'success'     => false,
                 'error-codes' => ['turnstile_request_failed'],
-                'diagnostic' => is_array($err) && isset($err['message']) ? (string) $err['message'] : 'unknown_error',
+                'diagnostic'  => is_array($err) ? $err['message'] : 'unknown_error',
             ];
 
             return false;
@@ -87,9 +87,9 @@ final class TurnstileValidator implements TurnstileValidatorInterface
 
         if (!is_array($data)) {
             $this->lastResponse = [
-                'success' => false,
+                'success'     => false,
                 'error-codes' => ['turnstile_bad_response'],
-                'diagnostic' => 'invalid_json',
+                'diagnostic'  => 'invalid_json',
             ];
             return false;
         }
@@ -97,7 +97,6 @@ final class TurnstileValidator implements TurnstileValidatorInterface
         $this->lastResponse = $data;
 
         return !empty($data['success']);
-
     }
 
     /**

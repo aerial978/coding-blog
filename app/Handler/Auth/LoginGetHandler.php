@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Handler\Auth;
 
 use App\Controller\BaseController;
-use App\Core\View;
 use App\Core\Contract\FlashInterface;
 use App\Core\FormId;
+use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
@@ -44,10 +44,10 @@ final class LoginGetHandler extends BaseController
         $this->responder->render(
             'security/login.html.twig',
             $this->withFlashes([
-                'title'         => 'Login',
-                'csrf_token'    => $this->csrf->generateToken(FormId::LOGIN),
-                'old'           => is_array($old) ? $old : [],
-                'honeypot_name' => $this->honeypot->fieldName(),
+                'title'              => 'Login',
+                'csrf_token'         => $this->csrf->generateToken(FormId::LOGIN),
+                'old'                => is_array($old) ? $old : [],
+                'honeypot_name'      => $this->honeypot->fieldName(),
                 'turnstile_required' => $turnstileRequired,
                 'turnstile_enabled'  => $turnstileEnabled,
                 'turnstile_site_key' => $_ENV['TURNSTILE_SITE_KEY'] ?? '',

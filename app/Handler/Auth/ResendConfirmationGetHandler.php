@@ -7,8 +7,8 @@ namespace App\Handler\Auth;
 use App\Controller\BaseController;
 use App\Core\Contract\FlashInterface;
 use App\Core\FormId;
-use App\Core\View;
 use App\Core\Logger;
+use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
@@ -30,30 +30,34 @@ final class ResendConfirmationGetHandler extends BaseController
     public function handle(): void
     {
         $old = $this->flash->take('old', []);
-        $old = is_array($old) ? $old : [];
 
         if (empty($old)) {
             $this->submissionDelay->markFormStart('resend_confirm');
         }
 
-        $flags = $this->flash->take('security_flags', []);
-        $flags = is_array($flags) ? $flags : [];
+        $rawFlags = $this->flash->take('security_flags', []);
+
+        /** @var array<string, mixed> $flags */
+        $flags = is_array($rawFlags) ? $rawFlags : [];
 
         Logger::getLogger('auth')->info('resend_get_flags', [
             'flags' => $flags,
         ]);
 
         $turnstileRequired = !empty($flags['turnstile_resend']);
-        $turnstileEnabled = $turnstileRequired;
+        $turnstileEnabled  = $turnstileRequired;
 
-        $this->responder->render('security/resend-confirmation.html.twig', $this->withFlashes([
-            'title'         => 'Resend confirmation',
-            'csrf_token'    => $this->csrf->generateToken(FormId::RESEND_CONFIRM),
-            'old'           => is_array($old) ? $old : [],
-            'honeypot_name' => $this->honeypot->fieldName(),
-            'turnstile_required' => $turnstileRequired,
-            'turnstile_enabled'  => $turnstileEnabled,
-            'turnstile_site_key' => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
-        ]));
+        $this->responder->render(
+            'security/resend-confirmation.html.twig',
+            $this->withFlashes([
+                'title'              => 'Resend confirmation',
+                'csrf_token'         => $this->csrf->generateToken(FormId::RESEND_CONFIRM),
+                'old'                => $old,
+                'honeypot_name'      => $this->honeypot->fieldName(),
+                'turnstile_required' => $turnstileRequired,
+                'turnstile_enabled'  => $turnstileEnabled,
+                'turnstile_site_key' => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
+            ])
+        );
     }
 }

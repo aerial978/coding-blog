@@ -4,24 +4,30 @@ declare(strict_types=1);
 
 namespace App\Handler\Auth;
 
-use App\Http\Contract\ResponderInterface;
 use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\Logger;
+use App\Http\Contract\ResponderInterface;
+use App\Security\Guard\Contract\HoneypotGuardInterface;
+use App\Security\Guard\Contract\RateLimitGuardInterface;
+use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
-use App\Security\Guard\HoneypotGuard;
-use App\Security\Guard\SubmissionDelayGuard;
-use App\Security\Guard\RateLimitGuard;
 
 final class ResendConfirmationPostHandler
 {
+    private const REDIRECT       = '/coding-blog/resend-confirmation';
+    private const HOME_REDIRECT  = '/coding-blog';
+    private const FORM_ID        = 'resend_confirm';
+    private const TURNSTILE_FLAG = 'turnstile_resend';
+    private const RATE_LIMIT_KEY = 'resend_confirm';
+
     public function __construct(
         private SecurityServiceInterface $securityService,
         private FlashInterface $flash,
         private ResponderInterface $responder,
-        private HoneypotGuard $honeypotGuard,
-        private SubmissionDelayGuard $submissionDelayGuard,
-        private RateLimitGuard $rateLimitGuard,
+        private HoneypotGuardInterface $honeypotGuard,
+        private SubmissionDelayGuardInterface $submissionDelayGuard,
+        private RateLimitGuardInterface $rateLimitGuard,
     ) {
     }
 
@@ -32,80 +38,126 @@ final class ResendConfirmationPostHandler
     {
         Logger::getLogger('auth')->info('resend_post_handler_entry');
 
-        $email = $this->strOrEmpty($form['email'] ?? null);
+        $email   = $this->strOrEmpty($form['email'] ?? null);
+        $context = $this->makeContext($email);
 
-        $contextBase = ['email' => $email ?: null];
+        /** @var array{
+         *   form: array<string, mixed>,
+         *   redirect: string,
+         *   flash_type: 'success',
+         *   code: string,
+         *   log_level: 'warning',
+         *   log_channel: string,
+         *   context: array<string, mixed>,
+         *   flags_bag?: string,
+         *   set_flags?: array<string, mixed>
+         * } $honeypotOptions
+         */
+        $honeypotOptions = array_merge([
+            'form'        => $form,
+            'redirect'    => self::REDIRECT,
+            'flash_type'  => 'success',
+            'code'        => ErrorCode::AUTH_RESEND_EMAIL_SENT,
+            'log_level'   => 'warning',
+            'log_channel' => 'auth',
+            'context'     => $context,
+        ], $this->turnstileStepUp());
 
-        // Honeypot (politique resend = succès silencieux)
-        if (!$this->honeypotGuard->assertClean([
-            'form'       => $form,
-            'redirect'   => '/coding-blog/resend-confirmation',
-            'flash_type' => 'success',
-            'code'       => ErrorCode::AUTH_RESEND_EMAIL_SENT,
-            'log_level'  => 'warning',
-            'log_channel'=> 'auth',
-            'context'    => [
-                'email' => $email ?: null,
-                // 'reason' n'est pas nécessaire ici : le guard l’ajoute déjà ('honeypot')
-            ],
-            'flags_bag' => 'security_flags',
-            'set_flags' => ['turnstile_resend' => true],
-        ])) {
+        if (!$this->honeypotGuard->assertClean($honeypotOptions)) {
             return;
         }
 
-        if (!$this->submissionDelayGuard->assertPassed([
-            'form_id'   => 'resend_confirm',
-            'redirect'  => '/coding-blog/resend-confirmation',
-            'context'   => $contextBase,
-            'policy'    => [
-                'max_delay_exceeded' => ['flash' => 'error',   'code' => ErrorCode::AUTH_FORM_EXPIRED],
+        /** @var array{
+         *   form_id: string,
+         *   redirect: string,
+         *   context: array<string, mixed>,
+         *   policy: array<string, array{flash: 'error'|'info'|'success'|'warning', code: string}>,
+         *   default: array{flash: 'error'|'info'|'success'|'warning', code: string},
+         *   flags_bag?: string,
+         *   set_flags?: array<string, mixed>
+         * } $delayOptions
+         */
+        $delayOptions = array_merge([
+            'form_id'  => self::FORM_ID,
+            'redirect' => self::REDIRECT,
+            'context'  => $context,
+            'policy'   => [
+                'max_delay_exceeded' => ['flash' => 'error', 'code' => ErrorCode::AUTH_FORM_EXPIRED],
             ],
-            'default'   => ['flash' => 'success', 'code' => ErrorCode::AUTH_RESEND_EMAIL_SENT],
-            
-            'flags_bag' => 'security_flags',
-            'set_flags' => ['turnstile_resend' => true],
-        ])) {
+            'default'  => ['flash' => 'success', 'code' => ErrorCode::AUTH_RESEND_EMAIL_SENT],
+        ], $this->turnstileStepUp());
+
+        if (!$this->submissionDelayGuard->assertPassed($delayOptions)) {
             return;
         }
 
-        if (!$this->rateLimitGuard->assertAllowed([
-            'key'        => 'resend_confirm',
-            'limit'      => 5,
-            'window_sec' => 300,
-            'redirect'   => '/coding-blog/resend-confirmation',
+        /** @var array{
+         *   key: string,
+         *   limit: int,
+         *   window_sec: int,
+         *   redirect: string,
+         *   route_for_log: string,
+         *   log_ctx: array<string, mixed>,
+         *   flags_bag?: string,
+         *   set_flags?: array<string, mixed>
+         * } $rateLimitOptions
+         */
+        $rateLimitOptions = array_merge([
+            'key'           => self::RATE_LIMIT_KEY,
+            'limit'         => 5,
+            'window_sec'    => 300,
+            'redirect'      => self::REDIRECT,
             'route_for_log' => '/resend-confirmation',
-            'log_ctx'    => [
-                'email'  => $email ?: null,
-                'reason' => 'rate_limited', // utile pour vos logs, optionnel
-            ],
-            'flags_bag' => 'security_flags',
-            'set_flags' => ['turnstile_resend' => true],
+            'log_ctx'       => $this->makeRateLimitContext($email),
+        ], $this->turnstileStepUp());
 
-            /* Opt-in : anti-énumération => succès silencieux
-            'silent_success'            => true,
-            'silent_success_flash_type' => 'success',
-            'silent_success_code'       => ErrorCode::AUTH_RESEND_EMAIL_SENT,*/
-        ])) {
+        if (!$this->rateLimitGuard->assertAllowed($rateLimitOptions)) {
             return;
         }
 
         $result = $this->callResendConfirmationSafely($email);
         if ($result === null) {
-            $this->responder->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect(self::REDIRECT);
             return;
         }
 
         $this->handleResendOutcome($result, $email);
     }
 
-    // -------------------------
-    // Helpers (à extraire ensuite)
-    // -------------------------
-
-    private function strOrEmpty(mixed $value): string
+    /**
+     * @return array<string,mixed>
+     */
+    private function makeContext(string $email): array
     {
-        return is_string($value) ? trim($value) : '';
+        return [
+            'form'  => self::FORM_ID,
+            'email' => $email !== '' ? $email : null,
+        ];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function makeRateLimitContext(string $email): array
+    {
+        return [
+            'email'  => $email !== '' ? $email : null,
+            'reason' => 'rate_limited',
+        ];
+    }
+
+    /**
+     * @return array{
+     *   flags_bag: string,
+     *   set_flags: array<string, mixed>
+     * }
+     */
+    private function turnstileStepUp(): array
+    {
+        return [
+            'flags_bag' => 'security_flags',
+            'set_flags' => [self::TURNSTILE_FLAG => true],
+        ];
     }
 
     /**
@@ -114,12 +166,16 @@ final class ResendConfirmationPostHandler
     private function callResendConfirmationSafely(string $email): ?array
     {
         try {
-            return $this->securityService->resendConfirmation($email);
+            /** @var array<string, mixed> $result */
+            $result = $this->securityService->resendConfirmation($email);
+
+            return $result;
         } catch (\Throwable $e) {
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
                 'exception' => $e->getMessage(),
                 'email'     => $email,
             ]));
+
             return null;
         }
     }
@@ -133,25 +189,29 @@ final class ResendConfirmationPostHandler
 
         if ($code === (string) ErrorCode::AUTH_ALREADY_CONFIRMED) {
             $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_ALREADY_CONFIRMED));
-            $this->responder->redirect('/coding-blog');
+            $this->responder->redirect(self::HOME_REDIRECT);
             return;
         }
 
         if ($code !== '') {
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', $code, ['email' => $email]));
-            $this->responder->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect(self::REDIRECT);
             return;
         }
 
         $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
             'email' => $email,
         ]));
-        $this->responder->redirect('/coding-blog/resend-confirmation');
+        $this->responder->redirect(self::REDIRECT);
+    }
+
+    private function strOrEmpty(mixed $value): string
+    {
+        return is_string($value) ? trim($value) : '';
     }
 
     private function stringify(mixed $value): string
     {
         return is_string($value) || is_int($value) || is_float($value) ? (string) $value : '';
     }
-
 }

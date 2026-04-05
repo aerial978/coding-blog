@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Model;
 
-use App\Core\SqlHelper;
+use App\Core\Contract\SqlHelperInterface;
 use App\Model\Entity\UserEntity;
 use App\Model\UserModel;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -12,172 +12,375 @@ use PHPUnit\Framework\TestCase;
 
 final class UserModelTest extends TestCase
 {
-    /** @var SqlHelper&MockObject */
-    private SqlHelper $sqlHelper;
+    private SqlHelperInterface&MockObject $sqlHelper;
+    private \PDOStatement&MockObject $statement;
+
+    private UserModel $model;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->sqlHelper = $this->createMock(SqlHelper::class);
+
+        $this->sqlHelper = $this->createMock(SqlHelperInterface::class);
+        $this->statement = $this->createMock(\PDOStatement::class);
+
+        $this->model = new UserModel($this->sqlHelper);
     }
 
-    // =========================
-    // findOneByUsername()
-    // =========================
-
-    public function testFindOneByUsernameReturnsEntityWhenFound(): void
+    public function testFindAllReturnsHydratedUsers(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
+        $rows = [
+            [
+                'user_id'    => 1,
+                'username'   => 'alice',
+                'email'      => 'alice@example.com',
+                'created_at' => '2026-01-01 10:00:00',
+            ],
+            [
+                'user_id'    => 2,
+                'username'   => 'bob',
+                'email'      => 'bob@example.com',
+                'created_at' => '2026-01-02 11:00:00',
+            ],
+        ];
 
         $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with('SELECT id AS user_id, username, email, created_at FROM user')
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetchAll')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn($rows);
+
+        $result = $this->model->findAll();
+
+        $this->assertCount(2, $result);
+        $this->assertContainsOnlyInstancesOf(UserEntity::class, $result);
+
+        $this->assertSame(1, $result[0]->getUserId());
+        $this->assertSame('alice', $result[0]->getUsername());
+        $this->assertSame('alice@example.com', $result[0]->getEmail());
+
+        $this->assertSame(2, $result[1]->getUserId());
+        $this->assertSame('bob', $result[1]->getUsername());
+        $this->assertSame('bob@example.com', $result[1]->getEmail());
+    }
+
+    public function testFindAllReturnsEmptyArrayWhenNoUsersFound(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with('SELECT id AS user_id, username, email, created_at FROM user')
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetchAll')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn([]);
+
+        $result = $this->model->findAll();
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindOneByUsernameReturnsHydratedUserWhenFound(): void
+    {
+        $username = 'alice';
+
+        $row = [
+            'username' => 'alice',
+        ];
+
+        $this->sqlHelper
+            ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('SELECT username FROM user WHERE username = :username'),
-                $this->equalTo([':username' => 'john'])
+                'SELECT username FROM user WHERE username = :username',
+                [':username' => $username]
             )
-            ->willReturn($stmt);
+            ->willReturn($this->statement);
 
-        $stmt->method('fetch')
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
             ->with(\PDO::FETCH_ASSOC)
-            ->willReturn(['username' => 'john']);
+            ->willReturn($row);
 
-        $model  = new UserModel($this->sqlHelper);
-        $entity = $model->findOneByUsername('john');
+        $result = $this->model->findOneByUsername($username);
 
-        $this->assertInstanceOf(UserEntity::class, $entity);
-        $this->assertSame('john', $entity->getUsername());
+        $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame('alice', $result->getUsername());
     }
 
     public function testFindOneByUsernameReturnsNullWhenNotFound(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
-
         $this->sqlHelper
+            ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('SELECT username FROM user WHERE username = :username'),
-                $this->equalTo([':username' => 'nobody'])
+                'SELECT username FROM user WHERE username = :username',
+                [':username' => 'unknown']
             )
-            ->willReturn($stmt);
+            ->willReturn($this->statement);
 
-        $stmt->method('fetch')
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
             ->with(\PDO::FETCH_ASSOC)
             ->willReturn(false);
 
-        $model = new UserModel($this->sqlHelper);
-        $this->assertNull($model->findOneByUsername('nobody'));
+        $result = $this->model->findOneByUsername('unknown');
+
+        $this->assertNull($result);
     }
 
-    // =========================
-    // findOneByEmail()
-    // =========================
-
-    public function testFindOneByEmailReturnsEntityWhenFound(): void
+    public function testFindOneByEmailReturnsHydratedUserWhenFound(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
+        $email = 'alice@example.com';
+
+        $row = [
+            'user_id'    => 12,
+            'username'   => 'alice',
+            'slug'       => 'alice',
+            'email'      => 'alice@example.com',
+            'password'   => 'hashed-password',
+            'status'     => 'inactive',
+            'created_at' => '2026-01-01 10:00:00',
+            'updated_at' => '2026-01-01 10:00:00',
+        ];
 
         $this->sqlHelper
+            ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('SELECT'),
-                [':email' => 'john@example.test']
+                $this->stringContains('WHERE email = :email'),
+                [':email' => $email]
             )
-            ->willReturn($stmt);
+            ->willReturn($this->statement);
 
-        $stmt->method('fetch')
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
             ->with(\PDO::FETCH_ASSOC)
-            ->willReturn([
-                'user_id'    => 42,
-                'username'   => 'john',
-                'slug'       => 'john',
-                'email'      => 'john@example.test',
-                'password'   => 'hashed',
-                'status'     => 'inactive',
-                'created_at' => '2025-10-03 12:00:00',
-                'updated_at' => '2025-10-03 12:00:00',
-            ]);
+            ->willReturn($row);
 
-        $model  = new UserModel($this->sqlHelper);
-        $entity = $model->findOneByEmail('john@example.test');
+        $result = $this->model->findOneByEmail($email);
 
-        $this->assertInstanceOf(UserEntity::class, $entity);
-        $this->assertSame(42, $entity->getUserId());
-        $this->assertSame('john@example.test', $entity->getEmail());
-        $this->assertSame('inactive', $entity->getStatus());
+        $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame(12, $result->getUserId());
+        $this->assertSame('alice', $result->getUsername());
+        $this->assertSame('alice@example.com', $result->getEmail());
+        $this->assertSame('hashed-password', $result->getPassword());
+        $this->assertSame('inactive', $result->getStatus());
     }
 
     public function testFindOneByEmailReturnsNullWhenNotFound(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
-
         $this->sqlHelper
+            ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('SELECT'),
-                [':email' => 'nope@example.test']
+                $this->stringContains('WHERE email = :email'),
+                [':email' => 'unknown@example.com']
             )
-            ->willReturn($stmt);
+            ->willReturn($this->statement);
 
-        $stmt->method('fetch')
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
             ->with(\PDO::FETCH_ASSOC)
             ->willReturn(false);
 
-        $model = new UserModel($this->sqlHelper);
-        $this->assertNull($model->findOneByEmail('nope@example.test'));
+        $result = $this->model->findOneByEmail('unknown@example.com');
+
+        $this->assertNull($result);
     }
 
-    // =========================
-    // createUser()
-    // =========================
-
-    public function testCreateUserReturnsLastInsertIdOnSuccess(): void
+    public function testCreateUserReturnsInsertedIdWhenInsertSucceeds(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
+        $user = (new UserEntity())
+            ->setUsername('alice')
+            ->setSlug('alice')
+            ->setEmail('alice@example.com')
+            ->setPassword('hashed-password');
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
             ->with(
                 $this->stringContains('INSERT INTO user'),
-                $this->callback(function (array $params) {
-                    return $params[':username'] === 'John'
-                        && $params[':slug']     === 'john'
-                        && $params[':email']    === 'john@example.test'
-                        && $params[':password'] === 'hashed';
-                })
+                [
+                    ':username' => 'alice',
+                    ':slug'     => 'alice',
+                    ':email'    => 'alice@example.com',
+                    ':password' => 'hashed-password',
+                ]
             )
-            ->willReturn($stmt);
+            ->willReturn($this->statement);
 
-        $stmt->method('rowCount')->willReturn(1);
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
 
         $this->sqlHelper
+            ->expects($this->once())
             ->method('lastInsertId')
-            ->willReturn(99);
+            ->willReturn(25);
 
-        $entity = (new UserEntity())
-            ->setUsername('John')
-            ->setSlug('john')
-            ->setEmail('john@example.test')
-            ->setPassword('hashed');
+        $result = $this->model->createUser($user);
 
-        $model = new UserModel($this->sqlHelper);
-        $this->assertSame(99, $model->createUser($entity));
+        $this->assertSame(25, $result);
     }
 
-    public function testCreateUserReturnsZeroWhenNoRowInserted(): void
+    public function testCreateUserReturnsZeroWhenInsertFails(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
+        $user = (new UserEntity())
+            ->setUsername('alice')
+            ->setSlug('alice')
+            ->setEmail('alice@example.com')
+            ->setPassword('hashed-password');
 
-        $this->sqlHelper->method('request')->willReturn($stmt);
-        $stmt->method('rowCount')->willReturn(0);
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->willReturn($this->statement);
 
-        $entity = (new UserEntity())
-            ->setUsername('John')
-            ->setSlug('john')
-            ->setEmail('john@example.test')
-            ->setPassword('hashed');
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(0);
 
-        $model = new UserModel($this->sqlHelper);
-        $this->assertSame(0, $model->createUser($entity));
+        $this->sqlHelper
+            ->expects($this->never())
+            ->method('lastInsertId');
+
+        $result = $this->model->createUser($user);
+
+        $this->assertSame(0, $result);
+    }
+
+    public function testFindAuthByEmailReturnsHydratedUserWhenFound(): void
+    {
+        $email = 'alice@example.com';
+
+        $row = [
+            'user_id'  => 7,
+            'username' => 'alice',
+            'email'    => 'alice@example.com',
+            'password' => 'hashed-password',
+            'status'   => 'active',
+        ];
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE email = :email'),
+                [':email' => $email]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn($row);
+
+        $result = $this->model->findAuthByEmail($email);
+
+        $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame(7, $result->getUserId());
+        $this->assertSame('alice', $result->getUsername());
+        $this->assertSame('alice@example.com', $result->getEmail());
+        $this->assertSame('hashed-password', $result->getPassword());
+        $this->assertSame('active', $result->getStatus());
+    }
+
+    public function testFindAuthByEmailReturnsNullWhenNotFound(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE email = :email'),
+                [':email' => 'unknown@example.com']
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
+
+        $result = $this->model->findAuthByEmail('unknown@example.com');
+
+        $this->assertNull($result);
+    }
+
+    public function testFindAuthByUsernameReturnsHydratedUserWhenFound(): void
+    {
+        $username = 'alice';
+
+        $row = [
+            'user_id'  => 8,
+            'username' => 'alice',
+            'email'    => 'alice@example.com',
+            'password' => 'hashed-password',
+            'status'   => 'active',
+        ];
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE username = :username'),
+                [':username' => $username]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn($row);
+
+        $result = $this->model->findAuthByUsername($username);
+
+        $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame(8, $result->getUserId());
+        $this->assertSame('alice', $result->getUsername());
+        $this->assertSame('alice@example.com', $result->getEmail());
+        $this->assertSame('hashed-password', $result->getPassword());
+        $this->assertSame('active', $result->getStatus());
+    }
+
+    public function testFindAuthByUsernameReturnsNullWhenNotFound(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE username = :username'),
+                [':username' => 'unknown']
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
+
+        $result = $this->model->findAuthByUsername('unknown');
+
+        $this->assertNull($result);
     }
 }

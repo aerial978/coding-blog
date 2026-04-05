@@ -4,33 +4,33 @@ declare(strict_types=1);
 
 namespace App\Core\Container\Provider;
 
-use App\Controller\ErrorController;
-use App\Controller\HomeController;
-use App\Core\View;
-use App\Http\Contract\ResponderInterface;
-use App\Http\Request;
-use Psr\Container\ContainerInterface;
-use App\Core\Contract\FlashInterface;
-use App\Model\Contract\UserModelInterface;
-use App\Controller\DebugController;
-use App\Core\Contract\SessionInterface;
 use App\Controller\AccountController;
-use App\Controller\RegisterController;            // <-- AJOUT
-use App\Handler\Auth\RegisterGetHandler;          // <-- AJOUT
-use App\Handler\Auth\RegisterPostHandler;         // <-- AJOUT
 use App\Controller\ConfirmAccountController;
-use App\Controller\ResendConfirmationController;
+use App\Controller\DebugController;
+use App\Controller\ErrorController;
 use App\Controller\ForgotPasswordController;
-use App\Controller\ResetPasswordController;
-use App\Handler\Auth\ConfirmAccountHandler;
-use App\Handler\Auth\ResendConfirmationGetHandler;    
-use App\Handler\Auth\ResendConfirmationPostHandler;
+use App\Controller\HomeController;
 use App\Controller\LoginController;
-use App\Handler\Auth\LoginGetHandler;
-use App\Handler\Auth\LoginPostHandler;
+use App\Controller\RegisterController;
+use App\Controller\ResendConfirmationController;
+use App\Controller\ResetPasswordController;
+use App\Core\Contract\FlashInterface;
+use App\Core\Contract\SessionInterface;
+use App\Core\View;
+use App\Handler\Auth\ConfirmAccountHandler;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
+use App\Handler\Auth\LoginGetHandler;
+use App\Handler\Auth\LoginPostHandler;
+use App\Handler\Auth\RegisterGetHandler;
+use App\Handler\Auth\RegisterPostHandler;
+use App\Handler\Auth\ResendConfirmationGetHandler;
+use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Handler\Auth\ResetPasswordGetHandler;
+use App\Handler\Auth\ResetPasswordPostHandler;
+use App\Http\Request;
+use App\Model\Contract\UserModelInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Provides controller definitions for the dependency injection container.
@@ -81,9 +81,6 @@ final class ControllerServiceProvider
                 /** @var Request $request */
                 $request = $container->get(Request::class);
 
-                /** @var ResponderInterface $responder */
-                $responder = $container->get(ResponderInterface::class);
-
                 /** @var RegisterGetHandler $getHandler */
                 $getHandler = $container->get(RegisterGetHandler::class);
 
@@ -119,16 +116,12 @@ final class ControllerServiceProvider
                     $request,
                     $getHandler,
                     $postHandler
-
                 );
             },
 
             LoginController::class => static function (ContainerInterface $container): LoginController {
                 /** @var Request $request */
                 $request = $container->get(Request::class);
-
-                /** @var ResponderInterface $responder */
-                $responder = $container->get(ResponderInterface::class);
 
                 /** @var LoginGetHandler $getHandler */
                 $getHandler = $container->get(LoginGetHandler::class);
@@ -152,14 +145,17 @@ final class ControllerServiceProvider
                 return new ForgotPasswordController($request, $getHandler, $postHandler);
             },
 
-            ResetPasswordController::class => static function (ContainerInterface $c): ResetPasswordController {
+            ResetPasswordController::class => static function (ContainerInterface $container): ResetPasswordController {
                 /** @var Request $request */
-                $request = $c->get(Request::class);
+                $request = $container->get(Request::class);
 
                 /** @var ResetPasswordGetHandler $getHandler */
-                $getHandler = $c->get(ResetPasswordGetHandler::class);
+                $getHandler = $container->get(ResetPasswordGetHandler::class);
 
-                return new ResetPasswordController($request, $getHandler);
+                /** @var ResetPasswordPostHandler $postHandler */
+                $postHandler = $container->get(ResetPasswordPostHandler::class);
+
+                return new ResetPasswordController($request, $getHandler, $postHandler);
             },
 
             DebugController::class => static function (ContainerInterface $container): object {
@@ -170,14 +166,14 @@ final class ControllerServiceProvider
             },
 
             AccountController::class => static function (ContainerInterface $container): object {
-            /** @var \App\Core\View $view */
-            $view = $container->get(\App\Core\View::class);
+                /** @var \App\Core\View $view */
+                $view = $container->get(\App\Core\View::class);
 
-            /** @var \App\Core\Contract\FlashInterface $flash */
-            $flash = $container->get(\App\Core\Contract\FlashInterface::class);
+                /** @var \App\Core\Contract\FlashInterface $flash */
+                $flash = $container->get(\App\Core\Contract\FlashInterface::class);
 
-            return new AccountController($view, $flash);
-    },
+                return new AccountController($view, $flash);
+            },
 
         ];
     }

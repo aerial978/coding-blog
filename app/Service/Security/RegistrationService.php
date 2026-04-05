@@ -32,7 +32,8 @@ final class RegistrationService implements RegistrationServiceInterface
         private RegistrationThrottleServiceInterface $throttle,
         private PasswordBlacklist $passwordBlacklist,
         private DisposableChecker $disposableChecker,
-    ) {}
+    ) {
+    }
 
     /**
      * @param array<string,mixed> $form
@@ -151,11 +152,15 @@ final class RegistrationService implements RegistrationServiceInterface
         $channel = 'auth';
 
         $throttleResult = $this->throttle->checkQuota($ip);
-        if (!($throttleResult['allowed'] ?? false)) {
+
+        if (!$throttleResult['allowed']) {
+            $reason       = $throttleResult['reason'];
+            $reasonSuffix = is_string($reason) ? $reason : '';
+
             Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_REGISTRATION_QUOTA_EXCEEDED, [
                 'email'  => $email,
                 'ip'     => $ip,
-                'reason' => (string) ($throttleResult['reason'] ?? ''),
+                'reason' => 'quota_exceeded_' . $reasonSuffix,
             ]);
 
             return [
@@ -178,13 +183,32 @@ final class RegistrationService implements RegistrationServiceInterface
         return ['username' => $username, 'email' => $email];
     }
 
-    private function strOrEmptyField(array $form, string $key, bool $trim = true): string
+    /**
+     * @param array<string, mixed> $form
+     */
+    private function trimmedStringField(array $form, string $key): string
     {
-        $val = $form[$key] ?? null;
-        if (!is_string($val)) {
+        $value = $form[$key] ?? null;
+
+        if (!is_string($value)) {
             return '';
         }
-        return $trim ? trim($val) : $val;
+
+        return trim($value);
+    }
+
+    /**
+     * @param array<string, mixed> $form
+     */
+    private function rawStringField(array $form, string $key): string
+    {
+        $value = $form[$key] ?? null;
+
+        if (!is_string($value)) {
+            return '';
+        }
+
+        return $value;
     }
 
     /**
@@ -194,10 +218,10 @@ final class RegistrationService implements RegistrationServiceInterface
     private function sanitizeRegistrationForm(array $form): array
     {
         // Champs “visibles” → trim; secrets (passwords) → pas de trim
-        $username = $this->strOrEmptyField($form, 'username', true);
-        $email    = $this->strOrEmptyField($form, 'email', true);
-        $password = $this->strOrEmptyField($form, 'password', false);
-        $confirm  = $this->strOrEmptyField($form, 'confirm_password', false);
+        $username = $this->trimmedStringField($form, 'username');
+        $email    = $this->trimmedStringField($form, 'email');
+        $password = $this->rawStringField($form, 'password');
+        $confirm  = $this->rawStringField($form, 'confirm_password');
 
         $old = ['username' => $username, 'email' => $email];
 
@@ -294,7 +318,7 @@ final class RegistrationService implements RegistrationServiceInterface
             $userId = $this->userModel->createUser($user);
             if ($userId <= 0) {
                 Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_REGISTRATION_FAILED, [
-                    'email' => $user->getEmail(),
+                    'email'    => $user->getEmail(),
                     'username' => $user->getUsername(),
                 ]);
                 $this->sqlHelper->rollBack();
@@ -305,7 +329,7 @@ final class RegistrationService implements RegistrationServiceInterface
             if (!$ok) {
                 $this->sqlHelper->rollBack();
                 Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-                    'reason' => 'create_confirmation_token_failed',
+                    'reason'  => 'create_confirmation_token_failed',
                     'user_id' => $userId,
                 ]);
                 return 0;
@@ -316,7 +340,7 @@ final class RegistrationService implements RegistrationServiceInterface
         } catch (\Throwable $txe) {
             $this->sqlHelper->rollBack();
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-                'reason' => 'transaction_exception',
+                'reason'    => 'transaction_exception',
                 'exception' => $txe->getMessage(),
             ]);
             return 0;
@@ -337,14 +361,14 @@ final class RegistrationService implements RegistrationServiceInterface
                 'Confirmation de votre compte',
                 'confirmation.html',
                 [
-                    'username' => $username, 
-                    'link' => $link
+                    'username' => $username,
+                    'link'     => $link
                 ]
             );
         } catch (\Throwable $mailEx) {
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
-                'email' => $email,
-                'user_id' => $userId,
+                'email'     => $email,
+                'user_id'   => $userId,
                 'exception' => $mailEx->getMessage(),
             ]);
             return false;
@@ -352,9 +376,9 @@ final class RegistrationService implements RegistrationServiceInterface
 
         if (!$sent) {
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
-                'email' => $email,
+                'email'   => $email,
                 'user_id' => $userId,
-                'reason' => 'mailer_returned_false',
+                'reason'  => 'mailer_returned_false',
             ]);
             return false;
         }
@@ -381,7 +405,7 @@ final class RegistrationService implements RegistrationServiceInterface
             if ($dupKind === 'email') {
                 Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_EMAIL_EXISTS, [
                     'email' => $email,
-                    'dup' => true,
+                    'dup'   => true,
                 ]);
                 return ['errors' => [ErrorCode::AUTH_EMAIL_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER], 'old' => $old];
             }
@@ -389,25 +413,25 @@ final class RegistrationService implements RegistrationServiceInterface
             if ($dupKind === 'username') {
                 Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_USERNAME_EXISTS, [
                     'username' => $username,
-                    'dup' => true,
+                    'dup'      => true,
                 ]);
                 return ['errors' => [ErrorCode::AUTH_USERNAME_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER], 'old' => $old];
             }
 
             // Duplicate key, but index not recognized (keep your original fallback)
             Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_REGISTRATION_FAILED, [
-                'reason' => 'duplicate_key',
+                'reason'   => 'duplicate_key',
                 'sqlstate' => $sqlState,
-                'driver' => $driverCode,
+                'driver'   => $driverCode,
             ]);
             return ['errors' => [ErrorCode::AUTH_REGISTRATION_FAILED], 'old' => $old];
         }
 
         // Any other PDO error → technical error
         Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-            'reason' => 'pdo_exception',
-            'sqlstate' => $sqlState,
-            'driver' => $driverCode,
+            'reason'    => 'pdo_exception',
+            'sqlstate'  => $sqlState,
+            'driver'    => $driverCode,
             'exception' => $pdoException->getMessage(),
         ]);
         return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];

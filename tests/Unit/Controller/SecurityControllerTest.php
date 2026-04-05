@@ -25,10 +25,10 @@ final class SecurityControllerTest extends TestCase
     {
         parent::setUp();
 
-        $_SERVER['REMOTE_ADDR']     = '1.2.3.4';
-        $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit';
+        $_SERVER['REMOTE_ADDR']      = '1.2.3.4';
+        $_SERVER['HTTP_USER_AGENT']  = 'PHPUnit';
         $_ENV['TURNSTILE_SITE_KEY']  = 'sitekey';
-        $_GET                       = [];
+        $_GET                        = [];
     }
 
     private function makeController(

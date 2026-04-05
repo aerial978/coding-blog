@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Service\Security;
 
 use App\Core\Contract\SessionInterface;
-use App\Model\Entity\UserEntity;
 use App\Core\ErrorCode;
 use App\Core\Logger;
 use App\Model\Contract\UserModelInterface;
+use App\Model\Entity\UserEntity;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Validation\Contract\FormValidatorInterface;
 
@@ -62,75 +62,124 @@ final class LoginService implements LoginServiceInterface
     {
         $channel = 'auth';
 
-        // 1) Lecture / normalisation
         [$identifier, $password, $old] = $this->sanitizeLoginForm($form);
 
-        // 2) Validation formelle
         $errors = $this->validateLoginForm($identifier, $password);
         if ($errors !== []) {
             return ['errors' => $errors, 'old' => $old];
         }
 
-        // 3) Contexte client
         $client = $this->resolveClientContext();
+        $user   = $this->findUserByIdentifier($identifier);
 
-        // 4) Throttling (à brancher)
-        // if (!$this->throttle->isAllowed($client['ip'], $identifier)) {
-        //     Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_LOGIN_QUOTA_EXCEEDED, [
-        //         'ip' => $client['ip'],
-        //         'identifier' => $identifier !== '' ? hash('sha256', mb_strtolower($identifier)) : null,
-        //     ]);
-        //     return ['errors' => [ErrorCode::AUTH_LOGIN_QUOTA_EXCEEDED], 'old' => $old];
-        // }
-
-        // 5) Résolution utilisateur
-        $user = $this->findUserByIdentifier($identifier);
-
-        // 6) Anti-énumération
-        if ($user === null) {
-            Logger::logCodeAndGetMessage($channel, 'info', ErrorCode:: AUTH_INVALID_CREDENTIALS, [
-                'reason' => 'user_not_found',
-                'ip'     => $client['ip'],
-            ]);
-
-            return ['errors' => [ErrorCode:: AUTH_INVALID_CREDENTIALS], 'old' => $old];
+        $failure = $this->failIfUserMissing($user, $client['ip'], $old, $channel);
+        if ($failure !== null) {
+            return $failure;
         }
 
+        /** @var UserEntity $user */
+        $failure = $this->failIfPasswordInvalid($user, $password, $client['ip'], $old, $channel);
+        if ($failure !== null) {
+            return $failure;
+        }
+
+        $failure = $this->failIfUserInactive($user, $client['ip'], $old, $channel);
+        if ($failure !== null) {
+            return $failure;
+        }
+
+        $userId  = $this->extractUserId($user);
+        $failure = $this->failIfUserIdInvalid($userId, $client['ip'], $old, $channel);
+        if ($failure !== null) {
+            return $failure;
+        }
+
+        $this->openAuthenticatedSession($userId, $client['ip'], $channel);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * @param array{identifier:string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     */
+    private function failIfUserMissing(?UserEntity $user, string $ip, array $old, string $channel): ?array
+    {
+        if ($user !== null) {
+            return null;
+        }
+
+        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_INVALID_CREDENTIALS, [
+            'reason' => 'user_not_found',
+            'ip'     => $ip,
+        ]);
+
+        return ['errors' => [ErrorCode::AUTH_INVALID_CREDENTIALS], 'old' => $old];
+    }
+
+    /**
+     * @param array{identifier:string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     */
+    private function failIfPasswordInvalid(UserEntity $user, string $password, string $ip, array $old, string $channel): ?array
+    {
         $hash = $this->extractPasswordHash($user);
-        if ($hash === '' || !password_verify($password, $hash)) {
-            Logger::logCodeAndGetMessage($channel, 'info', ErrorCode:: AUTH_INVALID_CREDENTIALS, [
-                'reason'  => 'bad_password',
-                'ip'      => $client['ip'],
-                'user_id' => $this->extractUserId($user) ?: null,
-            ]);
 
-            return ['errors' => [ErrorCode:: AUTH_INVALID_CREDENTIALS], 'old' => $old];
+        if ($hash !== '' && password_verify($password, $hash)) {
+            return null;
         }
 
-        // 7) Optionnel : statut
+        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_INVALID_CREDENTIALS, [
+            'reason'  => 'bad_password',
+            'ip'      => $ip,
+            'user_id' => $this->extractUserId($user) ?: null,
+        ]);
+
+        return ['errors' => [ErrorCode::AUTH_INVALID_CREDENTIALS], 'old' => $old];
+    }
+
+    /**
+     * @param array{identifier:string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     */
+    private function failIfUserInactive(UserEntity $user, string $ip, array $old, string $channel): ?array
+    {
         $status = $this->extractUserStatus($user);
-        if ($status !== null && $status !== 'active') {
-            Logger::logCodeAndGetMessage($channel, 'info', ErrorCode:: AUTH_INVALID_CREDENTIALS, [
-                'reason'  => 'user_not_active',
-                'status'  => $status,
-                'ip'      => $client['ip'],
-                'user_id' => $this->extractUserId($user) ?: null,
-            ]);
 
-            return ['errors' => [ErrorCode:: AUTH_INVALID_CREDENTIALS], 'old' => $old];
+        if ($status === null || $status === 'active') {
+            return null;
         }
 
-        // 8) Session (alignée avec SessionAuthChecker)
-        $userId = $this->extractUserId($user);
-        if ($userId <= 0) {
-            Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-                'reason' => 'missing_user_id',
-                'ip'     => $client['ip'],
-            ]);
+        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_INVALID_CREDENTIALS, [
+            'reason'  => 'user_not_active',
+            'status'  => $status,
+            'ip'      => $ip,
+            'user_id' => $this->extractUserId($user) ?: null,
+        ]);
 
-            return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
+        return ['errors' => [ErrorCode::AUTH_INVALID_CREDENTIALS], 'old' => $old];
+    }
+
+    /**
+     * @param array{identifier:string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     */
+    private function failIfUserIdInvalid(int $userId, string $ip, array $old, string $channel): ?array
+    {
+        if ($userId > 0) {
+            return null;
         }
 
+        Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
+            'reason' => 'missing_user_id',
+            'ip'     => $ip,
+        ]);
+
+        return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
+    }
+
+    private function openAuthenticatedSession(int $userId, string $ip, string $channel): void
+    {
         Logger::getLogger('app')->info('session_before_regenerate', [
             'session_id' => session_id(),
         ]);
@@ -141,21 +190,15 @@ final class LoginService implements LoginServiceInterface
             'session_id' => session_id(),
         ]);
 
-        // IMPORTANT : adaptez la clé si votre AuthChecker attend autre chose
         $this->session->set('user', [
-            'id' => $userId,
+            'id'    => $userId,
             'roles' => ['USER'],
         ]);
 
         Logger::logCodeAndGetMessage($channel, 'info', 'login_success', [
             'user_id' => $userId,
-            'ip'      => $client['ip'],
+            'ip'      => $ip,
         ]);
-
-        // 9) Throttle success (si branché)
-        // $this->throttle->recordSuccess($client['ip'], $userId, $client['userAgent']);
-
-        return ['ok' => true];
     }
 
     /**
@@ -168,13 +211,32 @@ final class LoginService implements LoginServiceInterface
         return ['identifier' => $identifier];
     }
 
-    private function strOrEmptyField(array $form, string $key, bool $trim = true): string
+    /**
+     * @param array<string, mixed> $form
+     */
+    private function trimmedStringField(array $form, string $key): string
     {
-        $val = $form[$key] ?? null;
-        if (!is_string($val)) {
+        $value = $form[$key] ?? null;
+
+        if (!is_string($value)) {
             return '';
         }
-        return $trim ? trim($val) : $val;
+
+        return trim($value);
+    }
+
+    /**
+     * @param array<string, mixed> $form
+     */
+    private function rawStringField(array $form, string $key): string
+    {
+        $value = $form[$key] ?? null;
+
+        if (!is_string($value)) {
+            return '';
+        }
+
+        return $value;
     }
 
     /**
@@ -183,8 +245,8 @@ final class LoginService implements LoginServiceInterface
      */
     private function sanitizeLoginForm(array $form): array
     {
-        $identifier = $this->strOrEmptyField($form, 'identifier', true);
-        $password   = $this->strOrEmptyField($form, 'password', false);
+        $identifier = $this->trimmedStringField($form, 'identifier');
+        $password   = $this->rawStringField($form, 'password');
 
         return [$identifier, $password, ['identifier' => $identifier]];
     }
@@ -194,21 +256,13 @@ final class LoginService implements LoginServiceInterface
      */
     private function validateLoginForm(string $identifier, string $password): array
     {
-        if (method_exists($this->validator, 'validateLogin')) {
-            /** @var list<string|int> $errors */
-            $errors = $this->validator->validateLogin([
-                'identifier' => $identifier,
-                'password'   => $password,
-            ]);
-            return $errors;
-        }
+        /** @var list<string|int> $errors */
+        $errors = $this->validator->validateLogin([
+            'identifier' => $identifier,
+            'password'   => $password,
+        ]);
 
-        // Fallback minimal
-        if ($identifier === '' || $password === '') {
-            return [ErrorCode:: AUTH_INVALID_CREDENTIALS];
-        }
-
-        return [];
+        return $errors;
     }
 
     /**

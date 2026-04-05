@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Http\Request;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
+use App\Http\Request;
 
 final class ForgotPasswordController
 {
@@ -17,7 +17,7 @@ final class ForgotPasswordController
     ) {
     }
 
-    public function ForgotPassword(): void
+    public function forgotPassword(): void
     {
         if ($this->request->getMethod() === 'GET') {
             $this->getHandler->handle();

@@ -6,14 +6,14 @@ namespace App\Service\Security;
 
 use App\Core\ErrorCode;
 use App\Core\Logger;
-use App\Model\UserTokenModel;
+use App\Model\Contract\UserTokenModelInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Service\Security\Contract\AccountConfirmationServiceInterface;
 
 final class AccountConfirmationService implements AccountConfirmationServiceInterface
 {
     public function __construct(
-        private UserTokenModel $userTokenModel,
+        private UserTokenModelInterface $userTokenModel,
         private TokenGeneratorInterface $tokenGen
     ) {
     }

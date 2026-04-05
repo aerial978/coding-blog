@@ -54,7 +54,7 @@ final class ConfirmAccountHandler
     /** @param array<string,mixed> $result */
     private function handleConfirmOutcome(array $result): void
     {
-        $code = Scalar::toString($result['error'] ?? null);
+        $code   = Scalar::toString($result['error'] ?? null);
         $reason = is_string($result['reason'] ?? null) ? $result['reason'] : '';
 
         $action = $this->resolveConfirmAction($code, $reason);
@@ -69,18 +69,26 @@ final class ConfirmAccountHandler
         if ($code === '') {
             return 'success';
         }
-        if ($code === (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN && $reason === 'expired') {
-            return 'invalid_expired';
+
+        $map = [
+            ErrorCode::AUTH_INVALID_CONFIRM_TOKEN => [
+                'expired'   => 'invalid_expired',
+                'not_found' => 'invalid_not_found',
+            ],
+            ErrorCode::AUTH_CONFIRM_TOKEN_USED => 'used',
+            ErrorCode::AUTH_ALREADY_CONFIRMED  => 'already',
+        ];
+
+        $entry = $map[$code] ?? null;
+
+        if (is_array($entry)) {
+            return $entry[$reason] ?? 'technical';
         }
-        if ($code === (string) ErrorCode::AUTH_INVALID_CONFIRM_TOKEN && $reason === 'not_found') {
-            return 'invalid_not_found';
+
+        if (is_string($entry)) {
+            return $entry;
         }
-        if ($code === (string) ErrorCode::AUTH_CONFIRM_TOKEN_USED) {
-            return 'used';
-        }
-        if ($code === (string) ErrorCode::AUTH_ALREADY_CONFIRMED) {
-            return 'already';
-        }
+
         return 'technical';
     }
 

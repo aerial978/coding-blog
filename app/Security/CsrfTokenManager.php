@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
-use App\Core\SessionManager;
+use App\Core\Contract\SessionInterface;
 use App\Security\Contract\CsrfTokenInterface;
 
 /**
@@ -27,10 +27,10 @@ final class CsrfTokenManager implements CsrfTokenInterface
      *
      * Initializes the CSRF token manager with a session handler.
      *
-     * @param SessionManager $session
+     * @param SessionInterface $session
      *     Session manager instance used for storing and retrieving tokens.
      */
-    public function __construct(private SessionManager $session)
+    public function __construct(private SessionInterface $session)
     {
     }
 

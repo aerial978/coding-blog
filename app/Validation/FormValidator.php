@@ -139,4 +139,12 @@ final class FormValidator implements FormValidatorInterface
         $email = $this->normalize($email);
         return ($this->email())($email);
     }
+
+    public function validatePasswordField(string $password): ?string
+    {
+        $password = $this->normalize($password);
+
+        // Réutilise la règle "password()" déjà définie (regex + ErrorCode)
+        return ($this->password())($password);
+    }
 }

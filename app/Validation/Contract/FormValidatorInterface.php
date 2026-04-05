@@ -22,4 +22,11 @@ interface FormValidatorInterface
      * @return string|null  Code d’erreur ou null si OK
      */
     public function validateEmailField(string $email): ?string;
+
+    /**
+     * Validation password réutilisable (reset-password, register, change-password…)
+     *
+     * @return string|null Code d’erreur ou null si OK
+     */
+    public function validatePasswordField(string $password): ?string;
 }

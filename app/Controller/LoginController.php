@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Http\Request;
 use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
+use App\Http\Request;
 
 final class LoginController
 {

@@ -24,19 +24,11 @@ final class LogContextNormalizer
      */
     private function normalizeValue(mixed $value): array|bool|float|int|string|\Stringable|null
     {
-        if (
-            is_string($value)
-            || is_int($value)
-            || is_float($value)
-            || is_bool($value)
-            || $value === null
-            || $value instanceof \Stringable
-        ) {
+        if (is_scalar($value) || $value === null || $value instanceof \Stringable) {
             return $value;
         }
 
         if (is_array($value)) {
-            /** @var array<int|string, mixed> $value */
             return $value;
         }
 
@@ -45,7 +37,7 @@ final class LogContextNormalizer
         }
 
         if (is_resource($value)) {
-            return 'resource(' . get_resource_type($value) . ')';
+            return sprintf('resource(%s)', get_resource_type($value));
         }
 
         return 'unknown';
