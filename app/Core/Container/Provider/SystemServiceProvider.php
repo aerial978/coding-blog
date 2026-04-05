@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Core\Container\Provider;
 
+use App\Core\Contract\FlashInterface;
+use App\Core\Contract\RateLimiterFactoryInterface;
+use App\Core\Contract\SessionInterface;
+use App\Core\Contract\SqlHelperInterface;
 use App\Core\Database;
 use App\Core\Factory\RateLimiterFactory;
 use App\Core\FlashService;
@@ -12,14 +16,15 @@ use App\Core\Mail\MailerInterface;
 use App\Core\SessionManager;
 use App\Core\SqlHelper;
 use App\Core\View;
+use App\Handler\Auth\ConfirmAccountHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Http\Responder;
 use App\Infrastructure\Mail\DummyMailer;
 use App\Infrastructure\Mail\MailjetMailer;
+use App\Log\LogContextNormalizer;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
-use App\Middleware\RateLimitMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
@@ -33,6 +38,8 @@ use App\Security\SessionAuthChecker;
 use App\Security\SubmissionDelayValidator;
 use App\Security\TokenGenerator;
 use App\Security\TurnstileValidator;
+use App\Support\ErrorListNormalizer;
+use App\Validation\Contract\FormValidatorInterface;
 use App\Validation\FormValidator;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
@@ -40,7 +47,7 @@ use Psr\Container\ContainerInterface;
 final class SystemServiceProvider
 {
     /**
-     * @return array<string, callable(\Psr\Container\ContainerInterface=): mixed>
+     * @return array<string, callable(\Psr\Container\ContainerInterface): mixed>
      */
     public static function getDefinitions(): array
     {
@@ -52,6 +59,7 @@ final class SystemServiceProvider
             self::getValidationDefinitions(),
             self::getSessionDefinitions(),
             self::getSecurityDefinitions(),
+            self::getApplicationDefinitions(),
             self::getMailerDefinitions()
         );
 
@@ -70,6 +78,12 @@ final class SystemServiceProvider
                 /** @var \PDO $pdo */
                 $pdo = $container->get(\PDO::class);
                 return new SqlHelper($pdo);
+            },
+
+            SqlHelperInterface::class => static function (ContainerInterface $container): SqlHelperInterface {
+                /** @var SqlHelper $sql */
+                $sql = $container->get(SqlHelper::class);
+                return $sql;
             },
         ];
     }
@@ -116,7 +130,14 @@ final class SystemServiceProvider
     {
         return [
             FormValidator::class => static fn (): FormValidator => new FormValidator(),
-            Slugify::class       => static fn (): Slugify => new Slugify(),
+
+            FormValidatorInterface::class => static function (ContainerInterface $container): FormValidatorInterface {
+                /** @var FormValidator $formValidator */
+                $formValidator = $container->get(FormValidator::class);
+                return $formValidator;
+            },
+
+            Slugify::class => static fn (): Slugify => new Slugify(),
         ];
     }
 
@@ -128,35 +149,58 @@ final class SystemServiceProvider
         return [
             SessionManager::class => static fn (): SessionManager => new SessionManager(),
 
-            FlashService::class => static function (ContainerInterface $container): FlashService {
+            SessionInterface::class => static function (ContainerInterface $container): SessionInterface {
                 /** @var SessionManager $session */
                 $session = $container->get(SessionManager::class);
+                return $session;
+            },
+
+            FlashService::class => static function (ContainerInterface $container): FlashService {
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
                 return new FlashService($session);
             },
 
+            FlashInterface::class => static function (ContainerInterface $container): FlashInterface {
+                /** @var FlashService $flash */
+                $flash = $container->get(FlashService::class);
+                return $flash;
+            },
+
             CsrfTokenManager::class => static function (ContainerInterface $container): CsrfTokenManager {
-                /** @var SessionManager $session */
-                $session = $container->get(SessionManager::class);
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
                 return new CsrfTokenManager($session);
             },
 
             RateLimiterFactory::class => static function (ContainerInterface $container): RateLimiterFactory {
-                /** @var SessionManager $session */
-                $session = $container->get(SessionManager::class);
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
                 return new RateLimiterFactory($session);
             },
 
+            RateLimiterFactoryInterface::class => static function (ContainerInterface $container): RateLimiterFactoryInterface {
+                /** @var RateLimiterFactory $factory */
+                $factory = $container->get(RateLimiterFactory::class);
+                return $factory;
+            },
+
             SubmissionDelayValidator::class => static function (ContainerInterface $container): SubmissionDelayValidator {
-                /** @var SessionManager $session */
-                $session = $container->get(SessionManager::class);
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
 
                 // Correction PHPStan: pas de cast (int) sur mixed
-                $min = self::getEnvInt('MIN_FORM_DELAY', 3);
+                $min = self::getEnvInt('MIN_FORM_DELAY', 10);
                 if ($min <= 0) {
-                    $min = 3;
+                    $min = 10;
                 }
 
-                return new SubmissionDelayValidator($session, $min);
+                $max = self::getEnvInt('MAX_FORM_DELAY', 1800);
+                if ($max <= 0) {
+                    $max = 1800;
+                }
+
+                return new SubmissionDelayValidator($session, $min, $max);
             },
         ];
     }
@@ -166,9 +210,77 @@ final class SystemServiceProvider
      */
     private static function getSecurityDefinitions(): array
     {
+        return array_merge(
+            self::getSecurityCoreServices(),
+            self::getSecurityBindings(),
+            self::getSecurityMiddlewares()
+        );
+    }
+
+    /**
+     * Services applicatifs (handlers, etc.).
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getApplicationDefinitions(): array
+    {
+        return [
+            LogContextNormalizer::class => static fn (): LogContextNormalizer => new LogContextNormalizer(),
+
+            ErrorListNormalizer::class => static fn (): ErrorListNormalizer => new ErrorListNormalizer(),
+
+            ConfirmAccountHandler::class => static function (ContainerInterface $container): ConfirmAccountHandler {
+                /** @var \App\Service\Security\Contract\SecurityServiceInterface $security */
+                $security = $container->get(\App\Service\Security\Contract\SecurityServiceInterface::class);
+
+                /** @var \App\Core\Contract\FlashInterface $flash */
+                $flash = $container->get(\App\Core\Contract\FlashInterface::class);
+
+                /** @var \App\Http\Contract\ResponderInterface $responder */
+                $responder = $container->get(\App\Http\Contract\ResponderInterface::class);
+
+                return new ConfirmAccountHandler($security, $flash, $responder);
+            },
+        ];
+    }
+
+    /**
+     * Services "concrets" de sécurité (classes).
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getSecurityCoreServices(): array
+    {
         return [
             TokenGenerator::class => static fn (): TokenGenerator => new TokenGenerator(),
 
+            HoneypotValidator::class => static function (): HoneypotValidator {
+                $field = self::getEnvString('HONEYPOT_FIELD', 'fax');
+                return new HoneypotValidator($field);
+            },
+
+            TurnstileValidator::class => static function (): TurnstileValidator {
+                $secret = self::getEnvString('TURNSTILE_SECRET', '');
+                return new TurnstileValidator($secret);
+            },
+
+            // Auth checker concret
+            SessionAuthChecker::class => static function (ContainerInterface $container): SessionAuthChecker {
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+                return new SessionAuthChecker($session);
+            },
+        ];
+    }
+
+    /**
+     * Bindings interface -> impl.
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getSecurityBindings(): array
+    {
+        return [
             TokenGeneratorInterface::class => static function (ContainerInterface $container): TokenGeneratorInterface {
                 /** @var TokenGenerator $tg */
                 $tg = $container->get(TokenGenerator::class);
@@ -182,22 +294,11 @@ final class SystemServiceProvider
             },
 
             AuthCheckerInterface::class => static function (ContainerInterface $container): AuthCheckerInterface {
-                /** @var SessionManager $session */
-                $session = $container->get(SessionManager::class);
-                return new SessionAuthChecker($session);
+                /** @var SessionAuthChecker $auth */
+                $auth = $container->get(SessionAuthChecker::class);
+                return $auth;
             },
 
-            HoneypotValidator::class => static function (): HoneypotValidator {
-                $field = self::getEnvString('HONEYPOT_FIELD', 'fax');
-                return new HoneypotValidator($field);
-            },
-
-            TurnstileValidator::class => static function (): TurnstileValidator {
-                $secret = self::getEnvString('TURNSTILE_SECRET', '');
-                return new TurnstileValidator($secret);
-            },
-
-            // Bindings interfaces
             HoneypotValidatorInterface::class => static function (ContainerInterface $container): HoneypotValidatorInterface {
                 /** @var HoneypotValidator $hp */
                 $hp = $container->get(HoneypotValidator::class);
@@ -215,35 +316,38 @@ final class SystemServiceProvider
                 $ts = $container->get(TurnstileValidator::class);
                 return $ts;
             },
+        ];
+    }
 
-            // Middlewares
+    /**
+     * Middlewares.
+     *
+     * @return array<string, callable(): mixed|callable(ContainerInterface): mixed>
+     */
+    private static function getSecurityMiddlewares(): array
+    {
+        return [
             AuthenticationMiddleware::class => static function (ContainerInterface $container): AuthenticationMiddleware {
                 /** @var AuthCheckerInterface $auth */
                 $auth = $container->get(AuthCheckerInterface::class);
-                /** @var FlashService $flash */
-                $flash = $container->get(FlashService::class);
-                return new AuthenticationMiddleware($auth, $flash);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new AuthenticationMiddleware($auth, $flash, $responder);
             },
 
             CsrfMiddleware::class => static function (ContainerInterface $container): CsrfMiddleware {
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
-                /** @var FlashService $flash */
-                $flash = $container->get(FlashService::class);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+
                 return new CsrfMiddleware($csrf, $flash);
             },
 
-            RateLimitMiddleware::class => static function (ContainerInterface $container): RateLimitMiddleware {
-                /** @var RateLimiterFactory $factory */
-                $factory = $container->get(RateLimiterFactory::class);
-                /** @var FlashService $flash */
-                $flash = $container->get(FlashService::class);
-                return new RateLimitMiddleware($factory, $flash);
-            },
-
-            SecurityHeadersMiddleware::class => static function (): SecurityHeadersMiddleware {
-                return new SecurityHeadersMiddleware();
-            },
+            SecurityHeadersMiddleware::class => static fn (): SecurityHeadersMiddleware => new SecurityHeadersMiddleware(),
         ];
     }
 
@@ -262,6 +366,11 @@ final class SystemServiceProvider
         $fromEmail = self::getEnvString('MAIL_FROM_EMAIL', 'no-reply@example.test');
         $fromName  = self::getEnvString('MAIL_FROM_NAME', 'Coding Blog');
         $transport = strtolower(self::getEnvString('MAILER_TRANSPORT', 'dummy'));
+
+        Logger::getLogger('auth')->info('mailer_transport_debug', [
+            'transport' => $transport,
+            'from'      => $fromEmail,
+        ]);
 
         if ($transport === 'mailjet') {
             $apiKey    = self::getEnvString('MJ_APIKEY_PUBLIC', '');

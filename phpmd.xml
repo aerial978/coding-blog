@@ -43,6 +43,12 @@
         <exclude name="CouplingBetweenObjects"/>
     </rule>
 
+    <rule ref="rulesets/codesize.xml/CyclomaticComplexity">
+        <properties>
+            <property name="reportLevel" value="8"/>
+        </properties>
+    </rule>
+
     <!-- =======================
          2) RÈGLES DÉSACTIVÉES
          ======================= -->

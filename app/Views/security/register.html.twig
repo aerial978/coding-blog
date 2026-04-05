@@ -16,7 +16,6 @@
         
         <form id="registerForm" method="post" action="" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            
             {{ fields.input(
                 'username',            # id
                 'username',            # name
@@ -51,23 +50,20 @@
                 required: true
             } %}
 
-            {# Script Turnstile – à mettre une seule fois par page #}
-            <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+            {% include 'templates/components/turnstile_widget.html.twig' with {
+              turnstile_enabled: true,
+              turnstile_site_key: turnstile_site_key
+            } %}
 
-            {# Widget Turnstile #}
-            <div class="mb-4 cf-turnstile"
-                data-sitekey="{{ turnstile_site_key }}"
-                data-theme="light">
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">Register</button>
+            <button type="submit" class="btn btn-primary w-100" id="register-submit">Register</button>
         </form>
     {% endif %}
 </div>
 
 {% block page_scripts %}
-<script src="public/assets/js/security/password-strength.js" defer></script>
-<script type="module" src="public/assets/js/security/validation.registration.js"></script>
+<script src="{{ base_path }}/public/assets/js/security/password-strength.js" defer></script>
+<script type="module" src="{{ base_path }}/public/assets/js/security/validation.registration.js"></script>
+<script src="{{ base_path }}/public/assets/js/security/turnstile.js" defer></script>
 {% endblock %}
 
 {% endblock %}

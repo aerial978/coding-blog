@@ -12,18 +12,15 @@ use App\Http\Middleware\MiddlewareInterface;
 use App\Http\Request;
 use App\Security\Contract\CsrfTokenInterface;
 
-/**
- * Middleware CSRF – valide automatiquement le token CSRF pour certaines routes POST.
- *
- * Il valide le token soumis avec le formulaire. En cas d’échec, il journalise,
- * ajoute un message flash, effectue une redirection et STOPPE la chaîne (return false).
- */
 final class CsrfMiddleware implements MiddlewareInterface
 {
     /** @var array<string,string> route POST => FormId */
     private const PROTECTED_POST_ROUTES = [
         '/register'            => FormId::REGISTER,
+        '/login'               => FormId::LOGIN,
         '/resend-confirmation' => FormId::RESEND_CONFIRM,
+        '/forgot-password'     => FormId::FORGOT_PASSWORD,
+        '/reset-password'      => FormId::RESET_PASSWORD,
     ];
 
     public function __construct(
@@ -32,59 +29,49 @@ final class CsrfMiddleware implements MiddlewareInterface
     ) {
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * Returns false when the request is blocked (e.g. invalid CSRF).
-     */
     public function handle(Request $request, string $uri, string $method): bool
     {
-        // Entry log (kept as-is)
         Logger::getLogger('app')->info('csrf_mw_entry', [
             'method' => $method,
             'uri'    => $uri,
         ]);
 
-        // Decide early if this route/method requires CSRF validation
         $formId = $this->resolveProtectedFormId($method, $uri);
         if ($formId === null) {
-            return true; // not a protected POST route
+            return true;
         }
 
-        // Extract submitted token and validate
         $submittedToken = $this->extractSubmittedToken($request);
         if ($this->csrf->validateToken($formId, $submittedToken)) {
-            return true; // OK → continue to controller
+            return true;
         }
 
-        // Invalid token → block the request
         $this->blockInvalidCsrf($uri, $formId, $submittedToken);
         return false;
     }
 
-    /**
-     * Decide whether the route must be protected and return its FormId or null otherwise.
-     */
     private function resolveProtectedFormId(string $method, string $uri): ?string
     {
         if (strtoupper($method) !== 'POST') {
             return null;
         }
+
         /** @var ?string $formId */
         $formId = self::PROTECTED_POST_ROUTES[$uri] ?? null;
         return $formId;
     }
 
-    /**
-     * Extract the submitted CSRF token from the request body.
-     */
     private function extractSubmittedToken(Request $request): ?string
     {
         /** @var array<string,mixed> $post */
         $post = $request->request();
-        return (isset($post['csrf_token']) && is_string($post['csrf_token']) && $post['csrf_token'] !== '')
-            ? $post['csrf_token']
-            : null;
+
+        if (!isset($post['csrf_token']) || !is_string($post['csrf_token'])) {
+            return null;
+        }
+
+        $token = trim($post['csrf_token']);
+        return $token !== '' ? $token : null;
     }
 
     /**
@@ -92,26 +79,53 @@ final class CsrfMiddleware implements MiddlewareInterface
      */
     private function blockInvalidCsrf(string $uri, string $formId, ?string $submittedToken): void
     {
-        // Technical log of the block
+        $this->logCsrfBlocked($uri, $formId, $submittedToken);
+        $this->flashCsrfInvalid($uri, $formId);
+
+        $target = $this->resolveRedirectTarget('/');
+        $this->redirect($target);
+    }
+
+    private function logCsrfBlocked(string $uri, string $formId, ?string $submittedToken): void
+    {
         Logger::getLogger('app')->warning('csrf_mw_block', [
             'uri'        => $uri,
             'form_id'    => $formId,
-            'token'      => $submittedToken             ?? '(none)',
-            'client_ip'  => $_SERVER['REMOTE_ADDR']     ?? 'unknown',
-            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+            'token'      => $this->tokenOrNone($submittedToken),
+            'client_ip'  => $this->serverString('REMOTE_ADDR', 'unknown'),
+            'user_agent' => $this->serverString('HTTP_USER_AGENT', 'unknown'),
         ]);
+    }
 
-        // User-facing message
+    private function flashCsrfInvalid(string $uri, string $formId): void
+    {
         $msg = Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_CSRF_INVALID, [
             'form_id' => $formId,
             'route'   => $uri,
         ]);
-        $this->flash->add('error', $msg);
 
-        // Redirect back (referer) or to home
-        $target = is_string($_SERVER['HTTP_REFERER'] ?? null) && $_SERVER['HTTP_REFERER'] !== ''
-            ? (string) $_SERVER['HTTP_REFERER']
-            : '/';
+        $this->flash->add('error', $msg);
+    }
+
+    private function resolveRedirectTarget(string $default): string
+    {
+        $referer = $this->serverString('HTTP_REFERER', '');
+        return $referer !== '' ? $referer : $default;
+    }
+
+    private function redirect(string $target): void
+    {
         header('Location: ' . $target, true, 302);
+    }
+
+    private function tokenOrNone(?string $token): string
+    {
+        return ($token !== null && $token !== '') ? $token : '(none)';
+    }
+
+    private function serverString(string $key, string $default): string
+    {
+        $value = $_SERVER[$key] ?? null;
+        return is_string($value) && $value !== '' ? $value : $default;
     }
 }

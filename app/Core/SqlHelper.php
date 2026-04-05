@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core;
 
 use App\Core\Contract\SqlHelperInterface;
@@ -7,24 +9,13 @@ use PDO;
 use PDOStatement;
 use RuntimeException;
 
-/**
- * Utility class to simplify SQL queries execution.
- *
- * This class wraps a PDO instance and provides a single `request` method
- * that supports both prepared statements and direct queries.
- */
-class SqlHelper implements SqlHelperInterface
+final class SqlHelper implements SqlHelperInterface
 {
     /**
      * Active database connection instance.
      */
     protected PDO $databaseConnection;
 
-    /**
-     * Constructor.
-     *
-     * @param PDO $pdo The PDO instance representing the database connection.
-     */
     public function __construct(PDO $pdo)
     {
         $this->databaseConnection = $pdo;
@@ -33,24 +24,30 @@ class SqlHelper implements SqlHelperInterface
     /**
      * Executes an SQL query, either prepared (with parameters) or direct.
      *
-     * - If `$params` is provided, the SQL is prepared and executed with bound parameters.
-     * - If `$params` is null, the SQL is executed directly.
+     * @param array<string, mixed> $params
      *
-     * @param string $sql The SQL query string.
-     * @param array<string, mixed>|null $params Optional parameters for prepared statements.
-     * @return PDOStatement The resulting PDO statement after execution.
-     *
-     * @throws RuntimeException If the direct query fails.
+     * @throws RuntimeException
      */
-    public function request(string $sql, ?array $params = null): PDOStatement
+    public function request(string $sql, array $params = []): PDOStatement
     {
-        if ($params !== null) {
+        if ($params !== []) {
             $statement = $this->databaseConnection->prepare($sql);
-            $statement->execute($params);
+
+            if ($statement === false) {
+                throw new RuntimeException("SQL prepare failed: $sql");
+            }
+
+            $executed = $statement->execute($params);
+
+            if ($executed === false) {
+                throw new RuntimeException("SQL execute failed: $sql");
+            }
+
             return $statement;
         }
 
         $statement = $this->databaseConnection->query($sql);
+
         if ($statement === false) {
             throw new RuntimeException("SQL query failed: $sql");
         }

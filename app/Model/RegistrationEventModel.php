@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Model;
 
-use App\Core\SqlHelper;
+use App\Core\Contract\SqlHelperInterface;
 use App\Model\Contract\RegistrationEventModelInterface;
 use DateInterval;
 use DateTimeImmutable;
@@ -13,8 +13,17 @@ final class RegistrationEventModel implements RegistrationEventModelInterface
 {
     protected string $table = 'registration_events';
 
+    /**
+     * Constructor.
+     *
+     * Initializes the model with a SqlHelper instance for
+     * executing database queries.
+     *
+     * @param SqlHelperInterface $sqlHelper
+     *     Helper class for preparing, executing, and managing SQL statements.
+     */
     public function __construct(
-        private SqlHelper $sqlHelper
+        private SqlHelperInterface $sqlHelper
     ) {
     }
 

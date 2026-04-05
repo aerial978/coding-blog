@@ -4,19 +4,32 @@ declare(strict_types=1);
 
 namespace App\Core\Container\Provider;
 
+use App\Controller\AccountController;
+use App\Controller\ConfirmAccountController;
+use App\Controller\DebugController;
 use App\Controller\ErrorController;
+use App\Controller\ForgotPasswordController;
 use App\Controller\HomeController;
-use App\Controller\SecurityController;
-use App\Core\FlashService;
+use App\Controller\LoginController;
+use App\Controller\RegisterController;
+use App\Controller\ResendConfirmationController;
+use App\Controller\ResetPasswordController;
+use App\Core\Contract\FlashInterface;
+use App\Core\Contract\SessionInterface;
 use App\Core\View;
-use App\Http\Contract\ResponderInterface;
+use App\Handler\Auth\ConfirmAccountHandler;
+use App\Handler\Auth\ForgotPasswordGetHandler;
+use App\Handler\Auth\ForgotPasswordPostHandler;
+use App\Handler\Auth\LoginGetHandler;
+use App\Handler\Auth\LoginPostHandler;
+use App\Handler\Auth\RegisterGetHandler;
+use App\Handler\Auth\RegisterPostHandler;
+use App\Handler\Auth\ResendConfirmationGetHandler;
+use App\Handler\Auth\ResendConfirmationPostHandler;
+use App\Handler\Auth\ResetPasswordGetHandler;
+use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Request;
-use App\Model\UserModel;
-use App\Security\CsrfTokenManager;
-use App\Security\HoneypotValidator;
-use App\Security\SubmissionDelayValidator;
-use App\Security\TurnstileValidator;
-use App\Service\Security\SecurityService;
+use App\Model\Contract\UserModelInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -42,65 +55,126 @@ final class ControllerServiceProvider
     public static function getDefinitions(): array
     {
         return [
-            HomeController::class => static function (ContainerInterface $container): object {
+            HomeController::class => static function (ContainerInterface $container): HomeController {
                 /** @var View $view */
                 $view = $container->get(View::class);
-                /** @var UserModel $userModel */
-                $userModel = $container->get(UserModel::class);
-                /** @var FlashService $flash */
-                $flash = $container->get(FlashService::class);
+
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
 
                 return new HomeController($view, $userModel, $flash);
             },
 
-            ErrorController::class => static function (ContainerInterface $container): object {
+            ErrorController::class => static function (ContainerInterface $container): ErrorController {
                 /** @var View $view */
                 $view = $container->get(View::class);
-                /** @var FlashService $flash */
-                $flash = $container->get(FlashService::class);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
 
                 return new ErrorController($view, $flash);
             },
 
-            SecurityController::class => static function (ContainerInterface $container): object {
-                /** @var View $view */
-                $view = $container->get(View::class);
-                /** @var SecurityService $securityService */
-                $securityService = $container->get(SecurityService::class);
+            RegisterController::class => static function (ContainerInterface $container): RegisterController {
                 /** @var Request $request */
                 $request = $container->get(Request::class);
-                /** @var FlashService $flash */
-                $flash = $container->get(FlashService::class);
-                /** @var CsrfTokenManager $csrf */
-                $csrf = $container->get(CsrfTokenManager::class);
 
-                /**
-                 * IMPORTANT :
-                 * - Si votre SecurityController attend désormais des interfaces (HoneypotValidatorInterface, etc.),
-                 *   vous pouvez aussi récupérer ces interfaces ici.
-                 * - Cette version conserve les classes concrètes : elles doivent implémenter les interfaces attendues.
-                 */
-                /** @var HoneypotValidator $honeypot */
-                $honeypot = $container->get(HoneypotValidator::class);
-                /** @var SubmissionDelayValidator $submissionDelay */
-                $submissionDelay = $container->get(SubmissionDelayValidator::class);
-                /** @var TurnstileValidator $turnstile */
-                $turnstile = $container->get(TurnstileValidator::class);
-                /** @var ResponderInterface $responder */
-                $responder = $container->get(ResponderInterface::class);
+                /** @var RegisterGetHandler $getHandler */
+                $getHandler = $container->get(RegisterGetHandler::class);
 
-                return new SecurityController(
-                    $view,
-                    $securityService,
+                /** @var RegisterPostHandler $postHandler */
+                $postHandler = $container->get(RegisterPostHandler::class);
+
+                return new RegisterController(
                     $request,
-                    $flash,
-                    $csrf,
-                    $honeypot,
-                    $submissionDelay,
-                    $turnstile,
-                    $responder
+                    $getHandler,
+                    $postHandler
                 );
             },
+
+            ConfirmAccountController::class => static function (ContainerInterface $container): ConfirmAccountController {
+                /** @var ConfirmAccountHandler $handler */
+                $handler = $container->get(ConfirmAccountHandler::class);
+
+                return new ConfirmAccountController($handler);
+            },
+
+
+            ResendConfirmationController::class => static function (ContainerInterface $container): ResendConfirmationController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var ResendConfirmationGetHandler $getHandler */
+                $getHandler = $container->get(ResendConfirmationGetHandler::class);
+
+                /** @var ResendConfirmationPostHandler $postHandler */
+                $postHandler = $container->get(ResendConfirmationPostHandler::class);
+
+                return new ResendConfirmationController(
+                    $request,
+                    $getHandler,
+                    $postHandler
+                );
+            },
+
+            LoginController::class => static function (ContainerInterface $container): LoginController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var LoginGetHandler $getHandler */
+                $getHandler = $container->get(LoginGetHandler::class);
+
+                /** @var LoginPostHandler $postHandler */
+                $postHandler = $container->get(LoginPostHandler::class);
+
+                return new LoginController($request, $getHandler, $postHandler);
+            },
+
+            ForgotPasswordController::class => static function (ContainerInterface $container): ForgotPasswordController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var ForgotPasswordGetHandler $getHandler */
+                $getHandler = $container->get(ForgotPasswordGetHandler::class);
+
+                /** @var ForgotPasswordPostHandler $postHandler */
+                $postHandler = $container->get(ForgotPasswordPostHandler::class);
+
+                return new ForgotPasswordController($request, $getHandler, $postHandler);
+            },
+
+            ResetPasswordController::class => static function (ContainerInterface $container): ResetPasswordController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var ResetPasswordGetHandler $getHandler */
+                $getHandler = $container->get(ResetPasswordGetHandler::class);
+
+                /** @var ResetPasswordPostHandler $postHandler */
+                $postHandler = $container->get(ResetPasswordPostHandler::class);
+
+                return new ResetPasswordController($request, $getHandler, $postHandler);
+            },
+
+            DebugController::class => static function (ContainerInterface $container): object {
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                return new DebugController($session);
+            },
+
+            AccountController::class => static function (ContainerInterface $container): object {
+                /** @var \App\Core\View $view */
+                $view = $container->get(\App\Core\View::class);
+
+                /** @var \App\Core\Contract\FlashInterface $flash */
+                $flash = $container->get(\App\Core\Contract\FlashInterface::class);
+
+                return new AccountController($view, $flash);
+            },
+
         ];
     }
 }

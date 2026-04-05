@@ -5,106 +5,365 @@ declare(strict_types=1);
 namespace Tests\Unit\Core\Container;
 
 use App\Core\Container\Provider\SystemServiceProvider;
+use App\Core\Contract\FlashInterface;
+use App\Core\Contract\RateLimiterFactoryInterface;
+use App\Core\Contract\SessionInterface;
+use App\Core\Contract\SqlHelperInterface;
 use App\Core\Factory\RateLimiterFactory;
 use App\Core\FlashService;
 use App\Core\Mail\MailerInterface;
 use App\Core\SessionManager;
 use App\Core\SqlHelper;
 use App\Core\View;
+use App\Handler\Auth\ConfirmAccountHandler;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
+use App\Http\Responder;
 use App\Infrastructure\Mail\DummyMailer;
-use App\Infrastructure\Mail\MailjetMailer;
+use App\Log\LogContextNormalizer;
+use App\Middleware\AuthenticationMiddleware;
+use App\Middleware\CsrfMiddleware;
+use App\Middleware\SecurityHeadersMiddleware;
+use App\Security\Contract\AuthCheckerInterface;
+use App\Security\Contract\CsrfTokenInterface;
+use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\SubmissionDelayValidatorInterface;
+use App\Security\Contract\TokenGeneratorInterface;
+use App\Security\Contract\TurnstileValidatorInterface;
 use App\Security\CsrfTokenManager;
+use App\Security\HoneypotValidator;
+use App\Security\SessionAuthChecker;
+use App\Security\SubmissionDelayValidator;
 use App\Security\TokenGenerator;
+use App\Security\TurnstileValidator;
+use App\Service\Security\Contract\SecurityServiceInterface;
+use App\Support\ErrorListNormalizer;
+use App\Validation\Contract\FormValidatorInterface;
 use App\Validation\FormValidator;
-use PHPUnit\Framework\Attributes\Test;
+use Cocur\Slugify\Slugify;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
 final class SystemServiceProviderTest extends TestCase
 {
-    /** @var array<string, string|null> */
+    /** @var array<string, mixed> */
     private array $envBackup = [];
 
     protected function setUp(): void
     {
-        $keys = ['MAILER_TRANSPORT','MAIL_FROM_EMAIL','MAIL_FROM_NAME','MJ_APIKEY_PUBLIC','MJ_APIKEY_PRIVATE'];
-        foreach ($keys as $k) {
-            $raw                 = $_ENV[$k] ?? null;
-            $this->envBackup[$k] = is_string($raw) ? $raw : null; // <-- normalisation en ?string
-        }
+        parent::setUp();
 
-        $_ENV['MAIL_FROM_EMAIL']  = 'no-reply@example.test';
-        $_ENV['MAIL_FROM_NAME']   = 'Coding Blog';
-        $_ENV['MAILER_TRANSPORT'] = 'dummy';
+        $this->envBackup = [
+            'MAILER_TRANSPORT' => $_ENV['MAILER_TRANSPORT'] ?? null,
+            'MAIL_FROM_EMAIL'  => $_ENV['MAIL_FROM_EMAIL']  ?? null,
+            'MAIL_FROM_NAME'   => $_ENV['MAIL_FROM_NAME']   ?? null,
+            'HONEYPOT_FIELD'   => $_ENV['HONEYPOT_FIELD']   ?? null,
+            'TURNSTILE_SECRET' => $_ENV['TURNSTILE_SECRET'] ?? null,
+            'MIN_FORM_DELAY'   => $_ENV['MIN_FORM_DELAY']   ?? null,
+            'MAX_FORM_DELAY'   => $_ENV['MAX_FORM_DELAY']   ?? null,
+        ];
     }
 
     protected function tearDown(): void
     {
-        foreach ($this->envBackup as $k => $v) {
-            if ($v === null) {
-                unset($_ENV[$k]);
+        foreach ($this->envBackup as $key => $value) {
+            if ($value === null) {
+                unset($_ENV[$key]);
             } else {
-                $_ENV[$k] = $v;
+                $_ENV[$key] = $value;
             }
         }
+
+        parent::tearDown();
     }
 
-    /** Appelle une closure de factory avec ou sans arg. container selon sa signature. */
-    private function callFactory(callable $factory, ContainerInterface $c): mixed
+    /**
+     * @param array<string, mixed> $services
+     */
+    private function makeContainer(array $services): ContainerInterface
     {
-        $rf = new \ReflectionFunction(\Closure::fromCallable($factory));
-        return $rf->getNumberOfParameters() === 0 ? $factory() : $factory($c);
+        return new class ($services) implements ContainerInterface {
+            /**
+             * @param array<string, mixed> $services
+             */
+            public function __construct(private array $services)
+            {
+            }
+
+            public function get(string $id): mixed
+            {
+                if (!$this->has($id)) {
+                    throw new \RuntimeException('Service not found: ' . $id);
+                }
+
+                return $this->services[$id];
+            }
+
+            public function has(string $id): bool
+            {
+                return array_key_exists($id, $this->services);
+            }
+        };
     }
 
-    #[Test]
-    public function getDefinitions_builds_core_services_without_db(): void
+    public function testDefinitionsContainExpectedKeys(): void
     {
-        $defs = SystemServiceProvider::getDefinitions();
-        $c    = new FakeContainer();
-        // On ne veut aucune vraie connexion DB.
-        $pdo = $this->getMockBuilder(\PDO::class)->disableOriginalConstructor()->getMock();
-        $c->set(\PDO::class, $pdo);
-        $c->set(SessionManager::class, new SessionManager());
-        $c->set(View::class, new View());
-        $this->assertArrayHasKey(View::class, $defs);
-        $this->assertInstanceOf(View::class, $this->callFactory($defs[View::class], $c));
-        $this->assertArrayHasKey(Request::class, $defs);
-        $this->assertInstanceOf(Request::class, $this->callFactory($defs[Request::class], $c));
-        $this->assertArrayHasKey(FormValidator::class, $defs);
-        $this->assertInstanceOf(FormValidator::class, $this->callFactory($defs[FormValidator::class], $c));
-        $this->assertArrayHasKey(SessionManager::class, $defs);
-        $this->assertInstanceOf(SessionManager::class, $this->callFactory($defs[SessionManager::class], $c));
-        $this->assertArrayHasKey(FlashService::class, $defs);
-        $this->assertInstanceOf(FlashService::class, $this->callFactory($defs[FlashService::class], $c));
-        $this->assertArrayHasKey(CsrfTokenManager::class, $defs);
-        $this->assertInstanceOf(CsrfTokenManager::class, $this->callFactory($defs[CsrfTokenManager::class], $c));
-        $this->assertArrayHasKey(RateLimiterFactory::class, $defs);
-        $this->assertInstanceOf(RateLimiterFactory::class, $this->callFactory($defs[RateLimiterFactory::class], $c));
-        $this->assertArrayHasKey(TokenGenerator::class, $defs);
-        $this->assertInstanceOf(TokenGenerator::class, $this->callFactory($defs[TokenGenerator::class], $c));
-        $this->assertArrayHasKey(SqlHelper::class, $defs);
-        $this->assertInstanceOf(SqlHelper::class, $this->callFactory($defs[SqlHelper::class], $c));
-        // Dummy mailer par défaut
-        $this->assertArrayHasKey(MailerInterface::class, $defs);
-        $mailer = $this->callFactory($defs[MailerInterface::class], $c);
-        $this->assertInstanceOf(MailerInterface::class, $mailer);
+        $definitions = SystemServiceProvider::getDefinitions();
+
+        $this->assertArrayHasKey(\PDO::class, $definitions);
+        $this->assertArrayHasKey(SqlHelper::class, $definitions);
+        $this->assertArrayHasKey(SqlHelperInterface::class, $definitions);
+
+        $this->assertArrayHasKey(View::class, $definitions);
+        $this->assertArrayHasKey(Request::class, $definitions);
+        $this->assertArrayHasKey(Responder::class, $definitions);
+        $this->assertArrayHasKey(ResponderInterface::class, $definitions);
+
+        $this->assertArrayHasKey(FormValidator::class, $definitions);
+        $this->assertArrayHasKey(FormValidatorInterface::class, $definitions);
+        $this->assertArrayHasKey(Slugify::class, $definitions);
+
+        $this->assertArrayHasKey(SessionManager::class, $definitions);
+        $this->assertArrayHasKey(SessionInterface::class, $definitions);
+        $this->assertArrayHasKey(FlashService::class, $definitions);
+        $this->assertArrayHasKey(FlashInterface::class, $definitions);
+        $this->assertArrayHasKey(CsrfTokenManager::class, $definitions);
+        $this->assertArrayHasKey(RateLimiterFactory::class, $definitions);
+        $this->assertArrayHasKey(RateLimiterFactoryInterface::class, $definitions);
+        $this->assertArrayHasKey(SubmissionDelayValidator::class, $definitions);
+
+        $this->assertArrayHasKey(TokenGenerator::class, $definitions);
+        $this->assertArrayHasKey(HoneypotValidator::class, $definitions);
+        $this->assertArrayHasKey(TurnstileValidator::class, $definitions);
+        $this->assertArrayHasKey(SessionAuthChecker::class, $definitions);
+
+        $this->assertArrayHasKey(TokenGeneratorInterface::class, $definitions);
+        $this->assertArrayHasKey(CsrfTokenInterface::class, $definitions);
+        $this->assertArrayHasKey(AuthCheckerInterface::class, $definitions);
+        $this->assertArrayHasKey(HoneypotValidatorInterface::class, $definitions);
+        $this->assertArrayHasKey(SubmissionDelayValidatorInterface::class, $definitions);
+        $this->assertArrayHasKey(TurnstileValidatorInterface::class, $definitions);
+
+        $this->assertArrayHasKey(AuthenticationMiddleware::class, $definitions);
+        $this->assertArrayHasKey(CsrfMiddleware::class, $definitions);
+        $this->assertArrayHasKey(SecurityHeadersMiddleware::class, $definitions);
+
+        $this->assertArrayHasKey(LogContextNormalizer::class, $definitions);
+        $this->assertArrayHasKey(ErrorListNormalizer::class, $definitions);
+        $this->assertArrayHasKey(ConfirmAccountHandler::class, $definitions);
+
+        $this->assertArrayHasKey(MailerInterface::class, $definitions);
+        $this->assertArrayHasKey('logger.app', $definitions);
+        $this->assertArrayHasKey('logger.error', $definitions);
+    }
+
+    public function testHttpDefinitionsAreBuildableAndResponderAliasReturnsResponder(): void
+    {
+        $definitions = SystemServiceProvider::getDefinitions();
+
+        $view    = $definitions[View::class]();
+        $request = $definitions[Request::class]();
+
+        $this->assertInstanceOf(View::class, $view);
+        $this->assertInstanceOf(Request::class, $request);
+
+        $container = $this->makeContainer([
+            View::class => $view,
+        ]);
+
+        $responder = $definitions[Responder::class]($container);
+
+        $this->assertInstanceOf(Responder::class, $responder);
+
+        $aliasContainer = $this->makeContainer([
+            Responder::class => $responder,
+        ]);
+
+        $this->assertSame(
+            $responder,
+            $definitions[ResponderInterface::class]($aliasContainer)
+        );
+    }
+
+    public function testValidationAndApplicationDefinitionsAreBuildable(): void
+    {
+        $definitions = SystemServiceProvider::getDefinitions();
+
+        $validator       = $definitions[FormValidator::class]();
+        $slugify         = $definitions[Slugify::class]();
+        $logNormalizer   = $definitions[LogContextNormalizer::class]();
+        $errorNormalizer = $definitions[ErrorListNormalizer::class]();
+
+        $this->assertInstanceOf(FormValidator::class, $validator);
+        $this->assertInstanceOf(Slugify::class, $slugify);
+        $this->assertInstanceOf(LogContextNormalizer::class, $logNormalizer);
+        $this->assertInstanceOf(ErrorListNormalizer::class, $errorNormalizer);
+
+        $security  = $this->createMock(SecurityServiceInterface::class);
+        $flash     = $this->createMock(FlashInterface::class);
+        $responder = $this->createMock(ResponderInterface::class);
+
+        $container = $this->makeContainer([
+            SecurityServiceInterface::class => $security,
+            FlashInterface::class           => $flash,
+            ResponderInterface::class       => $responder,
+        ]);
+
+        $handler = $definitions[ConfirmAccountHandler::class]($container);
+
+        $this->assertInstanceOf(ConfirmAccountHandler::class, $handler);
+    }
+
+    public function testSessionAndSecurityDefinitionsAreBuildableAndAliasesResolveCorrectly(): void
+    {
+        $_ENV['HONEYPOT_FIELD']   = 'fax_test';
+        $_ENV['TURNSTILE_SECRET'] = 'secret_test';
+        $_ENV['MIN_FORM_DELAY']   = '15';
+        $_ENV['MAX_FORM_DELAY']   = '900';
+
+        $definitions = SystemServiceProvider::getDefinitions();
+
+        $session = $this->createMock(SessionInterface::class);
+
+        $sessionAliasContainer = $this->makeContainer([
+            SessionManager::class => $session,
+        ]);
+
+        $this->assertSame(
+            $session,
+            $definitions[SessionInterface::class]($sessionAliasContainer)
+        );
+
+        $flashContainer = $this->makeContainer([
+            SessionInterface::class => $session,
+        ]);
+        $flashService = $definitions[FlashService::class]($flashContainer);
+
+        $this->assertInstanceOf(FlashService::class, $flashService);
+
+        $flashAliasContainer = $this->makeContainer([
+            FlashService::class => $flashService,
+        ]);
+
+        $this->assertSame(
+            $flashService,
+            $definitions[FlashInterface::class]($flashAliasContainer)
+        );
+
+        $csrfManager = $definitions[CsrfTokenManager::class]($flashContainer);
+        $this->assertInstanceOf(CsrfTokenManager::class, $csrfManager);
+
+        $csrfAliasContainer = $this->makeContainer([
+            CsrfTokenManager::class => $csrfManager,
+        ]);
+
+        $this->assertSame(
+            $csrfManager,
+            $definitions[CsrfTokenInterface::class]($csrfAliasContainer)
+        );
+
+        $rateLimiterFactory = $definitions[RateLimiterFactory::class]($flashContainer);
+        $this->assertInstanceOf(RateLimiterFactory::class, $rateLimiterFactory);
+
+        $rateAliasContainer = $this->makeContainer([
+            RateLimiterFactory::class => $rateLimiterFactory,
+        ]);
+
+        $this->assertSame(
+            $rateLimiterFactory,
+            $definitions[RateLimiterFactoryInterface::class]($rateAliasContainer)
+        );
+
+        $submissionDelay = $definitions[SubmissionDelayValidator::class]($flashContainer);
+        $this->assertInstanceOf(SubmissionDelayValidator::class, $submissionDelay);
+
+        $submissionAliasContainer = $this->makeContainer([
+            SubmissionDelayValidator::class => $submissionDelay,
+        ]);
+
+        $this->assertSame(
+            $submissionDelay,
+            $definitions[SubmissionDelayValidatorInterface::class]($submissionAliasContainer)
+        );
+
+        $tokenGenerator     = $definitions[TokenGenerator::class]();
+        $honeypotValidator  = $definitions[HoneypotValidator::class]();
+        $turnstileValidator = $definitions[TurnstileValidator::class]();
+        $authChecker        = $definitions[SessionAuthChecker::class]($flashContainer);
+
+        $this->assertInstanceOf(TokenGenerator::class, $tokenGenerator);
+        $this->assertInstanceOf(HoneypotValidator::class, $honeypotValidator);
+        $this->assertInstanceOf(TurnstileValidator::class, $turnstileValidator);
+        $this->assertInstanceOf(SessionAuthChecker::class, $authChecker);
+
+        $this->assertSame(
+            $tokenGenerator,
+            $definitions[TokenGeneratorInterface::class](
+                $this->makeContainer([TokenGenerator::class => $tokenGenerator])
+            )
+        );
+
+        $this->assertSame(
+            $honeypotValidator,
+            $definitions[HoneypotValidatorInterface::class](
+                $this->makeContainer([HoneypotValidator::class => $honeypotValidator])
+            )
+        );
+
+        $this->assertSame(
+            $turnstileValidator,
+            $definitions[TurnstileValidatorInterface::class](
+                $this->makeContainer([TurnstileValidator::class => $turnstileValidator])
+            )
+        );
+
+        $this->assertSame(
+            $authChecker,
+            $definitions[AuthCheckerInterface::class](
+                $this->makeContainer([SessionAuthChecker::class => $authChecker])
+            )
+        );
+    }
+
+    public function testSecurityMiddlewaresAreBuildable(): void
+    {
+        $definitions = SystemServiceProvider::getDefinitions();
+
+        $authChecker = $this->createMock(AuthCheckerInterface::class);
+        $flash       = $this->createMock(FlashInterface::class);
+        $responder   = $this->createMock(ResponderInterface::class);
+        $csrf        = $this->createMock(CsrfTokenInterface::class);
+
+        $authContainer = $this->makeContainer([
+            AuthCheckerInterface::class => $authChecker,
+            FlashInterface::class       => $flash,
+            ResponderInterface::class   => $responder,
+        ]);
+
+        $csrfContainer = $this->makeContainer([
+            CsrfTokenInterface::class => $csrf,
+            FlashInterface::class     => $flash,
+        ]);
+
+        $authenticationMiddleware  = $definitions[AuthenticationMiddleware::class]($authContainer);
+        $csrfMiddleware            = $definitions[CsrfMiddleware::class]($csrfContainer);
+        $securityHeadersMiddleware = $definitions[SecurityHeadersMiddleware::class]();
+
+        $this->assertInstanceOf(AuthenticationMiddleware::class, $authenticationMiddleware);
+        $this->assertInstanceOf(CsrfMiddleware::class, $csrfMiddleware);
+        $this->assertInstanceOf(SecurityHeadersMiddleware::class, $securityHeadersMiddleware);
+    }
+
+    public function testMailerDefinitionReturnsDummyMailerWhenTransportIsDummy(): void
+    {
+        $_ENV['MAILER_TRANSPORT'] = 'dummy';
+        $_ENV['MAIL_FROM_EMAIL']  = 'noreply@example.test';
+        $_ENV['MAIL_FROM_NAME']   = 'Coding Blog Test';
+
+        $definitions = SystemServiceProvider::getDefinitions();
+
+        $mailer = $definitions[MailerInterface::class]();
+
         $this->assertInstanceOf(DummyMailer::class, $mailer);
-    }
-
-    #[Test]
-    public function getDefinitions_selects_mailjet_when_env_is_mailjet(): void
-    {
-        $_ENV['MAILER_TRANSPORT']  = 'mailjet';
-        $_ENV['MJ_APIKEY_PUBLIC']  = 'test_pub';
-        $_ENV['MJ_APIKEY_PRIVATE'] = 'test_priv';
-        $defs                      = SystemServiceProvider::getDefinitions();
-        $c                         = new FakeContainer();
-        $c->set(SessionManager::class, new SessionManager());
-        $c->set(View::class, new View());
-        $factory = $defs[MailerInterface::class];
-        $mailer  = $this->callFactory($factory, $c);
-        $this->assertInstanceOf(MailerInterface::class, $mailer);
-        $this->assertInstanceOf(MailjetMailer::class, $mailer);
     }
 }

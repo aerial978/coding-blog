@@ -6,6 +6,7 @@ namespace App\Middleware;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Logger;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Middleware\MiddlewareInterface;
 use App\Http\Request;
 use App\Security\Contract\AuthCheckerInterface;
@@ -20,12 +21,13 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     /** @var string[] Liste des routes protégées */
     private const PROTECTED_ROUTES = [
         '/change-password',
-        '/login',
+        '/account',
     ];
 
     public function __construct(
         private AuthCheckerInterface $authChecker,
-        private FlashInterface $flash
+        private FlashInterface $flash,
+        private ResponderInterface $responder
     ) {
     }
 
@@ -48,7 +50,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         $this->flash->add('error', 'Vous devez être connecté pour accéder à cette page.');
         Logger::getLogger('app')->warning('auth_mw_block', ['uri' => $uri]);
 
-        header('Location: /login', true, 302);
+        $this->responder->redirect('/coding-blog/login');
         return false;
     }
 }

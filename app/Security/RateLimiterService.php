@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Core\Contract\RateLimiterInterface;
+use App\Core\Contract\SessionInterface;
 use App\Core\Logger;
-use App\Core\SessionManager;
 
 /**
  * Session-based rate limiter service.
@@ -23,6 +23,7 @@ final class RateLimiterService implements RateLimiterInterface
 {
     /** @var string Session key under which rate-limit data is stored */
     private const BAG = 'rate_limit';
+
     /** @var int Number of seconds remaining before next allowed attempt */
     private int $retryAfter = 0;
 
@@ -34,7 +35,7 @@ final class RateLimiterService implements RateLimiterInterface
      *
      * @param string $actionKey
      *     Identifier for the rate-limited action (e.g. "register", "login").
-     * @param SessionManager $session
+     * @param SessionInterface $session
      *     Session handler used for persisting the rate-limiting state.
      * @param int $limit
      *     Maximum number of allowed attempts within the time window.
@@ -42,10 +43,10 @@ final class RateLimiterService implements RateLimiterInterface
      *     Time window duration in seconds (default: 300 = 5 minutes).
      */
     public function __construct(
-        private string $actionKey, // ex: 'registration'
-        private SessionManager $session,
-        private int $limit = 5, // ex: 5 tentatives
-        private int $window = 300,        // 300s = 5min
+        private string $actionKey,
+        private SessionInterface $session,
+        private int $limit = 5,
+        private int $window = 300,
     ) {
     }
 
@@ -61,28 +62,28 @@ final class RateLimiterService implements RateLimiterInterface
      */
     public function isAllowed(): bool
     {
-        $now   = time();
+        $now = time();
+
         /** @var array<string, mixed> $state */
         $state = (array) $this->session->get(self::BAG, []);
 
-        // Normaliser -> list<int>
         $raw  = $state[$this->actionKey] ?? [];
         $list = array_values(is_array($raw) ? $raw : []);
-        // garder uniquement des int ou des chaînes d'entiers
-        $list = array_values(array_filter($list, fn ($value): bool =>
-            is_int($value) || (is_string($value) && ctype_digit($value))));
-        // puis convertir en int
+        $list = array_values(array_filter(
+            $list,
+            fn ($value): bool => is_int($value) || (is_string($value) && ctype_digit($value))
+        ));
         $list = array_map(fn ($value): int => (int) $value, $list);
-
-        // Filtrer la fenêtre (closure NON static pour accéder à $this)
-        $list = array_values(array_filter($list, fn (int $ts): bool =>
-            ($now - $ts) < $this->window));
+        $list = array_values(array_filter(
+            $list,
+            fn (int $ts): bool => ($now - $ts) < $this->window
+        ));
 
         $state[$this->actionKey] = $list;
         $this->session->set(self::BAG, $state);
 
         if (count($list) >= $this->limit) {
-            $last             = $list !== [] ? max($list) : $now; // garde-fou
+            $last             = $list !== [] ? max($list) : $now;
             $this->retryAfter = max(0, ($last + $this->window) - $now);
 
             Logger::getLogger('auth')->warning('Rate limit exceeded', [
@@ -91,10 +92,12 @@ final class RateLimiterService implements RateLimiterInterface
                 'window_sec'  => $this->window,
                 'retry_after' => $this->retryAfter,
             ]);
+
             return false;
         }
 
         $this->retryAfter = 0;
+
         return true;
     }
 
@@ -103,13 +106,11 @@ final class RateLimiterService implements RateLimiterInterface
      *
      * Should be called after each action attempt (e.g., after each form submission)
      * to update the rate limiter’s state.
-     *
-     * @return void
      */
     public function recordAttempt(): void
     {
         $state                   = (array) $this->session->get(self::BAG, []);
-        $list                    = array_values((array)($state[$this->actionKey] ?? []));
+        $list                    = array_values((array) ($state[$this->actionKey] ?? []));
         $list[]                  = time();
         $state[$this->actionKey] = $list;
         $this->session->set(self::BAG, $state);
@@ -129,25 +130,29 @@ final class RateLimiterService implements RateLimiterInterface
     /**
      * Returns the number of remaining attempts within the current window.
      *
-     * This method can be used to display feedback to the user (e.g.,
-     * "You have 2 attempts left before a cooldown is applied").
+     * This method can be used to display feedback to the user.
      *
      * @return int
      *     The number of remaining allowed attempts.
      */
     public function getRemaining(): int
     {
-        $now   = time();
+        $now = time();
+
         /** @var array<string, mixed> $state */
         $state = (array) $this->session->get(self::BAG, []);
 
         $raw  = $state[$this->actionKey] ?? [];
         $list = array_values(is_array($raw) ? $raw : []);
-        $list = array_values(array_filter($list, fn ($value): bool =>
-            is_int($value) || (is_string($value) && ctype_digit($value))));
+        $list = array_values(array_filter(
+            $list,
+            fn ($value): bool => is_int($value) || (is_string($value) && ctype_digit($value))
+        ));
         $list = array_map(fn ($value): int => (int) $value, $list);
-        $list = array_values(array_filter($list, fn (int $ts): bool =>
-            ($now - $ts) < $this->window));
+        $list = array_values(array_filter(
+            $list,
+            fn (int $ts): bool => ($now - $ts) < $this->window
+        ));
 
         return max(0, $this->limit - count($list));
     }

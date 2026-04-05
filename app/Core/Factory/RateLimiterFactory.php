@@ -6,7 +6,7 @@ namespace App\Core\Factory;
 
 use App\Core\Contract\RateLimiterFactoryInterface;
 use App\Core\Contract\RateLimiterInterface;
-use App\Core\SessionManager;
+use App\Core\Contract\SessionInterface;
 use App\Security\RateLimiterService;
 
 /**
@@ -24,10 +24,10 @@ final class RateLimiterFactory implements RateLimiterFactoryInterface
      * Initializes the factory with a session manager instance used
      * to persist rate limiter state between requests.
      *
-     * @param SessionManager $session
+     * @param SessionInterface $session
      *     The session manager used for storing rate limiter data.
      */
-    public function __construct(private SessionManager $session)
+    public function __construct(private SessionInterface $session)
     {
     }
 

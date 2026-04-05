@@ -23,6 +23,29 @@ It is intended for learners, junior developers, or anyone who wants to understan
 - Bootstrap 5 integration for responsive design
 - SCSS support for maintainable and scalable styling
 
+## Authentication & Security Flow
+
+The authentication system follows a layered security approach :
+
+- Multi-step validation (client + server)
+- Token-based password reset flow
+- Controlled session lifecycle
+- Abuse protection (rate limit, quotas, Turnstile)
+- Logging of all sensitive actions (authentication, recovery, email events)
+- Secure registration flow with anti-bot and validation layers
+- Controlled email confirmation resend mechanism with anti-enumeration
+
+## Account Recovery
+
+The application includes a complete and secure account recovery flow :
+
+- Forgot password request with anti-enumeration protection
+- Secure password reset via time-limited token
+- One-time token consumption upon successful password update
+- Protection against token reuse and expiration
+- Neutral user feedback to prevent account discovery
+- Rate-limited password reset requests
+
 ## Installation
 
 - **Clone the repository**
@@ -99,8 +122,9 @@ npm run lint:md      # Markdownlint
 
 ## Security
 
-CodingBlog implements a series of robust, defence-in-depth security mechanisms typically found in modern, production-ready applications:
+CodingBlog implements a series of robust, defence-in-depth security mechanisms typically found in modern, production-ready applications :
 
+- Csrf Middleware
 - Honeypot anti-bot field
 - Minimal & maximal submission delay (anti-bot timing control)
 - Cloudflare Turnstile (bot detection & abuse prevention)
@@ -109,10 +133,15 @@ CodingBlog implements a series of robust, defence-in-depth security mechanisms t
 - Disposable email blocking
 - Password blacklist (common password prevention)
 - Secure session tokens used for CSRF protection and form timing validation
-- Rate-limiting middleware
 - Security headers middleware
 - Automatic injection of headers strengthening browser-side security
 - Structured logging (per-domain security logs)
+- Secure password reset tokens (hashed, time-limited, single-use)
+- Anti-enumeration mechanisms on authentication and recovery flows
+- Email-based quota limiting for sensitive actions (reset, resend)
+- Step-up security (Turnstile escalation on suspicious activity)
+- Secure registration flow with layered protections (validation, Turnstile, rate limiting)
+- Controlled confirmation email resend with anti-enumeration and quotas
 
 ## License
 

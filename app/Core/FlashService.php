@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core;
 
 use App\Core\Contract\FlashInterface;
+use App\Core\Contract\SessionInterface;
 
 /**
  * Provides a session-based flash message management service.
@@ -22,13 +23,13 @@ final class FlashService implements FlashInterface
     /**
      * Constructor.
      *
-     * Initializes the flash service with a session manager
-     * used to persist flash data between requests.
+     * Initializes the flash service with a session storage implementation.
+     * Flash data is persisted between requests via the SessionInterface abstraction.
      *
-     * @param SessionManager $session
-     *     The session manager instance for accessing and updating session data.
+     * @param SessionInterface $session
+     *     The session service used to access and update session data.
      */
-    public function __construct(private SessionManager $session)
+    public function __construct(private SessionInterface $session)
     {
     }
 

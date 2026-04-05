@@ -7,7 +7,7 @@ namespace App\Http;
 use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 
-final class Responder implements ResponderInterface
+class Responder implements ResponderInterface
 {
     public function __construct(
         private View $view,
@@ -16,13 +16,22 @@ final class Responder implements ResponderInterface
 
     public function render(string $template, array $data = []): void
     {
-        // Aligné avec BaseController : View::render() retourne du HTML
         echo $this->view->render($template, $data);
     }
 
     public function redirect(string $path): void
     {
-        header('Location: ' . $path);
+        $this->sendHeader('Location: ' . $path);
+        $this->terminate();
+    }
+
+    protected function sendHeader(string $header): void
+    {
+        header($header);
+    }
+
+    protected function terminate(): void
+    {
         exit;
     }
 }

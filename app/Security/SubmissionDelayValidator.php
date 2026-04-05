@@ -11,34 +11,12 @@ use App\Security\Exception\SuspiciousSubmissionException;
 final class SubmissionDelayValidator implements SubmissionDelayValidatorInterface
 {
     private SessionInterface $session;
-
-    /**
-     * Valeurs par défaut (si aucun réglage spécifique au formulaire).
-     */
     private int $defaultMinSeconds;
     private int $defaultMaxSeconds;
 
-    /**
-     * Règles spécifiques par formulaire.
-     *
-     * @var array<string, array{min:int, max:int}>
-     */
-    private array $rules = [
-        // exemple : inscription
-        'register' => [
-            'min' => 15,    // délai minimal en secondes
-            'max' => 1800,  // délai maximal : 30 minutes
-        ],
-        // exemple : renvoi de confirmation
-        'resend_confirm' => [
-            'min' => 5,
-            'max' => 900,   // 15 minutes
-        ],
-    ];
-
     public function __construct(
         SessionInterface $session,
-        int $defaultMinSeconds = 5,
+        int $defaultMinSeconds = 10,
         int $defaultMaxSeconds = 1800
     ) {
         $this->session           = $session;
@@ -70,79 +48,97 @@ final class SubmissionDelayValidator implements SubmissionDelayValidatorInterfac
         ?int $minSeconds = null,
         ?int $maxSeconds = null
     ): void {
-        $key   = $this->getKey($formId);
-        $start = $this->session->get($key);
+        $start = $this->session->get($this->getKey($formId));
 
         // Si aucune trace du GET : on ne bloque pas (comportement neutre)
-        if (!is_int($start)) {
+        if (!is_int($start) || $start <= 0) {
             return;
         }
 
-        $startInt = $start;
-        if ($startInt <= 0) {
+        [$min, $max]  = $this->resolveBounds($minSeconds, $maxSeconds);
+        $elapsed      = time() - $start;
+        $minOkKey     = $this->getMinOkKey($formId);
+        $minAlreadyOk = (bool) $this->session->get($minOkKey);
+
+        $this->assertMaxDelayNotExceeded($formId, $elapsed, $min, $max);
+
+        if ($minAlreadyOk) {
             return;
         }
 
-        // Résolution des bornes min/max : priorité aux paramètres explicites,
-        // sinon aux règles par formulaire, sinon aux valeurs par défaut.
-        [$min, $max] = $this->resolveBounds($formId, $minSeconds, $maxSeconds);
+        $this->assertMinDelayMet($formId, $elapsed, $min, $max);
 
-        $elapsed = time() - $startInt;
-
-        $minOkKey      = $this->getMinOkKey($formId);
-        $minAlreadyOk  = (bool) $this->session->get($minOkKey);
-
-        if ($elapsed > $max) {
-            throw new SuspiciousSubmissionException('max_delay_exceeded', [
-                'form'    => $formId,
-                'elapsed' => $elapsed,
-                'min'     => $min,
-                'max'     => $max,
-            ]);
-        }
-
-        if (!$minAlreadyOk) {
-            if ($elapsed < $min) {
-                throw new SuspiciousSubmissionException('min_delay_not_met', [
-                    'form'    => $formId,
-                    'elapsed' => $elapsed,
-                    'min'     => $min,
-                    'max'     => $max,
-                ]);
-            }
-
-            // Une première soumission humaine a respecté le délai minimal :
-            // on assouplit les soumissions suivantes (correction d’erreurs, etc.).
-            $this->session->set($minOkKey, 1);
-        }
+        // Une première soumission humaine a respecté le délai minimal :
+        // on assouplit les soumissions suivantes (correction d’erreurs, etc.).
+        $this->session->set($minOkKey, 1);
     }
 
     /**
-     * Calcule les bornes min/max effectives pour un formulaire.
-     *
-     * @return array{0:int,1:int} [min, max]
+     * @return array{0: int, 1: int}
      */
-    private function resolveBounds(
-        string $formId,
-        ?int $minOverride,
-        ?int $maxOverride
-    ): array {
-        $min = $this->defaultMinSeconds;
-        $max = $this->defaultMaxSeconds;
+    private function resolveBounds(?int $minSeconds, ?int $maxSeconds): array
+    {
+        $min = $minSeconds ?? $this->defaultMinSeconds;
+        $max = $maxSeconds ?? $this->defaultMaxSeconds;
 
-        if (isset($this->rules[$formId])) {
-            $min = $this->rules[$formId]['min'];
-            $max = $this->rules[$formId]['max'];
-        }
-
-        if ($minOverride !== null) {
-            $min = $minOverride;
-        }
-        if ($maxOverride !== null) {
-            $max = $maxOverride;
-        }
+        $min = $this->normalizeMin($min);
+        $max = $this->normalizeMax($max);
+        $max = $this->ensureMaxIsAtLeastMin($max, $min);
 
         return [$min, $max];
+    }
+
+    private function normalizeMin(int $min): int
+    {
+        return $min < 0 ? 0 : $min;
+    }
+
+    private function normalizeMax(int $max): int
+    {
+        if ($max > 0) {
+            return $max;
+        }
+
+        return $this->defaultMaxSeconds > 0 ? $this->defaultMaxSeconds : 1800;
+    }
+
+    private function ensureMaxIsAtLeastMin(int $max, int $min): int
+    {
+        return $max < $min ? $min : $max;
+    }
+
+    /**
+     * @throws SuspiciousSubmissionException
+     */
+    private function assertMaxDelayNotExceeded(string $formId, int $elapsed, int $min, int $max): void
+    {
+        if ($elapsed <= $max) {
+            return;
+        }
+
+        throw new SuspiciousSubmissionException('max_delay_exceeded', [
+            'form'    => $formId,
+            'elapsed' => $elapsed,
+            'min'     => $min,
+            'max'     => $max,
+        ]);
+    }
+
+    /**
+     * @throws SuspiciousSubmissionException
+     */
+    private function assertMinDelayMet(string $formId, int $elapsed, int $min, int $max): void
+    {
+        if ($elapsed >= $min) {
+            return;
+        }
+
+        throw new SuspiciousSubmissionException('min_delay_not_met', [
+            'form'    => $formId,
+            'elapsed' => $elapsed,
+            'min'     => $min,
+            'max'     => $max,
+        ]);
     }
 
     private function getKey(string $formId): string

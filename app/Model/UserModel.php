@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Model;
 
-use App\Core\SqlHelper;
+use App\Core\Contract\SqlHelperInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
 
@@ -24,10 +26,10 @@ class UserModel implements UserModelInterface
      * Initializes the model with a SqlHelper instance for
      * executing database queries.
      *
-     * @param SqlHelper $sqlHelper
+     * @param SqlHelperInterface $sqlHelper
      *     Helper class for preparing, executing, and managing SQL statements.
      */
-    public function __construct(private SqlHelper $sqlHelper)
+    public function __construct(private SqlHelperInterface $sqlHelper)
     {
     }
 
@@ -150,5 +152,51 @@ class UserModel implements UserModelInterface
         }
 
         return $this->sqlHelper->lastInsertId();
+    }
+
+    /**
+     * Retourne les champs nécessaires à l'authentification via email.
+     */
+    public function findAuthByEmail(string $email): ?UserEntity
+    {
+        $sql = "SELECT
+                    id AS user_id,
+                    username,
+                    email,
+                    password,
+                    status
+                FROM {$this->table}
+                WHERE email = :email
+                LIMIT 1";
+
+        $stmt = $this->sqlHelper->request($sql, [':email' => $email]);
+
+        /** @var array<string,mixed>|false $row */
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ? (new UserEntity())->hydrate((array) $row) : null;
+    }
+
+    /**
+     * Retourne les champs nécessaires à l'authentification via username.
+     */
+    public function findAuthByUsername(string $username): ?UserEntity
+    {
+        $sql = "SELECT
+                    id AS user_id,
+                    username,
+                    email,
+                    password,
+                    status
+                FROM {$this->table}
+                WHERE username = :username
+                LIMIT 1";
+
+        $stmt = $this->sqlHelper->request($sql, [':username' => $username]);
+
+        /** @var array<string,mixed>|false $row */
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ? (new UserEntity())->hydrate((array) $row) : null;
     }
 }

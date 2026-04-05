@@ -1,158 +1,410 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Model;
 
-use App\Core\SqlHelper;
+use App\Core\Contract\SqlHelperInterface;
 use App\Model\UserTokenModel;
+use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class UserTokenModelTest extends TestCase
 {
-    /** @var SqlHelper&MockObject */
-    private SqlHelper $sqlHelper;
+    private SqlHelperInterface&MockObject $sqlHelper;
+    private \PDOStatement&MockObject $statement;
+
+    private UserTokenModel $model;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->sqlHelper = $this->createMock(SqlHelper::class);
+
+        $this->sqlHelper = $this->createMock(SqlHelperInterface::class);
+        $this->statement = $this->createMock(\PDOStatement::class);
+
+        $this->model = new UserTokenModel($this->sqlHelper);
     }
 
-    // =========================
-    // createConfirmationToken()
-    // =========================
-
-    public function testCreateConfirmationTokenThrowsOnInvalidLength(): void
+    public function testActivateByHashReturnsTrueWhenAtLeastOneRowIsUpdated(): void
     {
-        $model = new UserTokenModel($this->sqlHelper);
+        $hash = str_repeat('a', 32);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Token hash must be exactly 32 bytes');
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('UPDATE user u'),
+                [':hash' => $hash]
+            )
+            ->willReturn($this->statement);
 
-        // hash de longueur != 32
-        $badHash = random_bytes(16);
-        $model->createConfirmationToken(123, $badHash, new \DateTimeImmutable('+1 day'));
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $this->assertTrue($this->model->activateByHash($hash));
     }
 
-    public function testCreateConfirmationTokenReturnsTrueOnUpsert(): void
+    public function testActivateByHashReturnsFalseWhenNoRowIsUpdated(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
+        $hash = str_repeat('b', 32);
 
-        // on vérifie les params clefs
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('UPDATE user u'),
+                [':hash' => $hash]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(0);
+
+        $this->assertFalse($this->model->activateByHash($hash));
+    }
+
+    public function testHasActiveUnusedTokenReturnsTrueWhenTokenExists(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('SELECT 1'),
+                [
+                    ':user_id' => 42,
+                    ':purpose' => 'confirmation',
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetchColumn')
+            ->willReturn('1');
+
+        $this->assertTrue($this->model->hasActiveUnusedToken(42, 'confirmation'));
+    }
+
+    public function testHasActiveUnusedTokenReturnsFalseWhenTokenDoesNotExist(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetchColumn')
+            ->willReturn(false);
+
+        $this->assertFalse($this->model->hasActiveUnusedToken(42, 'confirmation'));
+    }
+
+    public function testInvalidatePasswordResetTokenReturnsTrueWhenAtLeastOneRowIsUpdated(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('UPDATE user_token'),
+                [':user_id' => 42]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $this->assertTrue($this->model->invalidatePasswordResetToken(42));
+    }
+
+    public function testInvalidatePasswordResetTokenReturnsFalseWhenNoRowIsUpdated(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('UPDATE user_token'),
+                [':user_id' => 42]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(0);
+
+        $this->assertFalse($this->model->invalidatePasswordResetToken(42));
+    }
+
+    public function testCreateConfirmationTokenReturnsTrueWhenInsertAffectsAtLeastOneRow(): void
+    {
+        $userId    = 42;
+        $hash      = str_repeat('c', 32);
+        $expiresAt = new \DateTimeImmutable('2026-03-28 12:00:00');
+
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
             ->with(
                 $this->stringContains('INSERT INTO user_token'),
-                $this->callback(function (array $params): bool {
-                    return isset($params[':user_id'], $params[':token_hash'], $params[':expires_at'])
-                        && $params[':user_id'] === 42
-                        && is_string($params[':token_hash'])
-                        && strlen($params[':token_hash']) === 32
-                        && is_string($params[':expires_at']);
-                })
+                [
+                    ':user_id'    => $userId,
+                    ':purpose'    => 'confirmation',
+                    ':token_hash' => $hash,
+                    ':expires_at' => '2026-03-28 12:00:00',
+                ]
             )
-            ->willReturn($stmt);
+            ->willReturn($this->statement);
 
-        // ON DUPLICATE → rowCount() typiquement 1 ou 2
-        $stmt->method('rowCount')->willReturn(1);
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
 
-        $hash32 = random_bytes(32);
-        $model  = new UserTokenModel($this->sqlHelper);
-
-        $this->assertTrue($model->createConfirmationToken(42, $hash32, new \DateTimeImmutable('+1 day')));
+        $this->assertTrue($this->model->createConfirmationToken($userId, $hash, $expiresAt));
     }
 
-    // ==================================
-    // findConfirmationContextByHash()
-    // ==================================
-
-    public function testFindConfirmationContextByHashReturnsArrayWhenFound(): void
+    public function testCreatePasswordResetTokenReturnsTrueWhenInsertAffectsAtLeastOneRow(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
-        $hash = random_bytes(32);
+        $userId    = 42;
+        $hash      = str_repeat('d', 32);
+        $expiresAt = new \DateTimeImmutable('2026-03-28 13:00:00');
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
-            ->with($this->stringContains('SELECT'), [':hash' => $hash])
-            ->willReturn($stmt);
+            ->with(
+                $this->stringContains('INSERT INTO user_token'),
+                [
+                    ':user_id'    => $userId,
+                    ':purpose'    => 'password_reset',
+                    ':token_hash' => $hash,
+                    ':expires_at' => '2026-03-28 13:00:00',
+                ]
+            )
+            ->willReturn($this->statement);
 
-        $stmt->method('fetch')
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(2);
+
+        $this->assertTrue($this->model->createPasswordResetToken($userId, $hash, $expiresAt));
+    }
+
+    public function testCreateConfirmationTokenThrowsExceptionWhenHashLengthIsInvalid(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Token hash must be exactly 32 bytes (SHA-256).');
+
+        $this->sqlHelper
+            ->expects($this->never())
+            ->method('request');
+
+        $this->model->createConfirmationToken(
+            42,
+            'short-hash',
+            new \DateTimeImmutable('2026-03-28 12:00:00')
+        );
+    }
+
+    public function testHasActiveUnusedPasswordResetTokenDelegatesToPasswordResetPurpose(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('SELECT 1'),
+                [
+                    ':user_id' => 42,
+                    ':purpose' => 'password_reset',
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetchColumn')
+            ->willReturn('1');
+
+        $this->assertTrue($this->model->hasActiveUnusedPasswordResetToken(42));
+    }
+
+    public function testFindConfirmationContextByHashReturnsRowWhenFound(): void
+    {
+        $hash = str_repeat('e', 32);
+        $row  = [
+            'user_id'     => 42,
+            'user_status' => 'inactive',
+            'used'        => 0,
+            'used_at'     => null,
+            'expires_at'  => '2026-03-28 14:00:00',
+            'is_expired'  => 0,
+        ];
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE t.token_hash = :hash'),
+                [
+                    ':hash'    => $hash,
+                    ':purpose' => 'confirmation',
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
             ->with(\PDO::FETCH_ASSOC)
-            ->willReturn([
-                'user_id'      => 99,
-                'user_status'  => 'inactive',
-                'used'         => 0,
-                'used_at'      => null,
-                'expires_at'   => '2030-01-01 00:00:00',
-                'is_expired'   => 0,
-            ]);
+            ->willReturn($row);
 
-        $model = new UserTokenModel($this->sqlHelper);
-        $row   = $model->findConfirmationContextByHash($hash);
-
-        $this->assertIsArray($row);
-        $this->assertSame(99, $row['user_id']);
-        $this->assertSame('inactive', $row['user_status']);
-        $this->assertSame(0, $row['used']);
-        $this->assertSame(0, $row['is_expired']);
+        $this->assertSame($row, $this->model->findConfirmationContextByHash($hash));
     }
 
     public function testFindConfirmationContextByHashReturnsNullWhenNotFound(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
-        $hash = random_bytes(32);
+        $hash = str_repeat('f', 32);
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
-            ->with($this->stringContains('SELECT'), [':hash' => $hash])
-            ->willReturn($stmt);
+            ->with(
+                $this->stringContains('WHERE t.token_hash = :hash'),
+                [
+                    ':hash'    => $hash,
+                    ':purpose' => 'confirmation',
+                ]
+            )
+            ->willReturn($this->statement);
 
-        $stmt->method('fetch')
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
             ->with(\PDO::FETCH_ASSOC)
             ->willReturn(false);
 
-        $model = new UserTokenModel($this->sqlHelper);
-        $this->assertNull($model->findConfirmationContextByHash($hash));
+        $this->assertNull($this->model->findConfirmationContextByHash($hash));
     }
 
-    // =========================
-    // activateByHash()
-    // =========================
-
-    public function testActivateByHashReturnsTrueWhenUpdated(): void
+    public function testFindPasswordResetContextByHashReturnsRowWhenFound(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
-        $hash = random_bytes(32);
+        $hash = str_repeat('g', 32);
+        $row  = [
+            'user_id'     => 42,
+            'user_status' => 'active',
+            'used'        => 0,
+            'used_at'     => null,
+            'expires_at'  => '2026-03-28 15:00:00',
+            'is_expired'  => 0,
+        ];
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
-            ->with($this->stringContains('UPDATE user u'), [':hash' => $hash])
-            ->willReturn($stmt);
+            ->with(
+                $this->stringContains('WHERE t.token_hash = :hash'),
+                [
+                    ':hash'    => $hash,
+                    ':purpose' => 'password_reset',
+                ]
+            )
+            ->willReturn($this->statement);
 
-        $stmt->method('rowCount')->willReturn(1);
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn($row);
 
-        $model = new UserTokenModel($this->sqlHelper);
-        $this->assertTrue($model->activateByHash($hash));
+        $this->assertSame($row, $this->model->findPasswordResetContextByHash($hash));
     }
 
-    public function testActivateByHashReturnsFalseWhenNoRowUpdated(): void
+    public function testFindPasswordResetContextByHashReturnsNullWhenNotFound(): void
     {
-        $stmt = $this->createMock(\PDOStatement::class);
-        $hash = random_bytes(32);
+        $hash = str_repeat('h', 32);
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
-            ->with($this->stringContains('UPDATE user u'), [':hash' => $hash])
-            ->willReturn($stmt);
+            ->with(
+                $this->stringContains('WHERE t.token_hash = :hash'),
+                [
+                    ':hash'    => $hash,
+                    ':purpose' => 'password_reset',
+                ]
+            )
+            ->willReturn($this->statement);
 
-        $stmt->method('rowCount')->willReturn(0);
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
 
-        $model = new UserTokenModel($this->sqlHelper);
-        $this->assertFalse($model->activateByHash($hash));
+        $this->assertNull($this->model->findPasswordResetContextByHash($hash));
+    }
+
+    public function testConsumePasswordResetTokenAndUpdatePasswordReturnsTrueWhenUpdateSucceeds(): void
+    {
+        $hash         = str_repeat('i', 32);
+        $passwordHash = 'hashed-password';
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('u.password = :password_hash'),
+                [
+                    ':password_hash' => $passwordHash,
+                    ':hash'          => $hash,
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $this->assertTrue(
+            $this->model->consumePasswordResetTokenAndUpdatePassword($hash, $passwordHash)
+        );
+    }
+
+    public function testConsumePasswordResetTokenAndUpdatePasswordReturnsFalseWhenUpdateFails(): void
+    {
+        $hash         = str_repeat('j', 32);
+        $passwordHash = 'hashed-password';
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('u.password = :password_hash'),
+                [
+                    ':password_hash' => $passwordHash,
+                    ':hash'          => $hash,
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(0);
+
+        $this->assertFalse(
+            $this->model->consumePasswordResetTokenAndUpdatePassword($hash, $passwordHash)
+        );
     }
 }

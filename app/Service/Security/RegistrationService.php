@@ -74,8 +74,6 @@ final class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * Flux “heureux” + gardes d’erreurs, linéarisé pour réduire la complexité cyclomatique.
-     *
      * @param array<string,mixed> $form
      * @return array{
      *   ok?: true,
@@ -85,29 +83,84 @@ final class RegistrationService implements RegistrationServiceInterface
      */
     private function doRegisterFlow(array $form): array
     {
-        $channel = 'auth';
-
         // 1) Lecture et normalisation des entrées
         [$username, $email, $password, $confirm, $old] = $this->sanitizeRegistrationForm($form);
 
         // 2) Validation “formelle” et collisions
         $errors = $this->validateRegistrationOrConflicts($username, $email, $password, $confirm);
-        $err    = $this->outIfValidationErrors($errors, $old);
+        if ($errors !== []) {
+            return ['errors' => $errors, 'old' => $old];
+        }
+
+        // 3) Contexte client (IP + User-Agent)
+        $client = $this->resolveClientContext();
+
+        // 4) Throttling
+        $err = $this->denyIfRegistrationThrottled($email, $client['ip'], $old);
         if ($err !== null) {
             return $err;
         }
 
-        // 3) Throttling métier d'inscription (IP + User-Agent + email)
-        $ip        = is_string($_SERVER['REMOTE_ADDR'] ?? null) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
-        $userAgent = is_string($_SERVER['HTTP_USER_AGENT'] ?? null) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown';
+        // 5) Artefacts d’inscription
+        $art = $this->prepareRegistrationArtifacts($username, $password);
+        if ($art === null) {
+            return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
+        }
+
+        /** @var array{hashedPassword:string,slug:string,token:string,confirmTokenHash:string,confirmExpiresAt:\DateTimeImmutable} $art */
+
+        // 6) Transaction : création utilisateur + insertion du jeton
+        $user   = $this->makeUserEntity($username, $email, $art['hashedPassword'], $art['slug']);
+        $userId = $this->persistUserAndToken($user, $art['confirmTokenHash'], $art['confirmExpiresAt']);
+        if ($userId <= 0) {
+            return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
+        }
+
+        // 7) Envoi de l’email de confirmation
+        if (!$this->trySendConfirmationEmail($email, $username, $art['token'], $userId)) {
+            return ['errors' => [ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], 'old' => $old];
+        }
+
+        // 8) Marquer le succès du throttle
+        $this->throttle->recordSuccess(
+            email: $email,
+            userId: $userId,
+            ip: $client['ip'],
+            userAgent: $client['userAgent'],
+        );
+
+        return ['ok' => true];
+    }
+
+    /**
+     * @return array{ip:string, userAgent:string}
+     */
+    private function resolveClientContext(): array
+    {
+        $ip = is_string($_SERVER['REMOTE_ADDR'] ?? null) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+        $ua = is_string($_SERVER['HTTP_USER_AGENT'] ?? null) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown';
+
+        return ['ip' => $ip, 'userAgent' => $ua];
+    }
+
+    /**
+     * @param array{username:string,email:string} $old
+     * @return array{errors:list<string|int>,old:array{username:string,email:string}}|null
+     */
+    private function denyIfRegistrationThrottled(string $email, string $ip, array $old): ?array
+    {
+        $channel = 'auth';
 
         $throttleResult = $this->throttle->checkQuota($ip);
 
         if (!$throttleResult['allowed']) {
+            $reason       = $throttleResult['reason'];
+            $reasonSuffix = is_string($reason) ? $reason : '';
+
             Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_REGISTRATION_QUOTA_EXCEEDED, [
                 'email'  => $email,
                 'ip'     => $ip,
-                'reason' => (string) ($throttleResult['reason'] ?? ''),
+                'reason' => 'quota_exceeded_' . $reasonSuffix,
             ]);
 
             return [
@@ -116,38 +169,7 @@ final class RegistrationService implements RegistrationServiceInterface
             ];
         }
 
-        // 4) Préparer les artefacts d’inscription
-        $art = $this->prepareRegistrationArtifacts($username, $password);
-        $err = $this->outIfArtifactsNull($art, $old);
-        if ($err !== null) {
-            return $err;
-        }
-
-        /** @var array{hashedPassword:string,slug:string,token:string,confirmTokenHash:string,confirmExpiresAt:\DateTimeImmutable} $art */
-
-        // 5) Transaction : création utilisateur + insertion du jeton
-        $user   = $this->makeUserEntity($username, $email, $art['hashedPassword'], $art['slug']);
-        $userId = $this->persistUserAndToken($user, $art['confirmTokenHash'], $art['confirmExpiresAt']);
-        $err    = $this->outIfUserIdInvalid($userId, $old);
-        if ($err !== null) {
-            return $err;
-        }
-
-        // 6) Envoi de l’email de confirmation
-        $sent = $this->trySendConfirmationEmail($email, $username, $art['token'], $userId);
-        $err  = $this->outIfEmailNotSent($sent, $old);
-        if ($err !== null) {
-            return $err;
-        }
-
-        $this->throttle->recordSuccess(
-            email: $email,
-            userId: $userId,
-            ip: $ip,
-            userAgent: $userAgent,
-        );
-
-        return ['ok' => true];
+        return null;
     }
 
     /**
@@ -162,55 +184,31 @@ final class RegistrationService implements RegistrationServiceInterface
     }
 
     /**
-     * @param list<string> $errors
-     * @param array{username:string,email:string} $old
-     * @return array{errors:list<string|int>,old:array{username:string,email:string}}|null
+     * @param array<string, mixed> $form
      */
-    private function outIfValidationErrors(array $errors, array $old): ?array
+    private function trimmedStringField(array $form, string $key): string
     {
-        if ($errors === []) {
-            return null;
+        $value = $form[$key] ?? null;
+
+        if (!is_string($value)) {
+            return '';
         }
-        return ['errors' => $errors, 'old' => $old];
+
+        return trim($value);
     }
 
     /**
-     * @param array{hashedPassword:string,slug:string,token:string,confirmTokenHash:string,confirmExpiresAt:\DateTimeImmutable}|null $art
-     * @param array{username:string,email:string} $old
-     * @return array{errors:list<string|int>,old:array{username:string,email:string}}|null
+     * @param array<string, mixed> $form
      */
-    private function outIfArtifactsNull(?array $art, array $old): ?array
+    private function rawStringField(array $form, string $key): string
     {
-        if ($art !== null) {
-            return null;
-        }
-        // Longueur de hash binaire invalide (comportement inchangé)
-        return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
-    }
+        $value = $form[$key] ?? null;
 
-    /**
-     * @param array{username:string,email:string} $old
-     * @return array{errors:list<string|int>,old:array{username:string,email:string}}|null
-     */
-    private function outIfUserIdInvalid(int $userId, array $old): ?array
-    {
-        if ($userId > 0) {
-            return null;
+        if (!is_string($value)) {
+            return '';
         }
-        // Les logs sont déjà produits dans persistUserAndToken()
-        return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
-    }
 
-    /**
-     * @param array{username:string,email:string} $old
-     * @return array{errors:list<string|int>,old:array{username:string,email:string}}|null
-     */
-    private function outIfEmailNotSent(bool $sent, array $old): ?array
-    {
-        if ($sent) {
-            return null;
-        }
-        return ['errors' => [ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], 'old' => $old];
+        return $value;
     }
 
     /**
@@ -219,11 +217,14 @@ final class RegistrationService implements RegistrationServiceInterface
      */
     private function sanitizeRegistrationForm(array $form): array
     {
-        $username = is_string($form['username'] ?? null) ? trim($form['username']) : '';
-        $email    = is_string($form['email'] ?? null) ? trim($form['email']) : '';
-        $password = is_string($form['password'] ?? null) ? $form['password'] : '';
-        $confirm  = is_string($form['confirm_password'] ?? null) ? $form['confirm_password'] : '';
-        $old      = ['username' => $username, 'email' => $email];
+        // Champs “visibles” → trim; secrets (passwords) → pas de trim
+        $username = $this->trimmedStringField($form, 'username');
+        $email    = $this->trimmedStringField($form, 'email');
+        $password = $this->rawStringField($form, 'password');
+        $confirm  = $this->rawStringField($form, 'confirm_password');
+
+        $old = ['username' => $username, 'email' => $email];
+
         return [$username, $email, $password, $confirm, $old];
     }
 
@@ -317,7 +318,8 @@ final class RegistrationService implements RegistrationServiceInterface
             $userId = $this->userModel->createUser($user);
             if ($userId <= 0) {
                 Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_REGISTRATION_FAILED, [
-                    'email' => $user->getEmail(), 'username' => $user->getUsername(),
+                    'email'    => $user->getEmail(),
+                    'username' => $user->getUsername(),
                 ]);
                 $this->sqlHelper->rollBack();
                 return 0;
@@ -327,7 +329,8 @@ final class RegistrationService implements RegistrationServiceInterface
             if (!$ok) {
                 $this->sqlHelper->rollBack();
                 Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-                    'reason' => 'create_confirmation_token_failed', 'user_id' => $userId,
+                    'reason'  => 'create_confirmation_token_failed',
+                    'user_id' => $userId,
                 ]);
                 return 0;
             }
@@ -337,7 +340,8 @@ final class RegistrationService implements RegistrationServiceInterface
         } catch (\Throwable $txe) {
             $this->sqlHelper->rollBack();
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-                'reason' => 'transaction_exception', 'exception' => $txe->getMessage(),
+                'reason'    => 'transaction_exception',
+                'exception' => $txe->getMessage(),
             ]);
             return 0;
         }
@@ -356,18 +360,25 @@ final class RegistrationService implements RegistrationServiceInterface
                 $username,
                 'Confirmation de votre compte',
                 'confirmation.html',
-                ['username' => $username, 'link' => $link]
+                [
+                    'username' => $username,
+                    'link'     => $link
+                ]
             );
         } catch (\Throwable $mailEx) {
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
-                'email' => $email, 'user_id' => $userId, 'exception' => $mailEx->getMessage(),
+                'email'     => $email,
+                'user_id'   => $userId,
+                'exception' => $mailEx->getMessage(),
             ]);
             return false;
         }
 
         if (!$sent) {
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
-                'email' => $email, 'user_id' => $userId, 'reason' => 'mailer_returned_false',
+                'email'   => $email,
+                'user_id' => $userId,
+                'reason'  => 'mailer_returned_false',
             ]);
             return false;
         }
@@ -393,28 +404,35 @@ final class RegistrationService implements RegistrationServiceInterface
 
             if ($dupKind === 'email') {
                 Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_EMAIL_EXISTS, [
-                    'email' => $email, 'dup' => true,
+                    'email' => $email,
+                    'dup'   => true,
                 ]);
                 return ['errors' => [ErrorCode::AUTH_EMAIL_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER], 'old' => $old];
             }
 
             if ($dupKind === 'username') {
                 Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_USERNAME_EXISTS, [
-                    'username' => $username, 'dup' => true,
+                    'username' => $username,
+                    'dup'      => true,
                 ]);
                 return ['errors' => [ErrorCode::AUTH_USERNAME_EXISTS, ErrorCode::AUTH_PASSWORD_REENTER], 'old' => $old];
             }
 
             // Duplicate key, but index not recognized (keep your original fallback)
             Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_REGISTRATION_FAILED, [
-                'reason' => 'duplicate_key', 'sqlstate' => $sqlState, 'driver' => $driverCode,
+                'reason'   => 'duplicate_key',
+                'sqlstate' => $sqlState,
+                'driver'   => $driverCode,
             ]);
             return ['errors' => [ErrorCode::AUTH_REGISTRATION_FAILED], 'old' => $old];
         }
 
         // Any other PDO error → technical error
         Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
-            'reason' => 'pdo_exception', 'sqlstate' => $sqlState, 'driver' => $driverCode, 'exception' => $pdoException->getMessage(),
+            'reason'    => 'pdo_exception',
+            'sqlstate'  => $sqlState,
+            'driver'    => $driverCode,
+            'exception' => $pdoException->getMessage(),
         ]);
         return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
     }
@@ -424,22 +442,38 @@ final class RegistrationService implements RegistrationServiceInterface
      */
     private function extractPdoDetails(\PDOException $pdoException): array
     {
-        $code     = $pdoException->getCode(); // peut être string|int|null selon l’implémentation
-        $sqlState = is_string($code) ? ($code !== '' ? $code : null) : null;
-
-        $driver = (is_array($pdoException->errorInfo ?? null) && isset($pdoException->errorInfo[1]) && is_int($pdoException->errorInfo[1]))
-            ? $pdoException->errorInfo[1]
-            : null;
-
-        $message = (is_array($pdoException->errorInfo ?? null) && isset($pdoException->errorInfo[2]) && is_string($pdoException->errorInfo[2]))
-            ? $pdoException->errorInfo[2]
-            : $pdoException->getMessage();
-
         return [
-            'sqlstate' => $sqlState,
-            'driver'   => $driver,
-            'message'  => $message,
+            'sqlstate' => $this->normalizeSqlState($pdoException->getCode()),
+            'driver'   => $this->extractDriverCode($pdoException->errorInfo ?? null),
+            'message'  => $this->extractDriverMessage($pdoException),
         ];
+    }
+
+    /**
+     * @param string|int|null $code
+     */
+    private function normalizeSqlState(string|int|null $code): ?string
+    {
+        return is_string($code) && $code !== '' ? $code : null;
+    }
+
+    /**
+     * @param mixed $errorInfo
+     */
+    private function extractDriverCode(mixed $errorInfo): ?int
+    {
+        return (is_array($errorInfo) && isset($errorInfo[1]) && is_int($errorInfo[1]))
+            ? $errorInfo[1]
+            : null;
+    }
+
+    private function extractDriverMessage(\PDOException $pdoException): string
+    {
+        $info = $pdoException->errorInfo ?? null;
+        if (is_array($info) && isset($info[2]) && is_string($info[2]) && $info[2] !== '') {
+            return $info[2];
+        }
+        return $pdoException->getMessage();
     }
 
     /**

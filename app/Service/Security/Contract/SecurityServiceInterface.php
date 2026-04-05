@@ -30,30 +30,59 @@ interface SecurityServiceInterface
      *     An associative array containing registration results or errors.
      */
     public function register(array $form): array;
+
     /**
-         * Confirms a user account using a provided confirmation token.
-         *
-         * Validates the token, activates the user if valid and unexpired,
-         * and returns the operation result.
-         *
-         * @param string $token
-         *     The confirmation token submitted by the user (URL parameter or form field).
-         *
-         * @return array<string, mixed>
-         *     An associative array containing confirmation results or error details.
-         */
+     * Confirms a user account using a provided confirmation token.
+     *
+     * Validates the token, activates the user if valid and unexpired,
+     * and returns the operation result.
+     *
+     * @param string $token
+     *     The confirmation token submitted by the user (URL parameter or form field).
+     *
+     * @return array<string, mixed>
+     *     An associative array containing confirmation results or error details.
+     */
     public function confirmAccount(string $token): array;
+
     /**
-         * Resends a confirmation email for inactive user accounts.
-         *
-         * If the user’s account is not yet activated, this method regenerates
-         * a confirmation token and sends a new email to the registered address.
-         *
-         * @param string $email
-         *     The user’s email address.
-         *
-         * @return array<string, mixed>
-         *     An associative array containing operation results or error messages.
-         */
+     * Resends a confirmation email for inactive user accounts.
+     *
+     * If the user’s account is not yet activated, this method regenerates
+     * a confirmation token and sends a new email to the registered address.
+     *
+     * @param string $email
+     *     The user’s email address.
+     *
+     * @return array<string, mixed>
+     *     An associative array containing operation results or error messages.
+     */
     public function resendConfirmation(string $email): array;
+
+    /**
+     * Handles user login.
+     *
+     * @param array<string, mixed> $form
+     *     The associative array containing submitted login data.
+     *
+     * @return array<string, mixed>
+     *     An associative array containing login result data or errors.
+     */
+    public function login(array $form): array;
+
+    /**
+     * Starts the forgot-password flow for the supplied identifier.
+     *
+     * @return array<string, mixed>
+     *     An associative array containing operation results or errors.
+     */
+    public function forgotPassword(string $identifier): array;
+
+    /**
+     * Resets the user password using the provided token and passwords.
+     *
+     * @return array<string, mixed>
+     *     An associative array containing operation results, validation errors, or failure codes.
+     */
+    public function resetPassword(string $token, string $password, string $confirm): array;
 }

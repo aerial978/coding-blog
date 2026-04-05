@@ -1,7 +1,5 @@
 <?php
 
-// App/Service/Security/ConfirmationResendService.php
-
 declare(strict_types=1);
 
 namespace App\Service\Security;
@@ -12,6 +10,7 @@ use App\Core\Logger;
 use App\Core\Mail\MailerInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
+use App\Model\Entity\UserEntity;
 use App\Security\Contract\EmailQuotaServiceInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\EmailQuotaService;
@@ -36,7 +35,7 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
      * En cas d’utilisateur déjà actif → ['error' => AUTH_ALREADY_CONFIRMED]
      * En cas d’échec technique → ['error' => AUTH_TECHNICAL_ERROR] (ou AUTH_CONFIRM_EMAIL_SEND_FAILED)
      *
-     * @return array<string,mixed>
+     * @return array<string, mixed>
      */
     public function resend(string $email): array
     {
@@ -55,6 +54,7 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
                 'exception' => $e->getMessage(),
                 'email'     => $email,
             ]);
+
             return ['error' => ErrorCode::AUTH_TECHNICAL_ERROR];
         }
     }
@@ -62,105 +62,98 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
     /**
      * Flux “heureux” + gardes d’erreurs, linéarisé pour réduire la complexité.
      *
-     * @return array<string,mixed>
+     * @return array<string, mixed>
      */
     private function doResendFlow(string $email): array
     {
         $channel = 'auth';
 
+        $userResult = $this->resolveUserForResend($email, $channel);
+        if ($userResult !== null) {
+            return $userResult;
+        }
+
         $user = $this->userModel->findOneByEmail($email);
-
-        // Garde anti-énumération (et 1er affinage de type pour PHPStan)
-        $res = $this->outIfUnknownUser(is_object($user) ? $user : null, $email, $channel);
-        if ($res !== null) {
-            return $res; // ici, c’est toujours []
-        }
-        /** @var object $user */ // à partir d’ici, on sait que $user est un objet
-
-        // Normalisations robustes pour PHPStan (évite "method on mixed")
-        // Status: string|null
-        $tmpStatus = method_exists($user, 'getStatus') ? $user->getStatus() : null;
-        $status    = is_string($tmpStatus) ? $tmpStatus : null;
-
-        // UserId: int (accepte int natif ou string numérique)
-        $tmpId  = method_exists($user, 'getUserId') ? $user->getUserId() : null;
-        $userId = is_int($tmpId)
-            ? $tmpId
-            : ((is_string($tmpId) && ctype_digit($tmpId)) ? (int) $tmpId : 0);
-
-        // toName: string (vide si non disponible)
-        $tmpName = method_exists($user, 'getUsername') ? $user->getUsername() : null;
-        $toName  = is_string($tmpName) ? $tmpName : '';
-
-        // Vérification du quota métier (heures / jours)
-        $quota = $this->quotaService->checkQuota(
-            EmailQuotaService::TYPE_CONFIRM_RESEND,
-            $email
-        );
-
-        if (!$quota['allowed']) {
-            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED, [
-                'email'  => $email,
-                'reason' => 'quota_exceeded_' . $quota['reason'],
-            ]);
-            return []; // succès silencieux
+        if (!$user instanceof UserEntity) {
+            return ['error' => ErrorCode::AUTH_TECHNICAL_ERROR];
         }
 
-        // Déjà actif ?
-        $res = $this->outIfAlreadyActive($status, $userId, $email, $channel);
-        if ($res !== null) {
-            return $res;
+        [$status, $userId, $toName] = $this->extractUserBasics($user);
+
+        $guardResult = $this->guardResendEligibility($email, $status, $userId, $channel);
+        if ($guardResult !== null) {
+            return $guardResult;
         }
 
-        // Artefacts
-        [$token, $hashBin, $expiresAt] = $this->makeNewTokenArtifacts($email);
-        $res                           = $this->outIfHashNull($hashBin);
-        if ($res !== null) {
-            return $res;
-        }
-        /** @var string $hashBin */
-
-        // Persistance
-        $ok  = $this->persistNewToken($userId, $hashBin, $expiresAt);
-        $res = $this->outIfPersistFailed($ok);
-        if ($res !== null) {
-            return $res;
-        }
-
-        // Envoi
-        $sent = $this->sendConfirmationEmail($email, $toName, $token);
-        $res  = $this->outIfEmailNotSent($sent);
-        if ($res !== null) {
-            return $res;
-        }
-
-        // Enregistrer l’événement dans la base
-        $ip = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR'])
-            ? $_SERVER['REMOTE_ADDR']
-            : '0.0.0.0';
-
-        $ua = isset($_SERVER['HTTP_USER_AGENT']) && is_string($_SERVER['HTTP_USER_AGENT'])
-            ? $_SERVER['HTTP_USER_AGENT']
-            : 'unknown';
-
-        $this->quotaService->recordEvent(
-            $email,
-            EmailQuotaService::TYPE_CONFIRM_RESEND,
-            $userId,
-            $ip,
-            $ua
-        );
-
-        // Succès
-        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
-            'user_id' => $userId,
-            'email'   => $email,
-        ]);
-        return [];
+        return $this->processResendDelivery($email, $userId, $toName, $channel);
     }
 
-    /** @return array<string,mixed>|null */
-    private function outIfUnknownUser(?object $user, string $email, string $channel): ?array
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolveUserForResend(string $email, string $channel): ?array
+    {
+        $user   = $this->userModel->findOneByEmail($email);
+        $result = $this->guardUnknownUser($user, $email, $channel);
+
+        if ($result !== null) {
+            return $result;
+        }
+
+        if (!$user instanceof UserEntity) {
+            return ['error' => ErrorCode::AUTH_TECHNICAL_ERROR];
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function guardResendEligibility(string $email, ?string $status, int $userId, string $channel): ?array
+    {
+        $quotaResult = $this->guardQuota($email, $channel);
+        if ($quotaResult !== null) {
+            return $quotaResult;
+        }
+
+        return $this->outIfAlreadyActive($status, $userId, $email, $channel);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function processResendDelivery(string $email, int $userId, string $toName, string $channel): array
+    {
+        [$token, $hashBin, $expiresAt] = $this->makeNewTokenArtifacts($email);
+
+        $hashResult = $this->outIfHashNull($hashBin);
+        if ($hashResult !== null) {
+            return $hashResult;
+        }
+
+        /** @var string $hashBin */
+        $persistResult = $this->persistTokenOrFail($userId, $hashBin, $expiresAt);
+        if ($persistResult !== null) {
+            return $persistResult;
+        }
+
+        $mailResult = $this->sendEmailOrFail($email, $toName, $token);
+        if ($mailResult !== null) {
+            return $mailResult;
+        }
+
+        $this->recordResendEvent($email, $userId);
+        $this->logResendSuccess($channel, $userId, $email);
+
+        /** @var array<string, mixed> $result */
+        $result = [];
+
+        return $result;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function guardUnknownUser(?UserEntity $user, string $email, string $channel): ?array
     {
         if ($user !== null) {
             return null;
@@ -170,7 +163,54 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
             'email'  => $email,
             'reason' => 'user_not_found',
         ]);
-        return []; // politique anti-énumération
+
+        /** @var array<string, mixed> $result */
+        $result = [];
+
+        return $result;
+    }
+
+    /**
+     * Normalise les champs indispensables issus de $user.
+     *
+     * @return array{0: ?string, 1: int, 2: string} [status, userId, toName]
+     */
+    private function extractUserBasics(UserEntity $user): array
+    {
+        $tmpStatus = $user->getStatus();
+        $status    = is_string($tmpStatus) ? $tmpStatus : null;
+
+        $tmpId  = $user->getUserId();
+        $userId = is_int($tmpId) ? $tmpId : 0;
+
+        $tmpName = $user->getUsername();
+        $toName  = is_string($tmpName) ? $tmpName : '';
+
+        return [$status, $userId, $toName];
+    }
+
+    /**
+     * Retourne [] si quota dépassé (succès silencieux), sinon null.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function guardQuota(string $email, string $channel): ?array
+    {
+        $quota = $this->quotaService->checkQuota(EmailQuotaService::TYPE_CONFIRM_RESEND, $email);
+
+        if (!$quota['allowed']) {
+            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_RESEND_QUOTA_EXCEEDED, [
+                'email'  => $email,
+                'reason' => 'quota_exceeded_' . ($quota['reason'] ?? ''),
+            ]);
+
+            /** @var array<string, mixed> $result */
+            $result = [];
+
+            return $result;
+        }
+
+        return null;
     }
 
     /** @return array{error:string}|null */
@@ -179,10 +219,12 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
         if (!$this->isActive($status)) {
             return null;
         }
+
         Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_ALREADY_CONFIRMED, [
             'user_id' => $userId,
             'email'   => $email,
         ]);
+
         return ['error' => ErrorCode::AUTH_ALREADY_CONFIRMED];
     }
 
@@ -204,11 +246,26 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
         return $sent ? null : ['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED];
     }
 
-    // --------- helpers (petits "guards" et actions) ---------
+    /** @return array{error:string}|null */
+    private function persistTokenOrFail(int $userId, string $hashBin, DateTimeImmutable $expiresAt): ?array
+    {
+        $ok = $this->persistNewToken($userId, $hashBin, $expiresAt);
+
+        return $this->outIfPersistFailed($ok);
+    }
+
+    /** @return array{error:string}|null */
+    private function sendEmailOrFail(string $email, string $toName, string $token): ?array
+    {
+        $sent = $this->sendConfirmationEmail($email, $toName, $token);
+
+        return $this->outIfEmailNotSent($sent);
+    }
 
     private function isActive(?string $status): bool
     {
         $statusNormalized = trim((string) $status);
+
         return strcasecmp($statusNormalized, 'active') === 0 || $statusNormalized === '1';
     }
 
@@ -220,20 +277,20 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
         $channel = 'auth';
         $token   = $this->tokenGen->generateUrlSafeToken(32);
         $hashBin = $this->tokenGen->hashToken($token);
-        //Logger::logCodeAndGetMessage($channel, 'auth', 'token clair', ['token' => $token]);
 
         if (strlen($hashBin) !== 32) {
             Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
                 'reason' => 'invalid_binary_hash_length',
                 'email'  => $email,
             ]);
+
             return [$token, null, new DateTimeImmutable('+24 hours')];
         }
 
         return [$token, $hashBin, new DateTimeImmutable('+24 hours')];
     }
 
-    private function persistNewToken(int $userId, string $hashBin, \DateTimeImmutable $expiresAt): bool
+    private function persistNewToken(int $userId, string $hashBin, DateTimeImmutable $expiresAt): bool
     {
         return $this->userTokenModel->createConfirmationToken($userId, $hashBin, $expiresAt);
     }
@@ -242,13 +299,21 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
     {
         $baseUrl = AppConfig::getAppUrl();
         $link    = $baseUrl . '/confirm-account?token=' . urlencode($token);
+
         try {
-            $sent = $this->mailer->send($toEmail, $toName, 'Confirmation de votre compte', 'confirmation.html', ['username' => $toName, 'link' => $link]);
+            $sent = $this->mailer->send(
+                $toEmail,
+                $toName,
+                'Confirmation de votre compte',
+                'confirmation.html',
+                ['username' => $toName, 'link' => $link]
+            );
         } catch (\Throwable $mailEx) {
             Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED, [
                 'email'     => $toEmail,
                 'exception' => $mailEx->getMessage(),
             ]);
+
             return false;
         }
 
@@ -257,9 +322,32 @@ final class ConfirmationResendService implements ConfirmationResendServiceInterf
                 'email'  => $toEmail,
                 'reason' => 'mailer_returned_false',
             ]);
+
             return false;
         }
 
         return true;
+    }
+
+    private function recordResendEvent(string $email, int $userId): void
+    {
+        $ip = is_string($_SERVER['REMOTE_ADDR'] ?? null) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+        $ua = is_string($_SERVER['HTTP_USER_AGENT'] ?? null) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown';
+
+        $this->quotaService->recordEvent(
+            $email,
+            EmailQuotaService::TYPE_CONFIRM_RESEND,
+            $userId,
+            $ip,
+            $ua
+        );
+    }
+
+    private function logResendSuccess(string $channel, int $userId, string $email): void
+    {
+        Logger::logCodeAndGetMessage($channel, 'info', ErrorCode::AUTH_RESEND_EMAIL_SENT, [
+            'user_id' => $userId,
+            'email'   => $email,
+        ]);
     }
 }

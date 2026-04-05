@@ -76,16 +76,25 @@ class Request
     }
 
     /**
-     * Returns the raw GET query parameters.
+     * Returns raw GET query parameters or a single query value.
      *
      * Provides direct access to query string values.
      *
-     * @return array<string, mixed>
-     *     An associative array containing GET parameters.
+     * @param string|null $key
+     *     The query parameter name. If null, returns the full query array.
+     *
+     * @return ($key is null ? array<string, mixed> : mixed)
+     *     The full GET parameter array when no key is provided,
+     *     or the matching value for the given key, or null if missing.
      */
-    public function query(): array
+    public function query(?string $key = null): mixed
     {
-        // éviter le warning si $_GET est unset
-        return $this->sanitizeInputArray($GLOBALS['_GET'] ?? null);
+        $query = $this->sanitizeInputArray($GLOBALS['_GET'] ?? null);
+
+        if ($key === null) {
+            return $query;
+        }
+
+        return $query[$key] ?? null;
     }
 }

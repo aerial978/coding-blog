@@ -21,8 +21,36 @@ final class SessionFake implements SessionInterface
         return $this->data[$key] ?? $default;
     }
 
+    public function has(string $key): bool
+    {
+        return array_key_exists($key, $this->data);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function all(): array
+    {
+        return $this->data;
+    }
+
     public function remove(string $key): void
     {
         unset($this->data[$key]);
+    }
+
+    public function clear(): void
+    {
+        $this->data = [];
+    }
+
+    public function regenerateAndDeleteOld(): void
+    {
+        // Fake volontairement vide pour les tests unitaires.
+    }
+
+    public function regenerateKeepOld(): void
+    {
+        // Fake volontairement vide pour les tests unitaires.
     }
 }

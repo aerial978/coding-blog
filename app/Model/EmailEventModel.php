@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Model;
 
-use App\Core\SqlHelper;
+use App\Core\Contract\SqlHelperInterface;
 use App\Model\Contract\EmailEventModelInterface;
 use DateInterval;
 use DateTimeImmutable;
@@ -13,8 +13,17 @@ final class EmailEventModel implements EmailEventModelInterface
 {
     protected string $table = 'email_events';
 
+    /**
+     * Constructor.
+     *
+     * Initializes the model with a SqlHelper instance for performing
+     * parameterized SQL queries safely and consistently.
+     *
+     * @param SqlHelperInterface $sqlHelper
+     *     Helper utility for preparing and executing SQL queries.
+     */
     public function __construct(
-        private SqlHelper $sqlHelper
+        private SqlHelperInterface $sqlHelper
     ) {
     }
 
@@ -36,6 +45,7 @@ final class EmailEventModel implements EmailEventModelInterface
         ];
 
         $st = $this->sqlHelper->request($sql, $params);
+
         return $st->rowCount() === 1;
     }
 

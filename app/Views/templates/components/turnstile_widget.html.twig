@@ -1,0 +1,21 @@
+{# templates/components/turnstile_widget.html.twig #}
+{% if turnstile_enabled and turnstile_site_key %}
+  {# Script Cloudflare Turnstile (OK de l’inclure ici si 1 seul widget/page).
+     Si vous préférez, déplacez-le dans le layout avec un flag global. #}
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  {# Message box standardisée #}
+  <div class="alert alert-danger js-turnstile-msg" style="display:none;"></div>
+
+  {# Widget Turnstile
+     - data-sitekey obligatoire
+     - callbacks globaux standardisés (gérés par le script générique)
+  #}
+  <div class="mb-4 cf-turnstile js-turnstile-widget"
+       data-sitekey="{{ turnstile_site_key }}"
+       data-theme="light"
+       data-callback="onTurnstileSuccess"
+       data-expired-callback="onTurnstileExpired"
+       data-error-callback="onTurnstileError">
+  </div>
+{% endif %}

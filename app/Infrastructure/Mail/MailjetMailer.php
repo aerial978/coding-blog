@@ -181,21 +181,62 @@ final class MailjetMailer implements MailerInterface
      */
     private function handleFunctionalStatus(?array $msg, Response $response, string $toEmail): bool
     {
-        if (!is_array($msg) || (($msg['Status'] ?? '') !== 'success')) {
-            Logger::getLogger('mail')->error('Mailjet functional error', [
-                'status'         => $response->getStatus(),
-                'message_status' => $msg['Status'] ?? null,
-                'errors'         => $msg['Errors'] ?? null,
-                'to'             => $toEmail,
-                'from'           => $this->fromEmail,
-            ]);
+        $status = $this->extractMsgStatus($msg);
+
+        if ($status !== 'success') {
+            $this->logMailjetFunctionalError($response, $toEmail, $msg, $status);
             return false;
+        }
+
+        $this->logMailjetFunctionalSuccess($toEmail, $msg);
+        return true;
+    }
+
+    /**
+     * @param array<string,mixed>|null $msg
+     */
+    private function extractMsgStatus(?array $msg): ?string
+    {
+        if (!is_array($msg)) {
+            return null;
+        }
+
+        $raw = $msg['Status'] ?? null;
+        return is_string($raw) ? $raw : null;
+    }
+
+    /**
+     * @param array<string,mixed>|null $msg
+     */
+    private function logMailjetFunctionalError(Response $response, string $toEmail, ?array $msg, ?string $status): void
+    {
+        $errors = null;
+        if (is_array($msg)) {
+            $errors = $msg['Errors'] ?? null;
+        }
+
+        Logger::getLogger('mail')->error('Mailjet functional error', [
+            'status'         => $response->getStatus(),
+            'message_status' => $status,
+            'errors'         => $errors,
+            'to'             => $toEmail,
+            'from'           => $this->fromEmail,
+        ]);
+    }
+
+    /**
+     * @param array<string,mixed>|null $msg
+     */
+    private function logMailjetFunctionalSuccess(string $toEmail, ?array $msg): void
+    {
+        $subject = null;
+        if (is_array($msg) && is_string($msg['Subject'] ?? null)) {
+            $subject = $msg['Subject'];
         }
 
         Logger::getLogger('mail')->info('Mailjet sent', [
             'to'      => $toEmail,
-            'subject' => $msg['Subject'] ?? null,
+            'subject' => $subject,
         ]);
-        return true;
     }
 }
