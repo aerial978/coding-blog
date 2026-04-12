@@ -43,20 +43,30 @@ final class AuthServiceProvider
      */
     public static function getDefinitions(): array
     {
+        return array_merge(
+            self::getGuardDefinitions(),
+            self::getGuardBindings(),
+            self::getRegisterHandlerDefinitions(),
+            self::getResendConfirmationHandlerDefinitions(),
+            self::getLoginHandlerDefinitions(),
+            self::getForgotPasswordHandlerDefinitions(),
+            self::getResetPasswordHandlerDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getGuardDefinitions(): array
+    {
         return [
-            // -----------------
-            // Guards réutilisables
-            // -----------------
             HoneypotGuard::class => static function (ContainerInterface $container): HoneypotGuard {
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var LogContextNormalizer $logNormalizer */
                 $logNormalizer = $container->get(LogContextNormalizer::class);
 
@@ -71,13 +81,10 @@ final class AuthServiceProvider
             SubmissionDelayGuard::class => static function (ContainerInterface $container): SubmissionDelayGuard {
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var LogContextNormalizer $logNormalizer */
                 $logNormalizer = $container->get(LogContextNormalizer::class);
 
@@ -92,13 +99,10 @@ final class AuthServiceProvider
             TurnstileGuard::class => static function (ContainerInterface $container): TurnstileGuard {
                 /** @var TurnstileValidatorInterface $turnstile */
                 $turnstile = $container->get(TurnstileValidatorInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var LogContextNormalizer $logNormalizer */
                 $logNormalizer = $container->get(LogContextNormalizer::class);
 
@@ -113,10 +117,8 @@ final class AuthServiceProvider
             RateLimitGuard::class => static function (ContainerInterface $container): RateLimitGuard {
                 /** @var RateLimiterFactoryInterface $rateLimiterFactory */
                 $rateLimiterFactory = $container->get(RateLimiterFactoryInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
 
@@ -126,7 +128,15 @@ final class AuthServiceProvider
                     $responder,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getGuardBindings(): array
+    {
+        return [
             HoneypotGuardInterface::class => static function (ContainerInterface $container): HoneypotGuardInterface {
                 /** @var HoneypotGuardInterface $guard */
                 $guard = $container->get(HoneypotGuard::class);
@@ -154,26 +164,26 @@ final class AuthServiceProvider
 
                 return $guard;
             },
+        ];
+    }
 
-            // -----------------
-            // Handlers Register
-            // -----------------
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getRegisterHandlerDefinitions(): array
+    {
+        return [
             RegisterGetHandler::class => static function (ContainerInterface $container): RegisterGetHandler {
                 /** @var View $view */
                 $view = $container->get(View::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
-
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
 
@@ -190,25 +200,18 @@ final class AuthServiceProvider
             RegisterPostHandler::class => static function (ContainerInterface $container): RegisterPostHandler {
                 /** @var SecurityServiceInterface $securityService */
                 $securityService = $container->get(SecurityServiceInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
-
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
-
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
-
                 /** @var TurnstileGuardInterface $turnstileGuard */
                 $turnstileGuard = $container->get(TurnstileGuardInterface::class);
-
                 /** @var ErrorListNormalizer $errorListNormalizer */
                 $errorListNormalizer = $container->get(ErrorListNormalizer::class);
 
@@ -223,23 +226,26 @@ final class AuthServiceProvider
                     $errorListNormalizer,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getResendConfirmationHandlerDefinitions(): array
+    {
+        return [
             ResendConfirmationGetHandler::class => static function (ContainerInterface $container): ResendConfirmationGetHandler {
                 /** @var View $view */
                 $view = $container->get(View::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
-
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
 
@@ -256,19 +262,14 @@ final class AuthServiceProvider
             ResendConfirmationPostHandler::class => static function (ContainerInterface $container): ResendConfirmationPostHandler {
                 /** @var SecurityServiceInterface $securityService */
                 $securityService = $container->get(SecurityServiceInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
-
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
-
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
 
@@ -281,23 +282,26 @@ final class AuthServiceProvider
                     $rateLimitGuard,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getLoginHandlerDefinitions(): array
+    {
+        return [
             LoginGetHandler::class => static function (ContainerInterface $container): LoginGetHandler {
                 /** @var View $view */
                 $view = $container->get(View::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
-
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
 
@@ -314,19 +318,14 @@ final class AuthServiceProvider
             LoginPostHandler::class => static function (ContainerInterface $container): LoginPostHandler {
                 /** @var SecurityServiceInterface $securityService */
                 $securityService = $container->get(SecurityServiceInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
-
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
-
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
 
@@ -339,23 +338,26 @@ final class AuthServiceProvider
                     $rateLimitGuard,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getForgotPasswordHandlerDefinitions(): array
+    {
+        return [
             ForgotPasswordGetHandler::class => static function (ContainerInterface $container): ForgotPasswordGetHandler {
                 /** @var View $view */
                 $view = $container->get(View::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
-
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
 
@@ -372,19 +374,14 @@ final class AuthServiceProvider
             ForgotPasswordPostHandler::class => static function (ContainerInterface $container): ForgotPasswordPostHandler {
                 /** @var SecurityServiceInterface $securityService */
                 $securityService = $container->get(SecurityServiceInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
-
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
-
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
 
@@ -397,26 +394,28 @@ final class AuthServiceProvider
                     $rateLimitGuard,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getResetPasswordHandlerDefinitions(): array
+    {
+        return [
             ResetPasswordGetHandler::class => static function (ContainerInterface $container): ResetPasswordGetHandler {
                 /** @var View $view */
                 $view = $container->get(View::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
-
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
-
                 /** @var ResetPasswordServiceInterface $resetPasswordService */
                 $resetPasswordService = $container->get(ResetPasswordServiceInterface::class);
 
@@ -434,25 +433,18 @@ final class AuthServiceProvider
             ResetPasswordPostHandler::class => static function (ContainerInterface $container): ResetPasswordPostHandler {
                 /** @var SecurityServiceInterface $securityService */
                 $securityService = $container->get(SecurityServiceInterface::class);
-
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
-
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
-
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
-
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
-
                 /** @var TurnstileGuardInterface $turnstileGuard */
                 $turnstileGuard = $container->get(TurnstileGuardInterface::class);
-
                 /** @var ErrorListNormalizer $errorListNormalizer */
                 $errorListNormalizer = $container->get(ErrorListNormalizer::class);
 

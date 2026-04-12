@@ -38,7 +38,7 @@ final class ForgotPasswordPostHandler
      */
     public function handle(array $form): void
     {
-        $identifier = $this->strOrEmpty($form['identifier'] ?? $form['email'] ?? null);
+        $identifier = $this->extractIdentifier($form);
 
         if ($identifier === '') {
             $this->rejectEmptyIdentifier();
@@ -47,6 +47,48 @@ final class ForgotPasswordPostHandler
 
         $context = $this->makeContext($identifier);
 
+        if (!$this->passesHoneypot($form, $context)) {
+            return;
+        }
+
+        if (!$this->passesSubmissionDelay($context)) {
+            return;
+        }
+
+        if (!$this->passesRateLimit($identifier, $context)) {
+            return;
+        }
+
+        if (!$this->assertTurnstileIfPresent($form, $context)) {
+            return;
+        }
+
+        $this->securityService->forgotPassword($identifier);
+        $this->replyNeutralSuccess($identifier);
+    }
+
+    /**
+     * @param array<string,mixed> $form
+     */
+    private function extractIdentifier(array $form): string
+    {
+        if (array_key_exists('identifier', $form)) {
+            return $this->strOrEmpty($form['identifier']);
+        }
+
+        if (array_key_exists('email', $form)) {
+            return $this->strOrEmpty($form['email']);
+        }
+
+        return '';
+    }
+
+    /**
+     * @param array<string,mixed> $form
+     * @param array<string,mixed> $context
+     */
+    private function passesHoneypot(array $form, array $context): bool
+    {
         /** @var array{
          *   form: array<string, mixed>,
          *   redirect: string,
@@ -69,10 +111,14 @@ final class ForgotPasswordPostHandler
             'context'     => $context,
         ], $this->turnstileStepUp());
 
-        if (!$this->honeypotGuard->assertClean($options)) {
-            return;
-        }
+        return $this->honeypotGuard->assertClean($options);
+    }
 
+    /**
+     * @param array<string,mixed> $context
+     */
+    private function passesSubmissionDelay(array $context): bool
+    {
         /** @var array{
          *   form_id: string,
          *   redirect: string,
@@ -95,10 +141,14 @@ final class ForgotPasswordPostHandler
             'min_sec'  => 3,
         ], $this->turnstileStepUp());
 
-        if (!$this->submissionDelayGuard->assertPassed($options)) {
-            return;
-        }
+        return $this->submissionDelayGuard->assertPassed($options);
+    }
 
+    /**
+     * @param array<string,mixed> $context
+     */
+    private function passesRateLimit(string $identifier, array $context): bool
+    {
         /** @var array{
          *   key: string,
          *   limit: int,
@@ -123,16 +173,7 @@ final class ForgotPasswordPostHandler
             'log_ctx'       => $context,
         ], $this->turnstileStepUp());
 
-        if (!$this->rateLimitGuard->assertAllowed($options)) {
-            return;
-        }
-
-        if (!$this->assertTurnstileIfPresent($form, $context)) {
-            return;
-        }
-
-        $this->securityService->forgotPassword($identifier);
-        $this->replyNeutralSuccess($identifier);
+        return $this->rateLimitGuard->assertAllowed($options);
     }
 
     private function rejectEmptyIdentifier(): void

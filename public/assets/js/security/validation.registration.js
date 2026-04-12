@@ -3,10 +3,10 @@ import { createFormValidator } from './validation.factory.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.querySelector('#registerForm');
-  if (!form) return;
+  if (!form) {return;}
 
   const FV = createFormValidator('#registerForm');
-  if (!FV) return;
+  if (!FV) {return;}
 
   const { addRules, enableLiveValidation } = FV;
 
@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
   { type: 'required', message: messages.required },
   { type: 'regex', value: regex.password, message: messages.password },
 ], { errorsContainer: '#password_error' });
-
 
   enableLiveValidation();
 });

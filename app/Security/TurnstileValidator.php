@@ -9,7 +9,8 @@ use App\Security\Contract\TurnstileValidatorInterface;
 final class TurnstileValidator implements TurnstileValidatorInterface
 {
     private string $secret;
-    /** @var array<string,mixed>|null */
+
+    /** @var array<string, mixed>|null */
     private ?array $lastResponse = null;
 
     public function __construct(?string $secret)
@@ -32,20 +33,56 @@ final class TurnstileValidator implements TurnstileValidatorInterface
     {
         $this->lastResponse = null;
 
-        // En dev, si aucune clé n’est configurée → on laisse passer pour ne pas bloquer.
         if (!$this->isConfigured()) {
             return true;
         }
 
-        if ($token === null || $token === '') {
-            $this->lastResponse = [
-                'success'     => false,
-                'error-codes' => ['missing-input-response'],
-                'diagnostic'  => 'empty_token',
-            ];
+        if ($this->isEmptyToken($token)) {
+            $this->setMissingTokenResponse();
+
             return false;
         }
 
+        $response = $this->performValidationRequest((string) $token, $remoteIp);
+
+        if ($response === false) {
+            $this->setRequestFailedResponse();
+
+            return false;
+        }
+
+        /** @var array<string, mixed>|null $data */
+        $data = json_decode($response, true);
+
+        if (!is_array($data)) {
+            $this->setInvalidJsonResponse();
+
+            return false;
+        }
+
+        $this->lastResponse = $data;
+
+        return !empty($data['success']);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getLastResponse(): ?array
+    {
+        return $this->lastResponse;
+    }
+
+    private function isEmptyToken(?string $token): bool
+    {
+        return $token === null || $token === '';
+    }
+
+    /**
+     * @param string|null $remoteIp
+     */
+    private function performValidationRequest(string $token, ?string $remoteIp): string|false
+    {
         $postData = http_build_query([
             'secret'   => $this->secret,
             'response' => $token,
@@ -56,54 +93,47 @@ final class TurnstileValidator implements TurnstileValidatorInterface
             'http' => [
                 'method'  => 'POST',
                 'header'  => "Content-Type: application/x-www-form-urlencoded\r\n"
-                           . 'Content-Length: ' . strlen($postData) . "\r\n",
+                    . 'Content-Length: ' . strlen($postData) . "\r\n",
                 'content' => $postData,
                 'timeout' => 5,
             ],
         ];
 
-        $context  = stream_context_create($opts);
+        $context = stream_context_create($opts);
 
-        $response = file_get_contents(
+        return file_get_contents(
             'https://challenges.cloudflare.com/turnstile/v0/siteverify',
             false,
             $context
         );
-
-        if ($response === false) {
-            $err = error_get_last();
-
-            $this->lastResponse = [
-                'success'     => false,
-                'error-codes' => ['turnstile_request_failed'],
-                'diagnostic'  => is_array($err) ? $err['message'] : 'unknown_error',
-            ];
-
-            return false;
-        }
-
-        /** @var array<string,mixed>|null $data */
-        $data = json_decode($response, true);
-
-        if (!is_array($data)) {
-            $this->lastResponse = [
-                'success'     => false,
-                'error-codes' => ['turnstile_bad_response'],
-                'diagnostic'  => 'invalid_json',
-            ];
-            return false;
-        }
-
-        $this->lastResponse = $data;
-
-        return !empty($data['success']);
     }
 
-    /**
-     * @return array<string,mixed>|null
-     */
-    public function getLastResponse(): ?array
+    private function setMissingTokenResponse(): void
     {
-        return $this->lastResponse;
+        $this->lastResponse = [
+            'success'     => false,
+            'error-codes' => ['missing-input-response'],
+            'diagnostic'  => 'empty_token',
+        ];
+    }
+
+    private function setRequestFailedResponse(): void
+    {
+        $err = error_get_last();
+
+        $this->lastResponse = [
+            'success'     => false,
+            'error-codes' => ['turnstile_request_failed'],
+            'diagnostic'  => is_array($err) ? $err['message'] : 'unknown_error',
+        ];
+    }
+
+    private function setInvalidJsonResponse(): void
+    {
+        $this->lastResponse = [
+            'success'     => false,
+            'error-codes' => ['turnstile_bad_response'],
+            'diagnostic'  => 'invalid_json',
+        ];
     }
 }

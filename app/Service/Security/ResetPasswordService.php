@@ -25,29 +25,16 @@ final class ResetPasswordService implements ResetPasswordServiceInterface
         $token = trim($token);
 
         if ($token === '') {
-            return [
-                'ok'    => false,
-                'error' => ErrorCode::AUTH_PASSWORD_RESET_TOKEN_INVALID,
-            ];
+            return $this->invalidResetTokenResult();
         }
 
         $hashBin = $this->tokenGen->hashToken($token);
         $ctx     = $this->userTokenModel->findPasswordResetContextByHash($hashBin);
 
-        // temporaire //
-        Logger::getLogger('auth')->info('reset_validate_token_debug', [
-            'token_present' => true,
-            'hash_len'      => strlen($hashBin),
-            'ctx_found'     => $ctx !== null,
-            'used'          => $ctx['used']       ?? null,
-            'is_expired'    => $ctx['is_expired'] ?? null,
-        ]);
+        $this->logValidateResetTokenDebug($hashBin, $ctx);
 
-        if ($ctx === null || !empty($ctx['is_expired']) || !empty($ctx['used'])) {
-            return [
-                'ok'    => false,
-                'error' => ErrorCode::AUTH_PASSWORD_RESET_TOKEN_INVALID,
-            ];
+        if ($this->isInvalidResetContext($ctx)) {
+            return $this->invalidResetTokenResult();
         }
 
         return [
@@ -55,6 +42,47 @@ final class ResetPasswordService implements ResetPasswordServiceInterface
             'context' => $ctx,
             'hash'    => $hashBin,
         ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $ctx
+     */
+    private function isInvalidResetContext(?array $ctx): bool
+    {
+        if ($ctx === null) {
+            return true;
+        }
+
+        if (!empty($ctx['is_expired'])) {
+            return true;
+        }
+
+        return !empty($ctx['used']);
+    }
+
+    /**
+     * @return array{ok:false, error:string}
+     */
+    private function invalidResetTokenResult(): array
+    {
+        return [
+            'ok'    => false,
+            'error' => ErrorCode::AUTH_PASSWORD_RESET_TOKEN_INVALID,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed>|null $ctx
+     */
+    private function logValidateResetTokenDebug(string $hashBin, ?array $ctx): void
+    {
+        Logger::getLogger('auth')->info('reset_validate_token_debug', [
+            'token_present' => true,
+            'hash_len'      => strlen($hashBin),
+            'ctx_found'     => $ctx !== null,
+            'used'          => $ctx['used'] ?? null,
+            'is_expired'    => $ctx['is_expired'] ?? null,
+        ]);
     }
 
     public function resetPassword(string $token, string $password, string $confirm): array

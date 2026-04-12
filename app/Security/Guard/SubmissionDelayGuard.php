@@ -167,11 +167,27 @@ final class SubmissionDelayGuard implements SubmissionDelayGuardInterface
     private function buildExceptionContext(array $contextBase, array $context, string $formId): array
     {
         return $contextBase + [
-            'form'    => $context['form']    ?? $formId,
-            'elapsed' => $context['elapsed'] ?? null,
-            'min'     => $context['min']     ?? null,
-            'max'     => $context['max']     ?? null,
+            'form'    => $this->readContextValue($context, 'form', $formId),
+            'elapsed' => $this->readNullableContextValue($context, 'elapsed'),
+            'min'     => $this->readNullableContextValue($context, 'min'),
+            'max'     => $this->readNullableContextValue($context, 'max'),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function readContextValue(array $context, string $key, mixed $default): mixed
+    {
+        return array_key_exists($key, $context) ? $context[$key] : $default;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function readNullableContextValue(array $context, string $key): mixed
+    {
+        return array_key_exists($key, $context) ? $context[$key] : null;
     }
 
     /**
