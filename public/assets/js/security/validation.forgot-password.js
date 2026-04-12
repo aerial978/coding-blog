@@ -2,18 +2,17 @@ import { messages } from './validation.rules.js';
 import { createFormValidator } from './validation.factory.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('#resendConfirmForm');
+  const form = document.querySelector('#forgotPasswordForm');
   if (!form) {return;}
 
-  const FV = createFormValidator('#resendConfirmForm');
+  const FV = createFormValidator('#forgotPasswordForm');
   if (!FV) {return;}
 
   const { addRules, enableLiveValidation } = FV;
 
-  addRules('#email', [
+  addRules('#identifier', [
     { type: 'required', message: messages.required },
-    { type: 'email',    message: messages.email },
-  ], { errorsContainer: '#email_error' });
+  ], { errorsContainer: '#identifier_error' });
 
   enableLiveValidation();
 });

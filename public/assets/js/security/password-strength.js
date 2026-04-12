@@ -28,8 +28,8 @@
 
     // Seuils longueur → couleur/libellé
     function tierFromLength(len) {
-      if (len >= 16) return { cls: 'bg-success', label: 'Fort'  };
-      if (len >= 12) return { cls: 'bg-warning', label: 'Moyen' };
+      if (len >= 16) {return { cls: 'bg-success', label: 'Fort'  };}
+      if (len >= 12) {return { cls: 'bg-warning', label: 'Moyen' };}
       return            { cls: 'bg-danger',  label: 'Faible' };
     }
 
@@ -45,11 +45,11 @@
 
         // Lookup sécurisé : pas d’accès dynamique d’objet
         const fn = (ALLOWED_KEYS.has(name)) ? TESTS.get(name) : undefined;
-        const ok = typeof fn === 'function' ? !!fn(value) : false;
+        const ok = typeof fn === 'function' ? Boolean(fn(value)) : false;
 
         li.classList.toggle('text-success', ok);
         li.classList.toggle('text-danger', !ok);
-        if (ok) passed++;
+        if (ok) {passed++;}
       });
 
       // 2) Jauge uniquement basée sur la longueur

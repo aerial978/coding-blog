@@ -34,6 +34,7 @@ The authentication system follows a layered security approach :
 - Logging of all sensitive actions (authentication, recovery, email events)
 - Secure registration flow with anti-bot and validation layers
 - Controlled email confirmation resend mechanism with anti-enumeration
+- Usernames are treated case-insensitively for authentication and uniqueness
 
 ## Account Recovery
 

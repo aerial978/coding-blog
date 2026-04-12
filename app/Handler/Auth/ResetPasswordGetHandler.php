@@ -34,29 +34,58 @@ final class ResetPasswordGetHandler extends BaseController
     {
         $token = trim($token);
 
-        // temporaire //
+        $this->logEntry($token);
+        $this->submissionDelay->markFormStart('reset_password');
+
+        $turnstileRequired = $this->isTurnstileRequired();
+        $check = $this->resetPasswordService->validateResetToken($token);
+
+        if (!$this->isValidTokenCheck($check)) {
+            $this->replyInvalidToken($check);
+            return;
+        }
+
+        $this->renderForm($token, $turnstileRequired);
+    }
+
+    private function logEntry(string $token): void
+    {
         Logger::getLogger('auth')->info('reset_get_handler_entry', [
             'token_present' => $token !== '',
             'token_length'  => strlen($token),
             'token_prefix'  => $token !== '' ? substr($token, 0, 8) : '(empty)',
         ]);
+    }
 
-        $this->submissionDelay->markFormStart('reset_password');
-
+    private function isTurnstileRequired(): bool
+    {
         $flags = $this->flash->take('security_flags', []);
         $flags = is_array($flags) ? $flags : [];
 
-        $turnstileRequired = !empty($flags['turnstile_reset']);
+        return !empty($flags['turnstile_reset']);
+    }
 
-        $check = $this->resetPasswordService->validateResetToken($token);
+    /**
+     * @param array<string, mixed> $check
+     */
+    private function isValidTokenCheck(array $check): bool
+    {
+        return !empty($check['ok']);
+    }
 
-        if (!$check['ok']) {
-            $error = is_string($check['error'] ?? null) ? $check['error'] : '';
-            $this->flash->add('error', MessageManager::get($error));
-            $this->responder->redirect('/coding-blog/forgot-password');
-            return;
-        }
+    /**
+     * @param array<string, mixed> $check
+     */
+    private function replyInvalidToken(array $check): void
+    {
+        $error = is_string($check['error'] ?? null) ? $check['error'] : '';
 
+        $this->flash->add('error', MessageManager::get($error));
+        $this->responder->redirect('/coding-blog/forgot-password');
+    }
+
+    private function renderForm(string $token, bool $turnstileRequired): void
+    {
         $this->responder->render('security/reset-password.html.twig', $this->withFlashes([
             'title'              => 'Réinitialiser le mot de passe',
             'csrf_token'         => $this->csrf->generateToken(FormId::RESET_PASSWORD),

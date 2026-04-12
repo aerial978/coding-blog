@@ -5,27 +5,27 @@
   let lastActiveForm = null;
 
   function showMsg(form, text) {
-    if (!form) return;
+    if (!form) {return;}
     const selector = form.getAttribute('data-turnstile-msg-selector') || '.js-turnstile-msg';
     const msgBox = form.querySelector(selector);
-    if (!msgBox) return;
+    if (!msgBox) {return;}
 
     msgBox.textContent = text;
     msgBox.style.display = 'block';
   }
 
   function hideMsg(form) {
-    if (!form) return;
+    if (!form) {return;}
     const selector = form.getAttribute('data-turnstile-msg-selector') || '.js-turnstile-msg';
     const msgBox = form.querySelector(selector);
-    if (!msgBox) return;
+    if (!msgBox) {return;}
 
     msgBox.textContent = '';
     msgBox.style.display = 'none';
   }
 
   function getToken(form) {
-    if (!form) return '';
+    if (!form) {return '';}
     const tokenField = form.querySelector('input[name="cf-turnstile-response"]');
     const token = tokenField && typeof tokenField.value === 'string' ? tokenField.value.trim() : '';
     return token;
@@ -57,13 +57,13 @@
 
     forms.forEach((form) => {
       // Si le widget n’est pas rendu (ex: turnstile_enabled=false), ne rien faire
-      const hasWidget = !!form.querySelector('.js-turnstile-widget, .cf-turnstile');
-      if (!hasWidget) return;
+      const hasWidget = Boolean(form.querySelector('.js-turnstile-widget, .cf-turnstile'));
+      if (!hasWidget) {return;}
 
       form.addEventListener('submit', function (e) {
         lastActiveForm = form;
 
-        if (!isTurnstileEnabledOnForm(form)) return;
+        if (!isTurnstileEnabledOnForm(form)) {return;}
 
         const token = getToken(form);
         if (!token) {

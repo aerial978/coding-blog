@@ -44,48 +44,166 @@ final class HoneypotGuard implements HoneypotGuardInterface
     public function assertClean(array $opt): bool
     {
         /** @var array<string, mixed> $form */
-        $form     = $opt['form'];
+        $form = $opt['form'];
         $redirect = $opt['redirect'];
-
-        $flashType  = $opt['flash_type']  ?? 'error';
-        $code       = $opt['code']        ?? ErrorCode::AUTH_TECHNICAL_ERROR;
-        $logLevel   = $opt['log_level']   ?? 'warning';
-        $logChannel = $opt['log_channel'] ?? 'auth';
-
-        $contextBase = is_array($opt['context'] ?? null) ? $opt['context'] : [];
 
         try {
             $this->honeypot->assertClean($form);
+
             return true;
         } catch (SuspiciousSubmissionException $e) {
-            $ctx = $contextBase + [
-                'reason' => 'honeypot',
-            ];
+            $this->handleSuspiciousSubmission($opt, $redirect);
 
-            $logCtx = $this->logNormalizer->normalize($ctx);
-
-            $this->flash->add(
-                $flashType,
-                Logger::logCodeAndGetMessage($logChannel, $logLevel, $code, $logCtx)
-            );
-
-            $flagsBag = is_string($opt['flags_bag'] ?? null) && $opt['flags_bag'] !== ''
-                ? $opt['flags_bag']
-                : 'security_flags';
-
-            if (isset($opt['set_flags'])) {
-                $existing = $this->flash->take($flagsBag, []);
-                $existing = is_array($existing) ? $existing : [];
-                $this->flash->put($flagsBag, $existing + $opt['set_flags']);
-            }
-
-            Logger::getLogger('auth')->info('security_flags_set', [
-                'guard' => 'honeypot',
-                'flags' => $opt['set_flags'] ?? null,
-            ]);
-
-            $this->responder->redirect($redirect);
             return false;
         }
+    }
+
+    /**
+     * @param array{
+     *   flash_type?: 'success'|'error'|'info'|'warning',
+     *   code?: string,
+     *   log_level?: 'debug'|'info'|'warning'|'error',
+     *   log_channel?: string,
+     *   context?: array<string, mixed>,
+     *   flags_bag?: string,
+     *   set_flags?: array<string, mixed>
+     * } $opt
+     */
+    private function handleSuspiciousSubmission(array $opt, string $redirect): void
+    {
+        $flashType = $this->resolveFlashType($opt);
+        $code = $this->resolveCode($opt);
+        $logLevel = $this->resolveLogLevel($opt);
+        $logChannel = $this->resolveLogChannel($opt);
+        $contextBase = $this->resolveContextBase($opt);
+
+        $ctx = $contextBase + [
+            'reason' => 'honeypot',
+        ];
+
+        $logCtx = $this->logNormalizer->normalize($ctx);
+
+        $this->flash->add(
+            $flashType,
+            Logger::logCodeAndGetMessage($logChannel, $logLevel, $code, $logCtx)
+        );
+
+        $this->applyFlags($opt);
+        $this->logFlags($opt);
+
+        $this->responder->redirect($redirect);
+    }
+
+    /**
+     * @param array{
+     *   flash_type?: 'success'|'error'|'info'|'warning'
+     * } $opt
+     */
+    private function resolveFlashType(array $opt): string
+    {
+        $flashType = $opt['flash_type'] ?? null;
+
+        return is_string($flashType)
+            ? $flashType
+            : 'error';
+    }
+
+    /**
+     * @param array{
+     *   code?: string
+     * } $opt
+     */
+    private function resolveCode(array $opt): string
+    {
+        $code = $opt['code'] ?? null;
+
+        return is_string($code) && $code !== ''
+            ? $code
+            : ErrorCode::AUTH_TECHNICAL_ERROR;
+    }
+
+    /**
+     * @param array{
+     *   log_level?: 'debug'|'info'|'warning'|'error'
+     * } $opt
+     */
+    private function resolveLogLevel(array $opt): string
+    {
+        $logLevel = $opt['log_level'] ?? null;
+
+        return is_string($logLevel)
+            ? $logLevel
+            : 'warning';
+    }
+
+    /**
+     * @param array{
+     *   log_channel?: string
+     * } $opt
+     */
+    private function resolveLogChannel(array $opt): string
+    {
+        $logChannel = $opt['log_channel'] ?? null;
+
+        return is_string($logChannel) && $logChannel !== ''
+            ? $logChannel
+            : 'auth';
+    }
+
+    /**
+     * @param array{
+     *   context?: array<string, mixed>
+     * } $opt
+     * @return array<string, mixed>
+     */
+    private function resolveContextBase(array $opt): array
+    {
+        return is_array($opt['context'] ?? null) ? $opt['context'] : [];
+    }
+
+    /**
+     * @param array{
+     *   flags_bag?: string,
+     *   set_flags?: array<string, mixed>
+     * } $opt
+     */
+    private function applyFlags(array $opt): void
+    {
+        if (!isset($opt['set_flags'])) {
+            return;
+        }
+
+        $flagsBag = $this->resolveFlagsBag($opt);
+        $existing = $this->flash->take($flagsBag, []);
+        $existing = is_array($existing) ? $existing : [];
+
+        $this->flash->put($flagsBag, $existing + $opt['set_flags']);
+    }
+
+    /**
+     * @param array{
+     *   set_flags?: array<string, mixed>
+     * } $opt
+     */
+    private function logFlags(array $opt): void
+    {
+        Logger::getLogger('auth')->info('security_flags_set', [
+            'guard' => 'honeypot',
+            'flags' => $opt['set_flags'] ?? null,
+        ]);
+    }
+
+    /**
+     * @param array{
+     *   flags_bag?: string
+     * } $opt
+     */
+    private function resolveFlagsBag(array $opt): string
+    {
+        $flagsBag = $opt['flags_bag'] ?? null;
+
+        return is_string($flagsBag) && $flagsBag !== ''
+            ? $flagsBag
+            : 'security_flags';
     }
 }

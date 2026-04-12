@@ -73,11 +73,27 @@ final class ResetPasswordPostHandler
      */
     private function extractInput(array $form): array
     {
-        $token    = $this->strOrEmpty($form['token'] ?? null);
+        $token = $this->strOrEmpty($form['token'] ?? null);
         $password = $this->strOrEmpty($form['password'] ?? null);
-        $confirm  = $this->strOrEmpty($form['password_confirm'] ?? $form['confirm_password'] ?? null);
+        $confirm = $this->extractConfirmPassword($form);
 
         return [$token, $password, $confirm];
+    }
+
+    /**
+     * @param array<string, mixed> $form
+     */
+    private function extractConfirmPassword(array $form): string
+    {
+        if (array_key_exists('password_confirm', $form)) {
+            return $this->strOrEmpty($form['password_confirm']);
+        }
+
+        if (array_key_exists('confirm_password', $form)) {
+            return $this->strOrEmpty($form['confirm_password']);
+        }
+
+        return '';
     }
 
     /**
