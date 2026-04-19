@@ -6,6 +6,7 @@ use App\Controller\DebugController;
 use App\Controller\ForgotPasswordController;
 use App\Controller\HomeController;
 use App\Controller\LoginController;
+use App\Controller\LogoutController;
 use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
@@ -27,6 +28,7 @@ return [
         '/register'            => [RegisterController::class, 'register'],
         '/resend-confirmation' => [ResendConfirmationController::class, 'resendConfirmation'],
         '/login'               => [LoginController::class, 'login'],
+        '/logout'              => [LogoutController::class, 'logout'],
         '/forgot-password'     => [ForgotPasswordController::class, 'forgotPassword'],
         '/reset-password'      => [ResetPasswordController::class, 'resetPassword'],
     ],

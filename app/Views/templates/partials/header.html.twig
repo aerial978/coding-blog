@@ -2,5 +2,12 @@
     <h1>My blog</h1>
     <nav>
         <a href="{{ base_path }}">Home page</a>
+
+        {% if is_authenticated %}
+            <form method="post" action="/coding-blog/logout" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ logout_csrf_token }}">
+                <button type="submit">Déconnexion</button>
+            </form>
+        {% endif %}
     </nav>
 </header>

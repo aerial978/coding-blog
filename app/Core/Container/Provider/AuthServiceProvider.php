@@ -11,6 +11,7 @@ use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
+use App\Handler\Auth\LogoutHandler;
 use App\Handler\Auth\RegisterGetHandler;
 use App\Handler\Auth\RegisterPostHandler;
 use App\Handler\Auth\ResendConfirmationGetHandler;
@@ -51,6 +52,7 @@ final class AuthServiceProvider
             self::getLoginHandlerDefinitions(),
             self::getForgotPasswordHandlerDefinitions(),
             self::getResetPasswordHandlerDefinitions(),
+            self::getLogoutHandlerDefinitions(),
         );
     }
 
@@ -58,6 +60,17 @@ final class AuthServiceProvider
      * @return array<string, callable(ContainerInterface): mixed>
      */
     private static function getGuardDefinitions(): array
+    {
+        return array_merge(
+            self::getValidationGuardDefinitions(),
+            self::getRateLimitGuardDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getValidationGuardDefinitions(): array
     {
         return [
             HoneypotGuard::class => static function (ContainerInterface $container): HoneypotGuard {
@@ -113,7 +126,15 @@ final class AuthServiceProvider
                     $logNormalizer,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getRateLimitGuardDefinitions(): array
+    {
+        return [
             RateLimitGuard::class => static function (ContainerInterface $container): RateLimitGuard {
                 /** @var RateLimiterFactoryInterface $rateLimiterFactory */
                 $rateLimiterFactory = $container->get(RateLimiterFactoryInterface::class);
@@ -457,6 +478,29 @@ final class AuthServiceProvider
                     $rateLimitGuard,
                     $turnstileGuard,
                     $errorListNormalizer,
+                );
+            },
+        ];
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getLogoutHandlerDefinitions(): array
+    {
+        return [
+            LogoutHandler::class => static function (ContainerInterface $container): LogoutHandler {
+                /** @var SecurityServiceInterface $securityService */
+                $securityService = $container->get(SecurityServiceInterface::class);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new LogoutHandler(
+                    $securityService,
+                    $flash,
+                    $responder,
                 );
             },
         ];

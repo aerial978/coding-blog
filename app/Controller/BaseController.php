@@ -40,15 +40,9 @@ abstract class BaseController
     }
 
     /**
-     * Adds flash messages (grouped by level) into the provided data array.
-     *
-     * @param array<string,mixed>                     $data
-     *     The view data array.
+     * @param array<string,mixed> $data
      * @param list<'error'|'success'|'warning'|'info'> $levels
-     *     The flash message levels to include. Defaults to all standard levels.
-     *
      * @return array<string,mixed>
-     *     The data array with a 'flashes' key added.
      */
     protected function withFlashes(
         array $data = [],

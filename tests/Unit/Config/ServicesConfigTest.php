@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 final class ServicesConfigTest extends TestCase
 {
     private string $path;
+
     protected function setUp(): void
     {
         // tests/Unit/Config -> projet
@@ -19,30 +20,44 @@ final class ServicesConfigTest extends TestCase
     #[Test]
     public function services_php_retourne_un_tableau_merge_des_providers_avec_cles_attendues(): void
     {
-        /** @var mixed $defs */                    // ⟵ NE pas pré-spécifier un array de callables/objets
+        /** @var mixed $defs */
         $defs = require $this->path;
+
         self::assertIsArray($defs);
         self::assertNotEmpty($defs);
 
         $expectedKeys = [
-            \PDO::class,
+            // System / Http
             \App\Core\View::class,
             \App\Http\Request::class,
-            \App\Core\SessionManager::class,
-            \App\Core\FlashService::class,
-            \App\Security\CsrfTokenManager::class,
-            \App\Core\Factory\RateLimiterFactory::class,
-            \App\Security\TokenGenerator::class,
+            \App\Core\Contract\SessionInterface::class,
+            \App\Core\Contract\FlashInterface::class,
+            \App\Security\Contract\CsrfTokenInterface::class,
+            \App\Core\Contract\RateLimiterFactoryInterface::class,
+            \App\Security\Contract\TokenGeneratorInterface::class,
             \App\Core\Mail\MailerInterface::class,
 
-            \App\Model\UserModel::class,
-            \App\Model\UserTokenModel::class,
-            \App\Service\SecurityService::class,
+            // Models / services
+            \App\Model\Contract\UserModelInterface::class,
+            \App\Model\Contract\UserTokenModelInterface::class,
+            \App\Service\Security\SecurityService::class,
+            \App\Service\Security\Contract\SecurityServiceInterface::class,
+            \App\Service\Security\LoginService::class,
+            \App\Service\Security\LogoutService::class,
 
+            // Controllers
             \App\Controller\HomeController::class,
             \App\Controller\ErrorController::class,
-            \App\Controller\SecurityController::class,
+            \App\Controller\AccountController::class,
+            \App\Controller\RegisterController::class,
+            \App\Controller\ConfirmAccountController::class,
+            \App\Controller\ResendConfirmationController::class,
+            \App\Controller\LoginController::class,
+            \App\Controller\LogoutController::class,
+            \App\Controller\ForgotPasswordController::class,
+            \App\Controller\ResetPasswordController::class,
         ];
+
         foreach ($expectedKeys as $key) {
             self::assertArrayHasKey($key, $defs, "Clé manquante: $key");
         }
@@ -53,6 +68,7 @@ final class ServicesConfigTest extends TestCase
     {
         /** @var mixed $defs */
         $defs = require $this->path;
+
         self::assertIsArray($defs);
 
         foreach ($defs as $id => $entry) {

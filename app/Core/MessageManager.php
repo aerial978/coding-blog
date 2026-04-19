@@ -50,6 +50,9 @@ class MessageManager
             ErrorCode::AUTH_PASSWORD_RESET_PASSWORD_INVALID     => 'Le mot de passe ne respecte pas les règles de sécurité.',
             ErrorCode::AUTH_PASSWORD_RESET_CONFIRM_MISMATCH     => 'La confirmation du mot de passe ne correspond pas.',
 
+            // ==== Auth - Logout ====
+            ErrorCode::AUTH_LOGOUT_SUCCESS                      => 'Vous avez été déconnecté.',
+
             // ==== Technique générale ====
             ErrorCode::AUTH_RETRY                     => 'Veuillez réessayer.',
             ErrorCode::AUTH_TECHNICAL_ERROR           => 'Une erreur technique est survenue. Merci de réessayer plus tard.',

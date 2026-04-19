@@ -23,10 +23,12 @@ use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
+use App\Service\Security\Contract\LogoutServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\ForgotPasswordService;
 use App\Service\Security\LoginService;
+use App\Service\Security\LogoutService;
 use App\Service\Security\RegistrationService;
 use App\Service\Security\ResetPasswordService;
 use App\Service\Security\SecurityService;
@@ -67,16 +69,13 @@ final class UserServiceProviderTest extends TestCase
     }
 
     /**
-     * Services transverses requis par le provider.
-     *
      * @return array<string, mixed>
      */
     private function baseServices(): array
     {
-        $sqlHelper = $this->createMock(\App\Core\SqlHelper::class);
+        $sqlHelper = $this->createMock(SqlHelperInterface::class);
 
         return [
-            \App\Core\SqlHelper::class     => $sqlHelper,
             SqlHelperInterface::class      => $sqlHelper,
             FormValidatorInterface::class  => $this->createMock(FormValidatorInterface::class),
             MailerInterface::class         => $this->createMock(MailerInterface::class),
@@ -104,12 +103,14 @@ final class UserServiceProviderTest extends TestCase
         $this->assertArrayHasKey(AccountConfirmationService::class, $definitions);
         $this->assertArrayHasKey(ConfirmationResendService::class, $definitions);
         $this->assertArrayHasKey(LoginService::class, $definitions);
+        $this->assertArrayHasKey(LogoutService::class, $definitions);
         $this->assertArrayHasKey(ForgotPasswordService::class, $definitions);
         $this->assertArrayHasKey(ResetPasswordService::class, $definitions);
         $this->assertArrayHasKey(SecurityService::class, $definitions);
 
         $this->assertArrayHasKey(SecurityServiceInterface::class, $definitions);
         $this->assertArrayHasKey(LoginServiceInterface::class, $definitions);
+        $this->assertArrayHasKey(LogoutServiceInterface::class, $definitions);
         $this->assertArrayHasKey(ForgotPasswordServiceInterface::class, $definitions);
         $this->assertArrayHasKey(ResetPasswordServiceInterface::class, $definitions);
     }
@@ -134,11 +135,12 @@ final class UserServiceProviderTest extends TestCase
         $this->assertInstanceOf(EmailEventModel::class, $emailEventModel);
     }
 
-    public function testThrottleAndStaticResourceDefinitionsAreBuildable(): void
+    public function testThrottleStaticResourceAndLogoutDefinitionsAreBuildable(): void
     {
         $definitions = UserServiceProvider::getDefinitions();
 
-        $sql = $this->createMock(\App\Core\SqlHelper::class);
+        $sql     = $this->createMock(SqlHelperInterface::class);
+        $session = $this->createMock(SessionInterface::class);
 
         $registrationEventModel = new RegistrationEventModel($sql);
         $emailEventModel        = new EmailEventModel($sql);
@@ -146,17 +148,20 @@ final class UserServiceProviderTest extends TestCase
         $container = $this->makeContainer([
             RegistrationEventModel::class => $registrationEventModel,
             EmailEventModel::class        => $emailEventModel,
+            SessionInterface::class       => $session,
         ]);
 
         $registrationThrottle = $definitions[RegistrationThrottleService::class]($container);
         $emailQuota           = $definitions[EmailQuotaService::class]($container);
         $passwordBlacklist    = $definitions[PasswordBlacklist::class]($container);
         $disposableChecker    = $definitions[DisposableChecker::class]($container);
+        $logoutService        = $definitions[LogoutService::class]($container);
 
         $this->assertInstanceOf(RegistrationThrottleService::class, $registrationThrottle);
         $this->assertInstanceOf(EmailQuotaService::class, $emailQuota);
         $this->assertInstanceOf(PasswordBlacklist::class, $passwordBlacklist);
         $this->assertInstanceOf(DisposableChecker::class, $disposableChecker);
+        $this->assertInstanceOf(LogoutService::class, $logoutService);
     }
 
     public function testDomainServiceDefinitionsAreBuildable(): void
@@ -164,8 +169,7 @@ final class UserServiceProviderTest extends TestCase
         $definitions = UserServiceProvider::getDefinitions();
 
         $services = $this->baseServices();
-        $sql      = $services[\App\Core\SqlHelper::class];
-        \assert($sql instanceof \App\Core\SqlHelper);
+        $sql      = $services[SqlHelperInterface::class];
 
         $userModel              = new UserModel($sql);
         $userTokenModel         = new UserTokenModel($sql);
@@ -208,8 +212,7 @@ final class UserServiceProviderTest extends TestCase
         $definitions = UserServiceProvider::getDefinitions();
 
         $services = $this->baseServices();
-        $sql      = $services[\App\Core\SqlHelper::class];
-        \assert($sql instanceof \App\Core\SqlHelper);
+        $sql      = $services[SqlHelperInterface::class];
 
         $userModel              = new UserModel($sql);
         $userTokenModel         = new UserTokenModel($sql);
@@ -236,6 +239,7 @@ final class UserServiceProviderTest extends TestCase
         $accountConfirmation = $definitions[AccountConfirmationService::class]($domainContainer);
         $confirmationResend  = $definitions[ConfirmationResendService::class]($domainContainer);
         $login               = $definitions[LoginService::class]($domainContainer);
+        $logout              = $definitions[LogoutService::class]($domainContainer);
         $forgotPassword      = $definitions[ForgotPasswordService::class]($domainContainer);
         $resetPassword       = $definitions[ResetPasswordService::class]($domainContainer);
 
@@ -244,6 +248,7 @@ final class UserServiceProviderTest extends TestCase
             AccountConfirmationService::class => $accountConfirmation,
             ConfirmationResendService::class  => $confirmationResend,
             LoginService::class               => $login,
+            LogoutService::class              => $logout,
             ForgotPasswordService::class      => $forgotPassword,
             ResetPasswordService::class       => $resetPassword,
         ]);
@@ -255,6 +260,7 @@ final class UserServiceProviderTest extends TestCase
         $aliasContainer = $this->makeContainer([
             SecurityService::class       => $securityService,
             LoginService::class          => $login,
+            LogoutService::class         => $logout,
             ForgotPasswordService::class => $forgotPassword,
             ResetPasswordService::class  => $resetPassword,
         ]);
@@ -267,6 +273,11 @@ final class UserServiceProviderTest extends TestCase
         $this->assertSame(
             $login,
             $definitions[LoginServiceInterface::class]($aliasContainer)
+        );
+
+        $this->assertSame(
+            $logout,
+            $definitions[LogoutServiceInterface::class]($aliasContainer)
         );
 
         $this->assertSame(

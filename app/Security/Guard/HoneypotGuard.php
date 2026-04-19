@@ -44,7 +44,7 @@ final class HoneypotGuard implements HoneypotGuardInterface
     public function assertClean(array $opt): bool
     {
         /** @var array<string, mixed> $form */
-        $form = $opt['form'];
+        $form     = $opt['form'];
         $redirect = $opt['redirect'];
 
         try {
@@ -71,10 +71,10 @@ final class HoneypotGuard implements HoneypotGuardInterface
      */
     private function handleSuspiciousSubmission(array $opt, string $redirect): void
     {
-        $flashType = $this->resolveFlashType($opt);
-        $code = $this->resolveCode($opt);
-        $logLevel = $this->resolveLogLevel($opt);
-        $logChannel = $this->resolveLogChannel($opt);
+        $flashType   = $this->resolveFlashType($opt);
+        $code        = $this->resolveCode($opt);
+        $logLevel    = $this->resolveLogLevel($opt);
+        $logChannel  = $this->resolveLogChannel($opt);
         $contextBase = $this->resolveContextBase($opt);
 
         $ctx = $contextBase + [

@@ -43,6 +43,8 @@ final class ErrorCode
     public const AUTH_PASSWORD_RESET_PASSWORD_INVALID   = 'auth.password.reset.password.invalid';
     public const AUTH_PASSWORD_RESET_CONFIRM_MISMATCH   = 'auth.password.reset.confirm.mismatch';
 
+    public const AUTH_LOGOUT_SUCCESS                    = 'auth.logout.success';
+
     public const AUTH_RETRY                     = 'auth.retry';
     public const AUTH_TECHNICAL_ERROR           = 'auth.technical_error';
     public const AUTH_FORM_EXPIRED              = 'auth.form.expired';

@@ -120,8 +120,10 @@ final class ResetPasswordControllerTest extends TestCase
         $this->request
             ->expects($this->once())
             ->method('query')
-            ->with('token')
-            ->willReturn($rawToken);
+            ->with()
+            ->willReturn([
+                'token' => $rawToken,
+            ]);
 
         $this->request
             ->expects($this->never())

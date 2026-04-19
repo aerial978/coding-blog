@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 /**
  * Fakes Mailjet classes used by the SUT.
- * Elles sont déclarées *avant* l'import du SUT et ne sortent pas du namespace \Mailjet,
- * donc aucun impact sur le reste des tests (on ne fait pas d'appel réel à l'API).
+ * Elles sont déclarées avant l'import du SUT et restent limitées
+ * au namespace \Mailjet pour éviter tout appel réel à l'API.
  */
 
 namespace Mailjet {
@@ -13,7 +13,49 @@ namespace Mailjet {
     {
         /** @var array<string,mixed> */
         public static array $Email = ['resource' => 'email', 'version' => 'v3.1'];
-        // le contenu exact n’a pas d’importance pour le test, seul le type compte
+    }
+
+    class Response
+    {
+        /**
+         * @param array<string,mixed> $data
+         */
+        public function __construct(
+            private bool $success,
+            private int $status,
+            private string $reason,
+            private mixed $body,
+            private array $data,
+        ) {
+        }
+
+        public function success(): bool
+        {
+            return $this->success;
+        }
+
+        public function getStatus(): int
+        {
+            return $this->status;
+        }
+
+        public function getReasonPhrase(): string
+        {
+            return $this->reason;
+        }
+
+        public function getBody(): mixed
+        {
+            return $this->body;
+        }
+
+        /**
+         * @return array<string,mixed>
+         */
+        public function getData(): array
+        {
+            return $this->data;
+        }
     }
 
     final class Client
@@ -45,11 +87,10 @@ namespace Mailjet {
         }
 
         /**
-         * Signature alignée avec l’usage réel : la ressource Mailjet est un array.
-         * @param array<string,mixed> $resource  (non utilisé par le double)
+         * @param array<string,mixed> $resource
          * @param array<string,mixed> $payload
          */
-        public function post(array $resource, array $payload): object
+        public function post(array $resource, array $payload): Response
         {
             $this->touch();
 
@@ -66,12 +107,13 @@ namespace Mailjet {
             /** @var array<string,mixed> $data */
             $data = [
                 'Messages' => [[
-                    'Status' => (($b['mode'] ?? '') === 'functional_error') ? 'error' : 'success',
-                    'Errors' => (($b['mode'] ?? '') === 'functional_error') ? [['ErrorMessage' => 'X']] : null,
+                    'Status'  => (($b['mode'] ?? '') === 'functional_error') ? 'error' : 'success',
+                    'Errors'  => (($b['mode'] ?? '') === 'functional_error') ? [['ErrorMessage' => 'X']] : null,
+                    'Subject' => 'Sujet',
                 ]],
             ];
 
-            return new \Tests\Unit\Infrastructure\Mail\FakeMailjetResponse(
+            return new Response(
                 $success,
                 $status,
                 $reason,
@@ -89,56 +131,29 @@ namespace Tests\Unit\Infrastructure\Mail {
     use PHPUnit\Framework\Attributes\Test;
     use PHPUnit\Framework\TestCase;
 
-    final class FakeMailjetResponse
-    {
-        /**
-         * @param array<string,mixed> $data
-         */
-        public function __construct(private bool $success, private int $status, private string $reason, private mixed $body, private array $data)
-        {
-        }
-
-        public function success(): bool
-        {
-            return $this->success;
-        }
-        public function getStatus(): int
-        {
-            return $this->status;
-        }
-        public function getReasonPhrase(): string
-        {
-            return $this->reason;
-        }
-        public function getBody(): mixed
-        {
-            return $this->body;
-        }
-
-        /** @return array<string,mixed> */
-        public function getData(): array
-        {
-            return $this->data;
-        }
-    }
-
     final class MailjetMailerTest extends TestCase
     {
         private string $root;
         private string $tplDir;
         private string $tplFile;
+
         protected function setUp(): void
         {
-            // tests/Unit/Infrastructure/Mail -> projet
             $this->root   = \dirname(__DIR__, 4);
             $this->tplDir = $this->root . '/resources/mail/templates';
+
             if (!is_dir($this->tplDir)) {
                 mkdir($this->tplDir, 0777, true);
             }
 
             $this->tplFile = $this->tplDir . '/_mailjet_test_template.html';
             file_put_contents($this->tplFile, '<h1>Hello {username}</h1><p>{link}</p>');
-            \Mailjet\Client::$behavior = ['mode' => 'success', 'status' => 200, 'reason' => 'OK'];
+
+            \Mailjet\Client::$behavior = [
+                'mode'   => 'success',
+                'status' => 200,
+                'reason' => 'OK',
+            ];
         }
 
         protected function tearDown(): void
@@ -147,7 +162,6 @@ namespace Tests\Unit\Infrastructure\Mail {
                 @unlink($this->tplFile);
             }
 
-            // Nettoyage de base pour les logs mail si présents
             $mailLogDir = $this->root . '/Logs/mail';
             if (is_dir($mailLogDir)) {
                 foreach (glob($mailLogDir . '/*.log') ?: [] as $f) {
@@ -182,13 +196,13 @@ namespace Tests\Unit\Infrastructure\Mail {
                 \basename($this->tplFile),
                 ['username' => 'Jane', 'link' => 'https://example.test/x']
             );
+
             self::assertTrue($ok);
         }
 
         #[Test]
         public function send_retourne_false_si_template_manquant(): void
         {
-            // Fichier supprimé → le SUT doit retourner false (et logger une erreur)
             @unlink($this->tplFile);
 
             $ok = $this->makeMailer()->send(
@@ -198,6 +212,7 @@ namespace Tests\Unit\Infrastructure\Mail {
                 \basename($this->tplFile),
                 ['username' => 'Jane']
             );
+
             self::assertFalse($ok);
         }
 
@@ -213,6 +228,7 @@ namespace Tests\Unit\Infrastructure\Mail {
                 \basename($this->tplFile),
                 ['username' => 'Jane']
             );
+
             self::assertFalse($ok);
         }
 
@@ -228,6 +244,7 @@ namespace Tests\Unit\Infrastructure\Mail {
                 \basename($this->tplFile),
                 ['username' => 'Jane']
             );
+
             self::assertFalse($ok);
         }
 
@@ -243,8 +260,8 @@ namespace Tests\Unit\Infrastructure\Mail {
                 \basename($this->tplFile),
                 ['username' => 'Jane']
             );
+
             self::assertFalse($ok);
         }
     }
-
 }

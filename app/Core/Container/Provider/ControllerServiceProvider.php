@@ -11,6 +11,7 @@ use App\Controller\ErrorController;
 use App\Controller\ForgotPasswordController;
 use App\Controller\HomeController;
 use App\Controller\LoginController;
+use App\Controller\LogoutController;
 use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
@@ -22,6 +23,7 @@ use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
+use App\Handler\Auth\LogoutHandler;
 use App\Handler\Auth\RegisterGetHandler;
 use App\Handler\Auth\RegisterPostHandler;
 use App\Handler\Auth\ResendConfirmationGetHandler;
@@ -30,6 +32,7 @@ use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
+use App\Security\Contract\CsrfTokenInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -46,13 +49,22 @@ final class ControllerServiceProvider
     /**
      * Returns an array of controller definitions for the container.
      *
-     * Each entry associates a fully qualified class name (FQCN) of a controller
-     * with a closure that receives the container and returns an instantiated controller.
-     *
      * @return array<class-string, \Closure(ContainerInterface):object>
      *     Map of [Controller FQCN => factory(ContainerInterface): Controller instance]
      */
     public static function getDefinitions(): array
+    {
+        return array_merge(
+            self::getCoreControllerDefinitions(),
+            self::getAuthControllerDefinitions(),
+            self::getUtilityControllerDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getCoreControllerDefinitions(): array
     {
         return [
             HomeController::class => static function (ContainerInterface $container): HomeController {
@@ -71,12 +83,34 @@ final class ControllerServiceProvider
             ErrorController::class => static function (ContainerInterface $container): ErrorController {
                 /** @var View $view */
                 $view = $container->get(View::class);
+
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
 
                 return new ErrorController($view, $flash);
             },
 
+            AccountController::class => static function (ContainerInterface $container): AccountController {
+                /** @var View $view */
+                $view = $container->get(View::class);
+
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+
+                return new AccountController($view, $flash, $csrf);
+            },
+        ];
+    }
+
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getAuthControllerDefinitions(): array
+    {
+        return [
             RegisterController::class => static function (ContainerInterface $container): RegisterController {
                 /** @var Request $request */
                 $request = $container->get(Request::class);
@@ -87,11 +121,7 @@ final class ControllerServiceProvider
                 /** @var RegisterPostHandler $postHandler */
                 $postHandler = $container->get(RegisterPostHandler::class);
 
-                return new RegisterController(
-                    $request,
-                    $getHandler,
-                    $postHandler
-                );
+                return new RegisterController($request, $getHandler, $postHandler);
             },
 
             ConfirmAccountController::class => static function (ContainerInterface $container): ConfirmAccountController {
@@ -100,7 +130,6 @@ final class ControllerServiceProvider
 
                 return new ConfirmAccountController($handler);
             },
-
 
             ResendConfirmationController::class => static function (ContainerInterface $container): ResendConfirmationController {
                 /** @var Request $request */
@@ -112,11 +141,7 @@ final class ControllerServiceProvider
                 /** @var ResendConfirmationPostHandler $postHandler */
                 $postHandler = $container->get(ResendConfirmationPostHandler::class);
 
-                return new ResendConfirmationController(
-                    $request,
-                    $getHandler,
-                    $postHandler
-                );
+                return new ResendConfirmationController($request, $getHandler, $postHandler);
             },
 
             LoginController::class => static function (ContainerInterface $container): LoginController {
@@ -130,6 +155,13 @@ final class ControllerServiceProvider
                 $postHandler = $container->get(LoginPostHandler::class);
 
                 return new LoginController($request, $getHandler, $postHandler);
+            },
+
+            LogoutController::class => static function (ContainerInterface $container): LogoutController {
+                /** @var LogoutHandler $handler */
+                $handler = $container->get(LogoutHandler::class);
+
+                return new LogoutController($handler);
             },
 
             ForgotPasswordController::class => static function (ContainerInterface $container): ForgotPasswordController {
@@ -157,24 +189,21 @@ final class ControllerServiceProvider
 
                 return new ResetPasswordController($request, $getHandler, $postHandler);
             },
+        ];
+    }
 
-            DebugController::class => static function (ContainerInterface $container): object {
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getUtilityControllerDefinitions(): array
+    {
+        return [
+            DebugController::class => static function (ContainerInterface $container): DebugController {
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
 
                 return new DebugController($session);
             },
-
-            AccountController::class => static function (ContainerInterface $container): object {
-                /** @var \App\Core\View $view */
-                $view = $container->get(\App\Core\View::class);
-
-                /** @var \App\Core\Contract\FlashInterface $flash */
-                $flash = $container->get(\App\Core\Contract\FlashInterface::class);
-
-                return new AccountController($view, $flash);
-            },
-
         ];
     }
 }
