@@ -38,7 +38,7 @@ final class ResetPasswordGetHandler extends BaseController
         $this->submissionDelay->markFormStart('reset_password');
 
         $turnstileRequired = $this->isTurnstileRequired();
-        $check = $this->resetPasswordService->validateResetToken($token);
+        $check             = $this->resetPasswordService->validateResetToken($token);
 
         if (!$this->isValidTokenCheck($check)) {
             $this->replyInvalidToken($check);

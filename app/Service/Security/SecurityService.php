@@ -8,6 +8,7 @@ use App\Service\Security\Contract\AccountConfirmationServiceInterface;
 use App\Service\Security\Contract\ConfirmationResendServiceInterface;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
+use App\Service\Security\Contract\LogoutServiceInterface;
 use App\Service\Security\Contract\RegistrationServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
@@ -19,6 +20,7 @@ final class SecurityService implements SecurityServiceInterface
         private AccountConfirmationServiceInterface $accountConfirmation,
         private ConfirmationResendServiceInterface $confirmationResend,
         private LoginServiceInterface $login,
+        private LogoutServiceInterface $logout,
         private ForgotPasswordServiceInterface $forgotPassword,
         private ResetPasswordServiceInterface $resetPassword,
     ) {
@@ -42,6 +44,11 @@ final class SecurityService implements SecurityServiceInterface
     public function login(array $form): array
     {
         return $this->login->login($form);
+    }
+
+    public function logout(): void
+    {
+        $this->logout->logout();
     }
 
     public function forgotPassword(string $identifier): array

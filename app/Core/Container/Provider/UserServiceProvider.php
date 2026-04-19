@@ -22,10 +22,12 @@ use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
+use App\Service\Security\Contract\LogoutServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\ForgotPasswordService;
 use App\Service\Security\LoginService;
+use App\Service\Security\LogoutService;
 use App\Service\Security\RegistrationService;
 use App\Service\Security\ResetPasswordService;
 use App\Service\Security\SecurityService;
@@ -95,6 +97,7 @@ final class UserServiceProvider
             self::getThrottleAndQuotaDefinitions(),
             self::getStaticResourceDefinitions(),
             self::getDomainServiceDefinitions(),
+            self::getSessionSecurityDefinitions(),
         );
     }
 
@@ -160,6 +163,21 @@ final class UserServiceProvider
             self::getRecoveryFlowDefinitions(),
             self::getSecurityFacadeDefinitions(),
         );
+    }
+
+    /**
+     * @phpstan-return array<class-string, \Closure(ContainerInterface): object>
+     */
+    private static function getSessionSecurityDefinitions(): array
+    {
+        return [
+            LogoutService::class => static function (ContainerInterface $container): LogoutService {
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                return new LogoutService($session);
+            },
+        ];
     }
 
     /**
@@ -352,6 +370,8 @@ final class UserServiceProvider
                 $confirmationResend = $container->get(ConfirmationResendService::class);
                 /** @var LoginService $login */
                 $login = $container->get(LoginService::class);
+                /** @var LogoutService $logout */
+                $logout = $container->get(LogoutService::class);
                 /** @var ForgotPasswordService $forgotPassword */
                 $forgotPassword = $container->get(ForgotPasswordService::class);
                 /** @var ResetPasswordService $resetPassword */
@@ -362,6 +382,7 @@ final class UserServiceProvider
                     $accountConfirmation,
                     $confirmationResend,
                     $login,
+                    $logout,
                     $forgotPassword,
                     $resetPassword,
                 );
@@ -396,6 +417,12 @@ final class UserServiceProvider
             ResetPasswordServiceInterface::class => static function (ContainerInterface $container): ResetPasswordServiceInterface {
                 /** @var ResetPasswordService $service */
                 $service = $container->get(ResetPasswordService::class);
+                return $service;
+            },
+
+            LogoutServiceInterface::class => static function (ContainerInterface $container): LogoutServiceInterface {
+                /** @var LogoutService $service */
+                $service = $container->get(LogoutService::class);
                 return $service;
             },
         ];

@@ -60,15 +60,12 @@ namespace Tests\Unit\Security {
 
         public function testValidateReturnsTrueWhenNotConfiguredEvenIfTokenMissing(): void
         {
-            $v = new TurnstileValidator(''); // non configuré => bypass dev => true
+            $v = new TurnstileValidator('');
 
             self::assertTrue($v->validate(null));
             self::assertTrue($v->validate(''));
 
-            // lastResponse doit être reset à null à chaque validate()
             self::assertNull($v->getLastResponse());
-
-            // Aucun appel réseau ne doit avoir eu lieu
             self::assertNull($GLOBALS['__turnstile_stub']['last_url']);
         }
 
@@ -77,31 +74,41 @@ namespace Tests\Unit\Security {
             $v = new TurnstileValidator('secret');
 
             self::assertFalse($v->validate(null));
-            self::assertFalse($v->validate(''));
+            self::assertSame([
+                'success'     => false,
+                'error-codes' => ['missing-input-response'],
+                'diagnostic'  => 'empty_token',
+            ], $v->getLastResponse());
 
-            // Aucun appel réseau dans ces deux cas
+            self::assertFalse($v->validate(''));
+            self::assertSame([
+                'success'     => false,
+                'error-codes' => ['missing-input-response'],
+                'diagnostic'  => 'empty_token',
+            ], $v->getLastResponse());
+
             self::assertNull($GLOBALS['__turnstile_stub']['last_url']);
-            self::assertNull($v->getLastResponse());
         }
 
         public function testValidateReturnsFalseWhenHttpCallFails(): void
         {
             $v = new TurnstileValidator('secret');
 
-            // Simule file_get_contents() => false (échec réseau)
             $GLOBALS['__turnstile_stub']['next_response'] = false;
 
             $ok = $v->validate('token-ok', '1.2.3.4');
             self::assertFalse($ok);
 
-            // URL appelée
             self::assertSame(
                 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
                 $GLOBALS['__turnstile_stub']['last_url']
             );
 
-            // lastResponse reste null (car response === false)
-            self::assertNull($v->getLastResponse());
+            $last = $v->getLastResponse();
+            self::assertIsArray($last);
+            self::assertFalse((bool) ($last['success'] ?? true));
+            self::assertSame(['turnstile_request_failed'], $last['error-codes'] ?? null);
+            self::assertArrayHasKey('diagnostic', $last);
         }
 
         public function testValidateStoresLastResponseAndReturnsTrueOnSuccess(): void
@@ -119,14 +126,13 @@ namespace Tests\Unit\Security {
 
             $last = $v->getLastResponse();
             self::assertIsArray($last);
-            self::assertTrue((bool)($last['success'] ?? false));
+            self::assertTrue((bool) ($last['success'] ?? false));
 
-            // Vérifie que le POST contient bien secret/response/remoteip
             $opts = $GLOBALS['__turnstile_stub']['last_opts'];
             self::assertIsArray($opts);
             self::assertSame('POST', $opts['http']['method'] ?? null);
 
-            $content = (string)($opts['http']['content'] ?? '');
+            $content = (string) ($opts['http']['content'] ?? '');
             self::assertStringContainsString('secret=secret', $content);
             self::assertStringContainsString('response=token-ok', $content);
             self::assertStringContainsString('remoteip=1.2.3.4', $content);
@@ -146,11 +152,11 @@ namespace Tests\Unit\Security {
 
             $last = $v->getLastResponse();
             self::assertIsArray($last);
-            self::assertFalse((bool)($last['success'] ?? true));
+            self::assertFalse((bool) ($last['success'] ?? true));
             self::assertSame(['invalid-input-response'], $last['error-codes'] ?? null);
         }
 
-        public function testValidateKeepsLastResponseNullWhenJsonIsInvalid(): void
+        public function testValidateStoresStructuredErrorWhenJsonIsInvalid(): void
         {
             $v = new TurnstileValidator('secret');
 
@@ -159,23 +165,28 @@ namespace Tests\Unit\Security {
             $ok = $v->validate('token-ok', null);
             self::assertFalse($ok);
 
-            // json_decode => null => is_array(false) => lastResponse reste null
-            self::assertNull($v->getLastResponse());
+            self::assertSame([
+                'success'     => false,
+                'error-codes' => ['turnstile_bad_response'],
+                'diagnostic'  => 'invalid_json',
+            ], $v->getLastResponse());
         }
 
         public function testValidateResetsLastResponseAtBeginningOfEachCall(): void
         {
             $v = new TurnstileValidator('secret');
 
-            // 1er appel : succès => lastResponse non-null
             $GLOBALS['__turnstile_stub']['next_response'] = json_encode(['success' => true]);
             self::assertTrue($v->validate('token-ok', null));
             self::assertNotNull($v->getLastResponse());
 
-            // 2e appel : échec réseau => lastResponse doit redevenir null
             $GLOBALS['__turnstile_stub']['next_response'] = false;
             self::assertFalse($v->validate('token-ok', null));
-            self::assertNull($v->getLastResponse());
+
+            $last = $v->getLastResponse();
+            self::assertIsArray($last);
+            self::assertFalse((bool) ($last['success'] ?? true));
+            self::assertSame(['turnstile_request_failed'], $last['error-codes'] ?? null);
         }
     }
 }

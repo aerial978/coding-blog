@@ -70,6 +70,8 @@ interface SecurityServiceInterface
      */
     public function login(array $form): array;
 
+    public function logout(): void;
+
     /**
      * Starts the forgot-password flow for the supplied identifier.
      *

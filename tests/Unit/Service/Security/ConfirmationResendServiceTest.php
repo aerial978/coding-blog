@@ -14,6 +14,7 @@ use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\EmailQuotaService;
 use App\Service\Security\ConfirmationResendService;
 use App\Validation\Contract\FormValidatorInterface;
+use DateTimeImmutable;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -68,6 +69,7 @@ final class ConfirmationResendServiceTest extends TestCase
         $user->setUserId($id);
         $user->setEmail($email);
         $user->setUsername($username);
+
         if ($status !== null) {
             $user->setStatus($status);
         }
@@ -115,6 +117,31 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->assertSame([], $result);
     }
 
+    public function testResendReturnsTechnicalErrorWhenSecondUserLookupIsNotAUserEntity(): void
+    {
+        $user = $this->makeUser();
+
+        $this->validator
+            ->expects($this->once())
+            ->method('validateEmailField')
+            ->with('john@example.com')
+            ->willReturn(null);
+
+        $this->userModel
+            ->expects($this->exactly(2))
+            ->method('findOneByEmail')
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, null);
+
+        $this->quotaService
+            ->expects($this->never())
+            ->method('checkQuota');
+
+        $result = $this->service->resend('john@example.com');
+
+        $this->assertSame(['error' => ErrorCode::AUTH_TECHNICAL_ERROR], $result);
+    }
+
     public function testResendReturnsNeutralWhenQuotaIsExceeded(): void
     {
         $user = $this->makeUser();
@@ -122,12 +149,14 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->validator
             ->expects($this->once())
             ->method('validateEmailField')
+            ->with('john@example.com')
             ->willReturn(null);
 
         $this->userModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findOneByEmail')
-            ->willReturn($user);
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
 
         $this->quotaService
             ->expects($this->once())
@@ -154,16 +183,50 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->validator
             ->expects($this->once())
             ->method('validateEmailField')
+            ->with('john@example.com')
             ->willReturn(null);
 
         $this->userModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findOneByEmail')
-            ->willReturn($user);
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
 
         $this->quotaService
             ->expects($this->once())
             ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
+            ->willReturn(['allowed' => true]);
+
+        $this->tokenGen
+            ->expects($this->never())
+            ->method('generateUrlSafeToken');
+
+        $result = $this->service->resend('john@example.com');
+
+        $this->assertSame(['error' => ErrorCode::AUTH_ALREADY_CONFIRMED], $result);
+    }
+
+    public function testResendReturnsAlreadyConfirmedWhenUserStatusIsOne(): void
+    {
+        $user = $this->makeUser(status: '1');
+
+        $this->validator
+            ->expects($this->once())
+            ->method('validateEmailField')
+            ->with('john@example.com')
+            ->willReturn(null);
+
+        $this->userModel
+            ->expects($this->exactly(2))
+            ->method('findOneByEmail')
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
+
+        $this->quotaService
+            ->expects($this->once())
+            ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
             ->willReturn(['allowed' => true]);
 
         $this->tokenGen
@@ -182,16 +245,19 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->validator
             ->expects($this->once())
             ->method('validateEmailField')
+            ->with('john@example.com')
             ->willReturn(null);
 
         $this->userModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findOneByEmail')
-            ->willReturn($user);
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
 
         $this->quotaService
             ->expects($this->once())
             ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
             ->willReturn(['allowed' => true]);
 
         $this->tokenGen
@@ -222,26 +288,31 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->validator
             ->expects($this->once())
             ->method('validateEmailField')
+            ->with('john@example.com')
             ->willReturn(null);
 
         $this->userModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findOneByEmail')
-            ->willReturn($user);
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
 
         $this->quotaService
             ->expects($this->once())
             ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
             ->willReturn(['allowed' => true]);
 
         $this->tokenGen
             ->expects($this->once())
             ->method('generateUrlSafeToken')
+            ->with(32)
             ->willReturn('plain-token');
 
         $this->tokenGen
             ->expects($this->once())
             ->method('hashToken')
+            ->with('plain-token')
             ->willReturn(str_repeat('a', 32));
 
         $this->userTokenModel
@@ -250,7 +321,7 @@ final class ConfirmationResendServiceTest extends TestCase
             ->with(
                 42,
                 str_repeat('a', 32),
-                $this->isInstanceOf(\DateTimeImmutable::class)
+                $this->isInstanceOf(DateTimeImmutable::class)
             )
             ->willReturn(false);
 
@@ -270,26 +341,31 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->validator
             ->expects($this->once())
             ->method('validateEmailField')
+            ->with('john@example.com')
             ->willReturn(null);
 
         $this->userModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findOneByEmail')
-            ->willReturn($user);
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
 
         $this->quotaService
             ->expects($this->once())
             ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
             ->willReturn(['allowed' => true]);
 
         $this->tokenGen
             ->expects($this->once())
             ->method('generateUrlSafeToken')
+            ->with(32)
             ->willReturn('plain-token');
 
         $this->tokenGen
             ->expects($this->once())
             ->method('hashToken')
+            ->with('plain-token')
             ->willReturn(str_repeat('b', 32));
 
         $this->userTokenModel
@@ -311,6 +387,59 @@ final class ConfirmationResendServiceTest extends TestCase
         $this->assertSame(['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $result);
     }
 
+    public function testResendReturnsEmailSendFailedWhenMailerThrows(): void
+    {
+        $user = $this->makeUser(status: 'pending');
+
+        $this->validator
+            ->expects($this->once())
+            ->method('validateEmailField')
+            ->with('john@example.com')
+            ->willReturn(null);
+
+        $this->userModel
+            ->expects($this->exactly(2))
+            ->method('findOneByEmail')
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
+
+        $this->quotaService
+            ->expects($this->once())
+            ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
+            ->willReturn(['allowed' => true]);
+
+        $this->tokenGen
+            ->expects($this->once())
+            ->method('generateUrlSafeToken')
+            ->with(32)
+            ->willReturn('plain-token');
+
+        $this->tokenGen
+            ->expects($this->once())
+            ->method('hashToken')
+            ->with('plain-token')
+            ->willReturn(str_repeat('d', 32));
+
+        $this->userTokenModel
+            ->expects($this->once())
+            ->method('createConfirmationToken')
+            ->willReturn(true);
+
+        $this->mailer
+            ->expects($this->once())
+            ->method('send')
+            ->willThrowException(new \RuntimeException('smtp down'));
+
+        $this->quotaService
+            ->expects($this->never())
+            ->method('recordEvent');
+
+        $result = $this->service->resend('john@example.com');
+
+        $this->assertSame(['error' => ErrorCode::AUTH_CONFIRM_EMAIL_SEND_FAILED], $result);
+    }
+
     public function testResendRecordsEventWhenFlowSucceeds(): void
     {
         $user = $this->makeUser(status: 'pending');
@@ -322,10 +451,10 @@ final class ConfirmationResendServiceTest extends TestCase
             ->willReturn(null);
 
         $this->userModel
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('findOneByEmail')
             ->with('john@example.com')
-            ->willReturn($user);
+            ->willReturnOnConsecutiveCalls($user, $user);
 
         $this->quotaService
             ->expects($this->once())
@@ -351,7 +480,7 @@ final class ConfirmationResendServiceTest extends TestCase
             ->with(
                 42,
                 str_repeat('c', 32),
-                $this->isInstanceOf(\DateTimeImmutable::class)
+                $this->isInstanceOf(DateTimeImmutable::class)
             )
             ->willReturn(true);
 
@@ -380,6 +509,68 @@ final class ConfirmationResendServiceTest extends TestCase
                 42,
                 '127.0.0.1',
                 'PHPUnit'
+            );
+
+        $result = $this->service->resend('john@example.com');
+
+        $this->assertSame([], $result);
+    }
+
+    public function testResendRecordsEventWithFallbackServerValuesWhenFlowSucceeds(): void
+    {
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+        $user = $this->makeUser(status: 'pending');
+
+        $this->validator
+            ->expects($this->once())
+            ->method('validateEmailField')
+            ->with('john@example.com')
+            ->willReturn(null);
+
+        $this->userModel
+            ->expects($this->exactly(2))
+            ->method('findOneByEmail')
+            ->with('john@example.com')
+            ->willReturnOnConsecutiveCalls($user, $user);
+
+        $this->quotaService
+            ->expects($this->once())
+            ->method('checkQuota')
+            ->with(EmailQuotaService::TYPE_CONFIRM_RESEND, 'john@example.com')
+            ->willReturn(['allowed' => true]);
+
+        $this->tokenGen
+            ->expects($this->once())
+            ->method('generateUrlSafeToken')
+            ->with(32)
+            ->willReturn('plain-token');
+
+        $this->tokenGen
+            ->expects($this->once())
+            ->method('hashToken')
+            ->with('plain-token')
+            ->willReturn(str_repeat('e', 32));
+
+        $this->userTokenModel
+            ->expects($this->once())
+            ->method('createConfirmationToken')
+            ->willReturn(true);
+
+        $this->mailer
+            ->expects($this->once())
+            ->method('send')
+            ->willReturn(true);
+
+        $this->quotaService
+            ->expects($this->once())
+            ->method('recordEvent')
+            ->with(
+                'john@example.com',
+                EmailQuotaService::TYPE_CONFIRM_RESEND,
+                42,
+                '0.0.0.0',
+                'unknown'
             );
 
         $result = $this->service->resend('john@example.com');

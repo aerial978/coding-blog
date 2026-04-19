@@ -1,3 +1,15 @@
-<h1>{{ title }}</h1>
+{% extends "templates/layouts/base.html.twig" %}
 
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
 <p>Vous êtes bien authentifié et avez accès à une route protégée.</p>
+
+{% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+
+<form method="post" action="/coding-blog/logout">
+    <input type="hidden" name="csrf_token" value="{{ logout_csrf_token }}">
+    <button type="submit">Déconnexion</button>
+</form>
+
+{% endblock %}

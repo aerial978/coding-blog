@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 final class FormValidatorTest extends TestCase
 {
     private FormValidator $v;
+
     protected function setUp(): void
     {
         $this->v = new FormValidator();
@@ -42,7 +43,7 @@ final class FormValidatorTest extends TestCase
     {
         return [
             'empty'  => ['', ErrorCode::AUTH_FIELD_REQUIRED],
-            'spaces' => ['   ', ErrorCode::AUTH_FIELD_REQUIRED], // NB: required() ne trim pas; trim est fait par validate()
+            'spaces' => ['   ', null],
             'ok'     => ['x', null],
         ];
     }
@@ -59,9 +60,9 @@ final class FormValidatorTest extends TestCase
     public static function emailRuleProvider(): array
     {
         return [
-            'empty'      => ['', ErrorCode::AUTH_EMAIL_INVALID],
-            'bad'        => ['foo@bar', ErrorCode::AUTH_EMAIL_INVALID],
-            'good'       => ['john@example.test', null],
+            'empty' => ['', ErrorCode::AUTH_EMAIL_INVALID],
+            'bad'   => ['foo@bar', ErrorCode::AUTH_EMAIL_INVALID],
+            'good'  => ['john@example.test', null],
         ];
     }
 
@@ -75,11 +76,11 @@ final class FormValidatorTest extends TestCase
     public static function validateEmailFieldProvider(): array
     {
         return [
-            'empty'       => ['', ErrorCode::AUTH_EMAIL_INVALID],
-            'spaces'      => ['  ', ErrorCode::AUTH_EMAIL_INVALID],
-            'bad_format'  => ['a@b', ErrorCode::AUTH_EMAIL_INVALID],
-            'ok'          => ['user@example.test', null],
-            'trim_ok'     => ['  user@example.test  ', null],
+            'empty'      => ['', ErrorCode::AUTH_EMAIL_INVALID],
+            'spaces'     => ['  ', ErrorCode::AUTH_EMAIL_INVALID],
+            'bad_format' => ['a@b', ErrorCode::AUTH_EMAIL_INVALID],
+            'ok'         => ['user@example.test', null],
+            'trim_ok'    => ['  user@example.test  ', null],
         ];
     }
 
@@ -94,13 +95,13 @@ final class FormValidatorTest extends TestCase
     public static function usernameProvider(): array
     {
         return [
-            'too_short'   => ['ab', ErrorCode::AUTH_USERNAME_INVALID],
-            'too_long'    => ['abcdefghijklmnopqrstu', ErrorCode::AUTH_USERNAME_INVALID], // 21
-            'no_letter'   => ['12345', ErrorCode::AUTH_USERNAME_INVALID],
-            'bad_chars'   => ['john-doe', ErrorCode::AUTH_USERNAME_INVALID],
-            'ok_min'      => ['abc', null],
-            'ok_mix'      => ['john_123', null],
-            'ok_max'      => ['abcdefghijklmnopqrst', null], // 20
+            'too_short' => ['ab', ErrorCode::AUTH_USERNAME_INVALID],
+            'too_long'  => ['abcdefghijklmnopqrstu', ErrorCode::AUTH_USERNAME_INVALID],
+            'no_letter' => ['12345', ErrorCode::AUTH_USERNAME_INVALID],
+            'bad_chars' => ['john-doe', ErrorCode::AUTH_USERNAME_INVALID],
+            'ok_min'    => ['abc', null],
+            'ok_mix'    => ['john_123', null],
+            'ok_max'    => ['abcdefghijklmnopqrst', null],
         ];
     }
 
@@ -116,13 +117,13 @@ final class FormValidatorTest extends TestCase
     public static function passwordProvider(): array
     {
         return [
-            'too_short'     => ['Aa1!Aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
-            'no_upper'      => ['aa1!aa1!aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
-            'no_lower'      => ['AA1!AA1!AA1!', ErrorCode::AUTH_PASSWORD_INVALID],
-            'no_digit'      => ['Aa!Aa!Aa!Aa!', ErrorCode::AUTH_PASSWORD_INVALID],
-            'no_special'    => ['Aa1Aa1Aa1Aa1', ErrorCode::AUTH_PASSWORD_INVALID],
-            'has_space'     => ['Aa1! aa1!aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
-            'valid_strong'  => ['Aa1!Bb2@Cc3#', null],
+            'too_short'    => ['Aa1!Aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_upper'     => ['aa1!aa1!aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_lower'     => ['AA1!AA1!AA1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_digit'     => ['Aa!Aa!Aa!Aa!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'no_special'   => ['Aa1Aa1Aa1Aa1', ErrorCode::AUTH_PASSWORD_INVALID],
+            'has_space'    => ['Aa1! aa1!aa1!', ErrorCode::AUTH_PASSWORD_INVALID],
+            'valid_strong' => ['Aa1!Bb2@Cc3#', null],
         ];
     }
 
@@ -151,7 +152,7 @@ final class FormValidatorTest extends TestCase
 
     public function test_inArray_rule(): void
     {
-        $rule = $this->v->inArray(['admin','editor'], 'ERR_ROLE');
+        $rule = $this->v->inArray(['admin', 'editor'], 'ERR_ROLE');
         $this->assertNull($rule('admin'));
         $this->assertSame('ERR_ROLE', $rule('guest'));
     }
@@ -165,22 +166,28 @@ final class FormValidatorTest extends TestCase
 
     // ---------------- validate() moteur générique ----------------
 
-    public function test_validate_generic_engine_applies_normalize_and_stops_on_first_error(): void
+    public function test_validate_generic_engine_applies_normalize_and_stops_on_first_error_per_field(): void
     {
         $schema = [
             'name'  => [$this->v->required(), $this->v->minLen(4, 'ERR_MIN4')],
             'email' => [$this->v->email()],
         ];
-        // Cas 1 : name vide, email invalide → seul "name" doit remonter (stop au 1er échec)
+
         $errors = $this->v->validate(['name' => '  ', 'email' => 'bad'], $schema);
-        $this->assertSame(['name' => ErrorCode::AUTH_FIELD_REQUIRED], $errors);
-        // Cas 2 : name court, email invalide → "name" minLen
+        $this->assertSame([
+            'name'  => ErrorCode::AUTH_FIELD_REQUIRED,
+            'email' => ErrorCode::AUTH_EMAIL_INVALID,
+        ], $errors);
+
         $errors = $this->v->validate(['name' => 'Bob', 'email' => 'bad'], $schema);
-        $this->assertSame(['name' => 'ERR_MIN4'], $errors);
-        // Cas 3 : name OK, email invalide → "email"
+        $this->assertSame([
+            'name'  => 'ERR_MIN4',
+            'email' => ErrorCode::AUTH_EMAIL_INVALID,
+        ], $errors);
+
         $errors = $this->v->validate(['name' => 'John', 'email' => 'bad'], $schema);
         $this->assertSame(['email' => ErrorCode::AUTH_EMAIL_INVALID], $errors);
-        // Cas 4 : tout OK
+
         $errors = $this->v->validate(['name' => 'John', 'email' => 'john@example.test'], $schema);
         $this->assertSame([], $errors);
     }
@@ -189,21 +196,23 @@ final class FormValidatorTest extends TestCase
 
     public function test_validateRegistration_covers_all_fields_and_rules(): void
     {
-        // Tous invalides
         $errors = $this->v->validateRegistration([
-            'username' => 'a',                        // trop court
-            'email'    => 'bad',                      // invalide
-            'password' => 'weak',                     // invalide
+            'username' => 'a',
+            'email'    => 'bad',
+            'password' => 'weak',
         ]);
-        $this->assertArrayHasKey('username', $errors);
-        $this->assertArrayHasKey('email', $errors);
-        $this->assertArrayHasKey('password', $errors);
-        // Tout OK
+
+        $this->assertCount(3, $errors);
+        $this->assertContains(ErrorCode::AUTH_USERNAME_INVALID, $errors);
+        $this->assertContains(ErrorCode::AUTH_EMAIL_INVALID, $errors);
+        $this->assertContains(ErrorCode::AUTH_PASSWORD_INVALID, $errors);
+
         $errors = $this->v->validateRegistration([
             'username' => 'john_doe',
             'email'    => 'john@example.test',
             'password' => 'Aa1!Bb2@Cc3#',
         ]);
+
         $this->assertSame([], $errors);
     }
 }

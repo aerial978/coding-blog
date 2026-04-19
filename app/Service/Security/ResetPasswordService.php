@@ -80,7 +80,7 @@ final class ResetPasswordService implements ResetPasswordServiceInterface
             'token_present' => true,
             'hash_len'      => strlen($hashBin),
             'ctx_found'     => $ctx !== null,
-            'used'          => $ctx['used'] ?? null,
+            'used'          => $ctx['used']       ?? null,
             'is_expired'    => $ctx['is_expired'] ?? null,
         ]);
     }
