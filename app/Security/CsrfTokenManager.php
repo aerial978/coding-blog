@@ -56,10 +56,16 @@ final class CsrfTokenManager implements CsrfTokenInterface
         /** @var array<string,mixed> $bag */
         $bag = is_array($raw) ? $raw : [];
 
+        $existing = $bag[$formId] ?? null;
+        if (is_string($existing) && $existing !== '') {
+            return $existing;
+        }
+
         $token        = bin2hex(random_bytes(32));
         $bag[$formId] = $token;
 
         $this->session->set(self::BAG, $bag);
+
         return $token;
     }
 
