@@ -3,8 +3,12 @@
 namespace App\Controller;
 
 use App\Core\Contract\FlashInterface;
+use App\Core\FormId;
 use App\Core\View;
+use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
+use App\Security\Contract\AuthCheckerInterface;
+use App\Security\Contract\CsrfTokenInterface;
 
 class HomeController extends BaseController
 {
@@ -15,8 +19,14 @@ class HomeController extends BaseController
      *
      * @param UserModelInterface $userModel The model used to interact with user data.
      */
-    public function __construct(View $view, private UserModelInterface $userModel, FlashInterface $flash)
-    {
+    public function __construct(
+        View $view,
+        private UserModelInterface $userModel,
+        FlashInterface $flash,
+        private Request $request,
+        private AuthCheckerInterface $authChecker,
+        private CsrfTokenInterface $csrf,
+    ) {
         parent::__construct($view, $flash);
     }
 
@@ -32,10 +42,15 @@ class HomeController extends BaseController
     {
         $users = $this->userModel->findAll();
 
+        $isAuthenticated = $this->authChecker->isAuthenticated($this->request);
+
         $this->render('home/index.html.twig', $this->withFlashes([
-            'title'   => 'Home',
-            'message' => 'This is the home page.',
-            'users'   => $users,
+            'show_header'       => true,
+            'is_authenticated'  => $isAuthenticated,
+            'logout_csrf_token' => $isAuthenticated ? $this->csrf->generateToken(FormId::LOGOUT) : '',
+            'title'             => 'Home',
+            'message'           => 'This is the home page.',
+            'users'             => $users,
         ]));
     }
 }

@@ -33,6 +33,7 @@ use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
+use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -78,8 +79,9 @@ final class ControllerServiceProviderTest extends TestCase
             FlashInterface::class                => $this->createMock(FlashInterface::class),
             SessionInterface::class              => $this->createMock(SessionInterface::class),
             UserModelInterface::class            => $this->createMock(UserModelInterface::class),
-            CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
             Request::class                       => $this->createMock(Request::class),
+            AuthCheckerInterface::class          => $this->createMock(AuthCheckerInterface::class),
+            CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
 
             ConfirmAccountHandler::class         => $this->instantiateWithoutConstructor(ConfirmAccountHandler::class),
             RegisterGetHandler::class            => $this->instantiateWithoutConstructor(RegisterGetHandler::class),

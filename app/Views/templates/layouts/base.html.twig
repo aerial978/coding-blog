@@ -25,7 +25,9 @@
 		</style>
 	</head>
 	<body>
-		{% include 'templates/partials/header.html.twig' %}
+		{% if show_header ?? false %}
+			{% include 'templates/partials/header.html.twig' %}
+		{% endif %}
 
 		<main>
 			{% block content %}{% endblock %}

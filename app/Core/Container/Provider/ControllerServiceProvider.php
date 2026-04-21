@@ -32,6 +32,7 @@ use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
+use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use Psr\Container\ContainerInterface;
 
@@ -77,7 +78,16 @@ final class ControllerServiceProvider
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
 
-                return new HomeController($view, $userModel, $flash);
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var AuthCheckerInterface $authChecker */
+                $authChecker = $container->get(AuthCheckerInterface::class);
+
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+
+                return new HomeController($view, $userModel, $flash, $request, $authChecker, $csrf);
             },
 
             ErrorController::class => static function (ContainerInterface $container): ErrorController {
