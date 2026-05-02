@@ -113,7 +113,10 @@ final class UserTokenModelTest extends TestCase
             ->method('request')
             ->with(
                 $this->stringContains('UPDATE user_token'),
-                [':user_id' => 42]
+                [
+                    ':user_id' => 42,
+                    ':purpose' => 'password_reset',
+                ]
             )
             ->willReturn($this->statement);
 
@@ -132,7 +135,10 @@ final class UserTokenModelTest extends TestCase
             ->method('request')
             ->with(
                 $this->stringContains('UPDATE user_token'),
-                [':user_id' => 42]
+                [
+                    ':user_id' => 42,
+                    ':purpose' => 'password_reset',
+                ]
             )
             ->willReturn($this->statement);
 
@@ -406,5 +412,135 @@ final class UserTokenModelTest extends TestCase
         $this->assertFalse(
             $this->model->consumePasswordResetTokenAndUpdatePassword($hash, $passwordHash)
         );
+    }
+
+    public function testCreateRememberMeTokenReturnsTrueWhenInsertAffectsAtLeastOneRow(): void
+    {
+        $userId    = 42;
+        $hash      = str_repeat('k', 32);
+        $expiresAt = new \DateTimeImmutable('2026-03-28 16:00:00');
+
+        $this->sqlHelper
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->stringContains('INSERT INTO user_token'),
+            [
+                ':user_id'    => $userId,
+                ':purpose'    => 'remember_me',
+                ':token_hash' => $hash,
+                ':expires_at' => '2026-03-28 16:00:00',
+            ]
+        )
+        ->willReturn($this->statement);
+
+        $this->statement
+        ->expects($this->once())
+        ->method('rowCount')
+        ->willReturn(1);
+
+        $this->assertTrue($this->model->createRememberMeToken($userId, $hash, $expiresAt));
+    }
+
+    public function testFindRememberMeContextByHashReturnsRowWhenFound(): void
+    {
+        $hash = str_repeat('l', 32);
+        $row  = [
+        'user_id'     => 42,
+        'user_status' => 'active',
+        'used'        => 0,
+        'used_at'     => null,
+        'expires_at'  => '2026-03-28 17:00:00',
+        'is_expired'  => 0,
+        ];
+
+        $this->sqlHelper
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->stringContains('WHERE t.token_hash = :hash'),
+            [
+                ':hash'    => $hash,
+                ':purpose' => 'remember_me',
+            ]
+        )
+        ->willReturn($this->statement);
+
+        $this->statement
+        ->expects($this->once())
+        ->method('fetch')
+        ->with(\PDO::FETCH_ASSOC)
+        ->willReturn($row);
+
+        $this->assertSame($row, $this->model->findRememberMeContextByHash($hash));
+    }
+
+    public function testFindRememberMeContextByHashReturnsNullWhenNotFound(): void
+    {
+        $hash = str_repeat('m', 32);
+
+        $this->sqlHelper
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->stringContains('WHERE t.token_hash = :hash'),
+            [
+                ':hash'    => $hash,
+                ':purpose' => 'remember_me',
+            ]
+        )
+        ->willReturn($this->statement);
+
+        $this->statement
+        ->expects($this->once())
+        ->method('fetch')
+        ->with(\PDO::FETCH_ASSOC)
+        ->willReturn(false);
+
+        $this->assertNull($this->model->findRememberMeContextByHash($hash));
+    }
+
+    public function testInvalidateRememberMeTokenReturnsTrueWhenAtLeastOneRowIsUpdated(): void
+    {
+        $this->sqlHelper
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->stringContains('UPDATE user_token'),
+            [
+                ':user_id' => 42,
+                ':purpose' => 'remember_me',
+            ]
+        )
+        ->willReturn($this->statement);
+
+        $this->statement
+        ->expects($this->once())
+        ->method('rowCount')
+        ->willReturn(1);
+
+        $this->assertTrue($this->model->invalidateRememberMeToken(42));
+    }
+
+    public function testInvalidateRememberMeTokenReturnsFalseWhenNoRowIsUpdated(): void
+    {
+        $this->sqlHelper
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->stringContains('UPDATE user_token'),
+            [
+                ':user_id' => 42,
+                ':purpose' => 'remember_me',
+            ]
+        )
+        ->willReturn($this->statement);
+
+        $this->statement
+        ->expects($this->once())
+        ->method('rowCount')
+        ->willReturn(0);
+
+        $this->assertFalse($this->model->invalidateRememberMeToken(42));
     }
 }

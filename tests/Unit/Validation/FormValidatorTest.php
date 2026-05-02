@@ -215,4 +215,46 @@ final class FormValidatorTest extends TestCase
 
         $this->assertSame([], $errors);
     }
+
+    // ---------------- validateLogin() ----------------
+
+    public function test_validateLogin_returns_required_errors_when_identifier_and_password_are_empty(): void
+    {
+        $errors = $this->v->validateLogin([
+        'identifier' => '',
+        'password'   => '',
+        ]);
+
+        $this->assertSame([
+        ErrorCode::AUTH_FIELD_REQUIRED,
+        ErrorCode::AUTH_FIELD_REQUIRED,
+        ], $errors);
+    }
+
+    public function test_validateLogin_returns_empty_array_when_identifier_and_password_are_present(): void
+    {
+        $errors = $this->v->validateLogin([
+        'identifier' => 'john@example.test',
+        'password'   => 'secret',
+        ]);
+
+        $this->assertSame([], $errors);
+    }
+
+    // ---------------- validatePasswordField() ----------------
+
+    public function test_validatePasswordField_returns_error_when_password_is_invalid(): void
+    {
+        $this->assertSame(
+            ErrorCode::AUTH_PASSWORD_INVALID,
+            $this->v->validatePasswordField('weak')
+        );
+    }
+
+    public function test_validatePasswordField_returns_null_when_password_is_valid(): void
+    {
+        $this->assertNull(
+            $this->v->validatePasswordField('Aa1!Bb2@Cc3#')
+        );
+    }
 }

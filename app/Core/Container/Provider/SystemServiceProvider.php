@@ -25,19 +25,25 @@ use App\Infrastructure\Mail\MailjetMailer;
 use App\Log\LogContextNormalizer;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
+use App\Middleware\RememberMeMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
+use App\Model\Contract\UserTokenModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\Contract\TurnstileValidatorInterface;
 use App\Security\CsrfTokenManager;
 use App\Security\HoneypotValidator;
+use App\Security\RememberMeCookieManager;
 use App\Security\SessionAuthChecker;
 use App\Security\SubmissionDelayValidator;
 use App\Security\TokenGenerator;
 use App\Security\TurnstileValidator;
+use App\Service\Security\Contract\RememberMeServiceInterface;
+use App\Service\Security\RememberMeService;
 use App\Support\ErrorListNormalizer;
 use App\Validation\Contract\FormValidatorInterface;
 use App\Validation\FormValidator;
@@ -270,6 +276,21 @@ final class SystemServiceProvider
                 $session = $container->get(SessionInterface::class);
                 return new SessionAuthChecker($session);
             },
+
+            RememberMeCookieManager::class => static fn (): RememberMeCookieManager => new RememberMeCookieManager(),
+
+            RememberMeService::class => static function (ContainerInterface $container): RememberMeService {
+                /** @var UserTokenModelInterface $userTokenModel */
+                $userTokenModel = $container->get(UserTokenModelInterface::class);
+
+                /** @var TokenGeneratorInterface $tokenGenerator */
+                $tokenGenerator = $container->get(TokenGeneratorInterface::class);
+
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                return new RememberMeService($userTokenModel, $tokenGenerator, $session);
+            },
         ];
     }
 
@@ -316,6 +337,18 @@ final class SystemServiceProvider
                 $ts = $container->get(TurnstileValidator::class);
                 return $ts;
             },
+
+            RememberMeCookieManagerInterface::class => static function (ContainerInterface $container): RememberMeCookieManagerInterface {
+                /** @var RememberMeCookieManager $manager */
+                $manager = $container->get(RememberMeCookieManager::class);
+                return $manager;
+            },
+
+            RememberMeServiceInterface::class => static function (ContainerInterface $container): RememberMeServiceInterface {
+                /** @var RememberMeService $service */
+                $service = $container->get(RememberMeService::class);
+                return $service;
+            },
         ];
     }
 
@@ -327,6 +360,19 @@ final class SystemServiceProvider
     private static function getSecurityMiddlewares(): array
     {
         return [
+            RememberMeMiddleware::class => static function (ContainerInterface $container): RememberMeMiddleware {
+                /** @var AuthCheckerInterface $auth */
+                $auth = $container->get(AuthCheckerInterface::class);
+
+                /** @var RememberMeCookieManagerInterface $cookieManager */
+                $cookieManager = $container->get(RememberMeCookieManagerInterface::class);
+
+                /** @var RememberMeServiceInterface $rememberMe */
+                $rememberMe = $container->get(RememberMeServiceInterface::class);
+
+                return new RememberMeMiddleware($auth, $cookieManager, $rememberMe);
+            },
+
             AuthenticationMiddleware::class => static function (ContainerInterface $container): AuthenticationMiddleware {
                 /** @var AuthCheckerInterface $auth */
                 $auth = $container->get(AuthCheckerInterface::class);

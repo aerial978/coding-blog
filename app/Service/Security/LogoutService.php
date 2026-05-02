@@ -8,23 +8,33 @@ use App\Core\Contract\SessionInterface;
 use App\Core\ErrorCode;
 use App\Core\Logger;
 use App\Service\Security\Contract\LogoutServiceInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 
 final class LogoutService implements LogoutServiceInterface
 {
     public function __construct(
         private SessionInterface $session,
+        private RememberMeServiceInterface $rememberMeService,
     ) {
     }
 
     public function logout(): void
     {
-        $userId = $this->session->get('user_id');
+        $user = $this->session->get('user');
+
+        $userId = (is_array($user) && isset($user['id']) && is_int($user['id']))
+            ? $user['id']
+            : null;
+
+        if ($userId !== null) {
+            $this->rememberMeService->invalidateRememberMeForUser($userId);
+        }
 
         $this->session->clear();
         $this->session->regenerateAndDeleteOld();
 
         Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_LOGOUT_SUCCESS, [
-            'user_id' => is_int($userId) || is_string($userId) ? $userId : null,
+            'user_id' => $userId,
         ]);
     }
 }

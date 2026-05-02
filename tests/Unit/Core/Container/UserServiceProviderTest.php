@@ -24,6 +24,7 @@ use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Service\Security\Contract\LogoutServiceInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\ForgotPasswordService;
@@ -76,12 +77,13 @@ final class UserServiceProviderTest extends TestCase
         $sqlHelper = $this->createMock(SqlHelperInterface::class);
 
         return [
-            SqlHelperInterface::class      => $sqlHelper,
-            FormValidatorInterface::class  => $this->createMock(FormValidatorInterface::class),
-            MailerInterface::class         => $this->createMock(MailerInterface::class),
-            TokenGeneratorInterface::class => $this->createMock(TokenGeneratorInterface::class),
-            SessionInterface::class        => $this->createMock(SessionInterface::class),
-            Slugify::class                 => new Slugify(),
+            SqlHelperInterface::class          => $sqlHelper,
+            FormValidatorInterface::class      => $this->createMock(FormValidatorInterface::class),
+            MailerInterface::class             => $this->createMock(MailerInterface::class),
+            TokenGeneratorInterface::class     => $this->createMock(TokenGeneratorInterface::class),
+            SessionInterface::class            => $this->createMock(SessionInterface::class),
+            RememberMeServiceInterface::class  => $this->createMock(RememberMeServiceInterface::class),
+            Slugify::class                     => new Slugify(),
         ];
     }
 
@@ -146,9 +148,10 @@ final class UserServiceProviderTest extends TestCase
         $emailEventModel        = new EmailEventModel($sql);
 
         $container = $this->makeContainer([
-            RegistrationEventModel::class => $registrationEventModel,
-            EmailEventModel::class        => $emailEventModel,
-            SessionInterface::class       => $session,
+            RegistrationEventModel::class     => $registrationEventModel,
+            EmailEventModel::class            => $emailEventModel,
+            SessionInterface::class           => $session,
+            RememberMeServiceInterface::class => $this->createMock(RememberMeServiceInterface::class),
         ]);
 
         $registrationThrottle = $definitions[RegistrationThrottleService::class]($container);

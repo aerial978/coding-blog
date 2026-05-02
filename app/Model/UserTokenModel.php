@@ -23,15 +23,6 @@ class UserTokenModel implements UserTokenModelInterface
     /** @var string The database table name for user tokens */
     protected string $table = 'user_token';
 
-    /**
-     * Constructor.
-     *
-     * Initializes the model with a SqlHelper instance for performing
-     * parameterized SQL queries safely and consistently.
-     *
-     * @param SqlHelperInterface $sqlHelper
-     *     Helper utility for preparing and executing SQL queries.
-     */
     public function __construct(
         private SqlHelperInterface $sqlHelper
     ) {
@@ -43,14 +34,7 @@ class UserTokenModel implements UserTokenModelInterface
      */
 
     /**
-     * Creates or updates a token for a given user and type.
-     *
-     * @param int $userId
-     * @param string $purpose
-     * @param string $hashBinary32
-     * @param \DateTimeInterface $expiresAt
-     *
-     * @return bool
+     * Creates or updates a token for a given user and purpose.
      */
     private function createToken(
         int $userId,
@@ -76,10 +60,10 @@ class UserTokenModel implements UserTokenModelInterface
         ";
 
         $params = [
-            ':user_id'       => $userId,
-            ':purpose'       => $purpose,
-            ':token_hash'    => $hashBinary32,
-            ':expires_at'    => $expiresAt->format('Y-m-d H:i:s'),
+            ':user_id'    => $userId,
+            ':purpose'    => $purpose,
+            ':token_hash' => $hashBinary32,
+            ':expires_at' => $expiresAt->format('Y-m-d H:i:s'),
         ];
 
         $st = $this->sqlHelper->request($sql, $params);
@@ -89,9 +73,6 @@ class UserTokenModel implements UserTokenModelInterface
 
     /**
      * Finds token + user context by hash and purpose.
-     *
-     * @param string $hashBinary32
-     * @param string $purpose
      *
      * @return array<string, mixed>|null
      */
@@ -123,30 +104,6 @@ class UserTokenModel implements UserTokenModelInterface
         return $row ?: null;
     }
 
-    public function activateByHash(string $hashBinary32): bool
-    {
-        $sql = "
-            UPDATE user u
-            JOIN {$this->table} t ON t.user_id = u.id
-            SET
-                u.status = 'active',
-                t.used    = 1,
-                t.used_at = NOW()
-            WHERE
-                t.token_hash = :hash
-                AND t.purpose = 'confirmation'
-                AND t.used = 0
-                AND t.expires_at > NOW()
-                AND u.status <> 'active'
-        ";
-
-        $st = $this->sqlHelper->request($sql, [
-            ':hash' => $hashBinary32,
-        ]);
-
-        return $st->rowCount() >= 1;
-    }
-
     /**
      * Returns true if the user already has an active (unused + not expired) token
      * for the given purpose.
@@ -171,7 +128,7 @@ class UserTokenModel implements UserTokenModelInterface
         return (bool) $st->fetchColumn();
     }
 
-    public function invalidatePasswordResetToken(int $userId): bool
+    private function invalidateActiveTokenByPurpose(int $userId, string $purpose): bool
     {
         $sql = "
             UPDATE {$this->table}
@@ -180,22 +137,65 @@ class UserTokenModel implements UserTokenModelInterface
                 used_at = NOW()
             WHERE
                 user_id = :user_id
-                AND purpose = 'password_reset'
+                AND purpose = :purpose
                 AND used = 0
                 AND expires_at > NOW()
         ";
 
         $st = $this->sqlHelper->request($sql, [
             ':user_id' => $userId,
+            ':purpose' => $purpose,
         ]);
 
         return $st->rowCount() >= 1;
     }
 
+    /* ============================================================
+     * Confirmation
+     * ============================================================
+     */
+
     public function createConfirmationToken(int $userId, string $hashBinary32, \DateTimeImmutable $expiresAt): bool
     {
         return $this->createToken($userId, 'confirmation', $hashBinary32, $expiresAt);
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findConfirmationContextByHash(string $hashBinary32): ?array
+    {
+        return $this->findContextByHashAndPurpose($hashBinary32, 'confirmation');
+    }
+
+    public function activateByHash(string $hashBinary32): bool
+    {
+        $sql = "
+            UPDATE user u
+            JOIN {$this->table} t ON t.user_id = u.id
+            SET
+                u.status = 'active',
+                t.used   = 1,
+                t.used_at = NOW()
+            WHERE
+                t.token_hash = :hash
+                AND t.purpose = 'confirmation'
+                AND t.used = 0
+                AND t.expires_at > NOW()
+                AND u.status <> 'active'
+        ";
+
+        $st = $this->sqlHelper->request($sql, [
+            ':hash' => $hashBinary32,
+        ]);
+
+        return $st->rowCount() >= 1;
+    }
+
+    /* ============================================================
+     * Password reset
+     * ============================================================
+     */
 
     public function createPasswordResetToken(int $userId, string $hashBinary32, \DateTimeImmutable $expiresAt): bool
     {
@@ -207,11 +207,14 @@ class UserTokenModel implements UserTokenModelInterface
         return $this->hasActiveUnusedToken($userId, 'password_reset');
     }
 
-    public function findConfirmationContextByHash(string $hashBinary32): ?array
+    public function invalidatePasswordResetToken(int $userId): bool
     {
-        return $this->findContextByHashAndPurpose($hashBinary32, 'confirmation');
+        return $this->invalidateActiveTokenByPurpose($userId, 'password_reset');
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function findPasswordResetContextByHash(string $hashBinary32): ?array
     {
         return $this->findContextByHashAndPurpose($hashBinary32, 'password_reset');
@@ -219,7 +222,6 @@ class UserTokenModel implements UserTokenModelInterface
 
     public function consumePasswordResetTokenAndUpdatePassword(string $hashBinary32, string $passwordHash): bool
     {
-        // Une seule requête : met à jour user + token (comme votre activateByHash)
         $sql = "
             UPDATE user u
             JOIN {$this->table} t ON t.user_id = u.id
@@ -240,5 +242,28 @@ class UserTokenModel implements UserTokenModelInterface
         ]);
 
         return $st->rowCount() >= 1;
+    }
+
+    /* ============================================================
+     * Remember me
+     * ============================================================
+     */
+
+    public function createRememberMeToken(int $userId, string $hashBinary32, \DateTimeImmutable $expiresAt): bool
+    {
+        return $this->createToken($userId, 'remember_me', $hashBinary32, $expiresAt);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findRememberMeContextByHash(string $hashBinary32): ?array
+    {
+        return $this->findContextByHashAndPurpose($hashBinary32, 'remember_me');
+    }
+
+    public function invalidateRememberMeToken(int $userId): bool
+    {
+        return $this->invalidateActiveTokenByPurpose($userId, 'remember_me');
     }
 }
