@@ -8,6 +8,7 @@ use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\MessageManager;
 use App\Http\Contract\ResponderInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
 use App\Security\Guard\Contract\RateLimitGuardInterface;
 use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
@@ -28,6 +29,7 @@ final class LoginPostHandler
         private HoneypotGuardInterface $honeypotGuard,
         private SubmissionDelayGuardInterface $submissionDelayGuard,
         private RateLimitGuardInterface $rateLimitGuard,
+        private RememberMeCookieManagerInterface $rememberMeManager,
     ) {
     }
 
@@ -36,8 +38,8 @@ final class LoginPostHandler
      */
     public function handle(array $form): void
     {
-        $email   = $this->strOrEmpty($form['email'] ?? null);
-        $context = $this->makeContext($email);
+        $identifier = $this->strOrEmpty($form['identifier'] ?? null);
+        $context    = $this->makeContext($identifier);
 
         /** @var array{
          *   form: array<string, mixed>,
@@ -109,7 +111,7 @@ final class LoginPostHandler
             'redirect'      => self::REDIRECT,
             'route_for_log' => '/login',
             'flash_type'    => 'error',
-            'put_old'       => ['email' => $email],
+            'put_old'       => ['identifier' => $identifier],
             'log_ctx'       => $context,
         ], $this->turnstileStepUp());
 
@@ -121,21 +123,22 @@ final class LoginPostHandler
         $result = $this->securityService->login($form);
 
         if (!empty($result['ok'])) {
+            $this->handleRememberMe($result);
             $this->replySuccess();
             return;
         }
 
-        $this->replyFailure($result, $email);
+        $this->replyFailure($result, $identifier, $form);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function makeContext(string $email): array
+    private function makeContext(string $identifier): array
     {
         return [
-            'form'  => self::FORM_ID,
-            'email' => $email !== '' ? $email : null,
+            'form'       => self::FORM_ID,
+            'identifier' => $identifier !== '' ? $identifier : null,
         ];
     }
 
@@ -162,11 +165,12 @@ final class LoginPostHandler
 
     /**
      * @param array<string, mixed> $result
+     * @param array<string, mixed> $form
      */
-    private function replyFailure(array $result, string $email): void
+    private function replyFailure(array $result, string $identifier, array $form): void
     {
         $this->flashLoginErrors($result);
-        $this->flashOldLoginInput($result, $email);
+        $this->flashOldLoginInput($result, $identifier, $form);
         $this->responder->redirect(self::REDIRECT);
     }
 
@@ -191,8 +195,9 @@ final class LoginPostHandler
 
     /**
      * @param array<string, mixed> $result
+     * @param array<string, mixed> $form
      */
-    private function flashOldLoginInput(array $result, string $email): void
+    private function flashOldLoginInput(array $result, string $identifier, array $form): void
     {
         $old = $result['old'] ?? null;
 
@@ -201,7 +206,41 @@ final class LoginPostHandler
             return;
         }
 
-        $this->flash->put('old', ['email' => $email]);
+        $rememberMe = $this->normalizeRememberMeValue($form);
+
+        $fallbackOld = [
+            'identifier' => $identifier,
+        ];
+
+        if ($rememberMe) {
+            $fallbackOld['remember_me'] = '1';
+        }
+
+        $this->flash->put('old', $fallbackOld);
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function handleRememberMe(array $result): void
+    {
+        $token = $result['remember_me_token'] ?? null;
+
+        if (!is_string($token) || $token === '') {
+            return;
+        }
+
+        $this->rememberMeManager->createCookie($token);
+    }
+
+    /**
+     * @param array<string, mixed> $form
+     */
+    private function normalizeRememberMeValue(array $form): bool
+    {
+        $value = $form['remember_me'] ?? null;
+
+        return $value === '1' || $value === 'on';
     }
 
     private function strOrEmpty(mixed $value): string

@@ -23,14 +23,16 @@ final class SessionAuthChecker implements AuthCheckerInterface
     {
     }
 
-    public function isAuthenticated(Request $request): bool
+    // @SuppressWarnings(PHPMD.UnusedFormalParameter)
+    public function isAuthenticated(Request $_request): bool
     {
         $user = $this->session->get('user');
         return is_array($user) && isset($user['id']);
     }
 
     /** @return list<string> */
-    public function getRoles(Request $request): array
+    // @SuppressWarnings(PHPMD.UnusedFormalParameter)
+    public function getRoles(Request $_request): array
     {
         $user = $this->session->get('user');
         if (!is_array($user)) {
@@ -52,7 +54,8 @@ final class SessionAuthChecker implements AuthCheckerInterface
         return $out;
     }
 
-    public function getUserId(Request $request): ?int
+    // @SuppressWarnings(PHPMD.UnusedFormalParameter)
+    public function getUserId(Request $_request): ?int
     {
         $user = $this->session->get('user');
         return (is_array($user) && isset($user['id']) && is_int($user['id']))

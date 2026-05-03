@@ -10,9 +10,13 @@ interface UserTokenModelInterface
 
     public function createPasswordResetToken(int $userId, string $tokenHash, \DateTimeImmutable $expiresAt): bool;
 
+    public function createRememberMeToken(int $userId, string $tokenHash, \DateTimeImmutable $expiresAt): bool;
+
     public function hasActiveUnusedPasswordResetToken(int $userId): bool;
 
     public function invalidatePasswordResetToken(int $userId): bool;
+
+    public function invalidateRememberMeToken(int $userId): bool;
 
     /**
      * @return array<string, mixed>|null
@@ -23,6 +27,11 @@ interface UserTokenModelInterface
      * @return array<string, mixed>|null
      */
     public function findPasswordResetContextByHash(string $hashBinary32): ?array;
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findRememberMeContextByHash(string $hashBinary32): ?array;
 
     public function activateByHash(string $hashBinary32): bool;
 

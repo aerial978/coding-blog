@@ -23,6 +23,7 @@ use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Service\Security\Contract\LogoutServiceInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\ForgotPasswordService;
@@ -175,7 +176,10 @@ final class UserServiceProvider
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
 
-                return new LogoutService($session);
+                /** @var RememberMeServiceInterface $rememberMeService */
+                $rememberMeService = $container->get(RememberMeServiceInterface::class);
+
+                return new LogoutService($session, $rememberMeService);
             },
         ];
     }
@@ -294,15 +298,21 @@ final class UserServiceProvider
             LoginService::class => static function (ContainerInterface $container): LoginService {
                 /** @var FormValidatorInterface $validator */
                 $validator = $container->get(FormValidatorInterface::class);
+
                 /** @var UserModelInterface $userModel */
                 $userModel = $container->get(UserModelInterface::class);
+
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
+
+                /** @var RememberMeServiceInterface $rememberMe */
+                $rememberMe = $container->get(RememberMeServiceInterface::class);
 
                 return new LoginService(
                     $validator,
                     $userModel,
                     $session,
+                    $rememberMe,
                 );
             },
         ];

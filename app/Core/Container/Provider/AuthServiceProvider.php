@@ -22,6 +22,7 @@ use App\Http\Contract\ResponderInterface;
 use App\Log\LogContextNormalizer;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Contract\TurnstileValidatorInterface;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
@@ -349,6 +350,8 @@ final class AuthServiceProvider
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
+                /** @var RememberMeCookieManagerInterface $rememberMe */
+                $rememberMe = $container->get(RememberMeCookieManagerInterface::class);
 
                 return new LoginPostHandler(
                     $securityService,
@@ -357,6 +360,7 @@ final class AuthServiceProvider
                     $honeypotGuard,
                     $submissionDelayGuard,
                     $rateLimitGuard,
+                    $rememberMe,
                 );
             },
         ];
@@ -496,11 +500,14 @@ final class AuthServiceProvider
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
+                /** @var RememberMeCookieManagerInterface $rememberMeManager */
+                $rememberMeManager = $container->get(RememberMeCookieManagerInterface::class);
 
                 return new LogoutHandler(
                     $securityService,
                     $flash,
                     $responder,
+                    $rememberMeManager,
                 );
             },
         ];

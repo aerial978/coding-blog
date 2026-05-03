@@ -8,6 +8,7 @@ use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\MessageManager;
 use App\Http\Contract\ResponderInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 
 final class LogoutHandler
@@ -18,12 +19,15 @@ final class LogoutHandler
         private SecurityServiceInterface $securityService,
         private FlashInterface $flash,
         private ResponderInterface $responder,
+        private RememberMeCookieManagerInterface $rememberMeManager,
     ) {
     }
 
     public function handle(): void
     {
         $this->securityService->logout();
+
+        $this->rememberMeManager->expireCookie();
 
         $this->flash->add(
             'success',

@@ -23,6 +23,7 @@ use App\Http\Contract\ResponderInterface;
 use App\Log\LogContextNormalizer;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Contract\TurnstileValidatorInterface;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
@@ -80,6 +81,7 @@ final class AuthServiceProviderTest extends TestCase
             FlashInterface::class                    => $this->createMock(FlashInterface::class),
             ResponderInterface::class                => $this->createMock(ResponderInterface::class),
             CsrfTokenInterface::class                => $this->createMock(CsrfTokenInterface::class),
+            RememberMeCookieManagerInterface::class  => $this->createMock(RememberMeCookieManagerInterface::class),
             HoneypotValidatorInterface::class        => $this->createMock(HoneypotValidatorInterface::class),
             SubmissionDelayValidatorInterface::class => $this->createMock(SubmissionDelayValidatorInterface::class),
             TurnstileValidatorInterface::class       => $this->createMock(TurnstileValidatorInterface::class),

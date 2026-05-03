@@ -8,6 +8,7 @@ use App\Core\Contract\SessionInterface;
 use App\Core\ErrorCode;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\LoginService;
 use App\Validation\Contract\FormValidatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -18,6 +19,7 @@ final class LoginServiceTest extends TestCase
     private FormValidatorInterface&MockObject $validator;
     private UserModelInterface&MockObject $userModel;
     private SessionInterface&MockObject $session;
+    private RememberMeServiceInterface&MockObject $rememberMeService;
 
     private LoginService $service;
 
@@ -28,14 +30,16 @@ final class LoginServiceTest extends TestCase
         $_SERVER['REMOTE_ADDR']     = '127.0.0.1';
         $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit';
 
-        $this->validator = $this->createMock(FormValidatorInterface::class);
-        $this->userModel = $this->createMock(UserModelInterface::class);
-        $this->session   = $this->createMock(SessionInterface::class);
+        $this->validator         = $this->createMock(FormValidatorInterface::class);
+        $this->userModel         = $this->createMock(UserModelInterface::class);
+        $this->session           = $this->createMock(SessionInterface::class);
+        $this->rememberMeService = $this->createMock(RememberMeServiceInterface::class);
 
         $this->service = new LoginService(
             $this->validator,
             $this->userModel,
             $this->session,
+            $this->rememberMeService,
         );
     }
 
@@ -175,6 +179,10 @@ final class LoginServiceTest extends TestCase
                 'roles' => ['USER'],
             ]);
 
+        $this->rememberMeService
+            ->expects($this->never())
+            ->method('createRememberMeToken');
+
         $result = $this->service->login($form);
 
         $this->assertSame(['ok' => true], $result);
@@ -203,6 +211,10 @@ final class LoginServiceTest extends TestCase
         $this->session->method('regenerateAndDeleteOld');
         $this->session->method('set');
 
+        $this->rememberMeService
+            ->expects($this->never())
+            ->method('createRememberMeToken');
+
         $result = $this->service->login($form);
 
         $this->assertSame(['ok' => true], $result);
@@ -221,5 +233,143 @@ final class LoginServiceTest extends TestCase
 
         $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $result['errors']);
         $this->assertSame(['identifier' => 'john@example.com'], $result['old']);
+    }
+
+    public function testLoginSuccessWithRememberMeReturnsRememberMeToken(): void
+    {
+        $form = [
+            'identifier'  => 'john@example.com',
+            'password'    => 'Password123!',
+            'remember_me' => '1',
+        ];
+
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
+        $user->setStatus('active');
+
+        $this->validator->method('validateLogin')->willReturn([]);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findAuthByEmail')
+            ->with('john@example.com')
+            ->willReturn($user);
+
+        $this->session
+            ->expects($this->once())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->once())
+            ->method('set')
+            ->with('user', [
+                'id'    => 42,
+                'roles' => ['USER'],
+            ]);
+
+        $this->rememberMeService
+            ->expects($this->once())
+            ->method('createRememberMeToken')
+            ->with(42)
+            ->willReturn('raw-token');
+
+        $result = $this->service->login($form);
+
+        $this->assertSame([
+            'ok'                => true,
+            'remember_me_token' => 'raw-token',
+        ], $result);
+    }
+
+    public function testLoginSuccessWithRememberMeOnReturnsRememberMeToken(): void
+    {
+        $form = [
+            'identifier'  => 'john@example.com',
+            'password'    => 'Password123!',
+            'remember_me' => 'on',
+        ];
+
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
+        $user->setStatus('active');
+
+        $this->validator->method('validateLogin')->willReturn([]);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findAuthByEmail')
+            ->with('john@example.com')
+            ->willReturn($user);
+
+        $this->session
+            ->expects($this->once())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->once())
+            ->method('set')
+            ->with('user', [
+                'id'    => 42,
+                'roles' => ['USER'],
+            ]);
+
+        $this->rememberMeService
+            ->expects($this->once())
+            ->method('createRememberMeToken')
+            ->with(42)
+            ->willReturn('raw-token');
+
+        $result = $this->service->login($form);
+
+        $this->assertSame([
+            'ok'                => true,
+            'remember_me_token' => 'raw-token',
+        ], $result);
+    }
+
+    public function testLoginSuccessWithRememberMeReturnsOkWhenTokenCreationFails(): void
+    {
+        $form = [
+            'identifier'  => 'john@example.com',
+            'password'    => 'Password123!',
+            'remember_me' => '1',
+        ];
+
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
+        $user->setStatus('active');
+
+        $this->validator->method('validateLogin')->willReturn([]);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findAuthByEmail')
+            ->with('john@example.com')
+            ->willReturn($user);
+
+        $this->session
+            ->expects($this->once())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->once())
+            ->method('set')
+            ->with('user', [
+                'id'    => 42,
+                'roles' => ['USER'],
+            ]);
+
+        $this->rememberMeService
+            ->expects($this->once())
+            ->method('createRememberMeToken')
+            ->with(42)
+            ->willReturn(null);
+
+        $result = $this->service->login($form);
+
+        $this->assertSame(['ok' => true], $result);
     }
 }

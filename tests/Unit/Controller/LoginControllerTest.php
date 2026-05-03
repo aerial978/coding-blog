@@ -13,6 +13,7 @@ use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
 use App\Security\Guard\Contract\RateLimitGuardInterface;
@@ -34,6 +35,7 @@ final class LoginControllerTest extends TestCase
     private HoneypotGuardInterface&MockObject $honeypotGuard;
     private SubmissionDelayGuardInterface&MockObject $submissionDelayGuard;
     private RateLimitGuardInterface&MockObject $rateLimitGuard;
+    private RememberMeCookieManagerInterface&MockObject $rememberMeCookieManager;
 
     private LoginController $controller;
 
@@ -53,6 +55,7 @@ final class LoginControllerTest extends TestCase
         $this->honeypotGuard            = $this->createMock(HoneypotGuardInterface::class);
         $this->submissionDelayGuard     = $this->createMock(SubmissionDelayGuardInterface::class);
         $this->rateLimitGuard           = $this->createMock(RateLimitGuardInterface::class);
+        $this->rememberMeCookieManager  = $this->createMock(RememberMeCookieManagerInterface::class);
 
         $getHandler = new LoginGetHandler(
             $this->view,
@@ -70,6 +73,7 @@ final class LoginControllerTest extends TestCase
             $this->honeypotGuard,
             $this->submissionDelayGuard,
             $this->rateLimitGuard,
+            $this->rememberMeCookieManager,
         );
 
         $this->controller = new LoginController(
@@ -161,5 +165,9 @@ final class LoginControllerTest extends TestCase
             ->method('redirect');
 
         $this->controller->login();
+
+        $this->rememberMeCookieManager
+            ->expects($this->never())
+            ->method('createCookie');
     }
 }

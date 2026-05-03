@@ -7,16 +7,17 @@ namespace App\Service\Security\Contract;
 interface LoginServiceInterface
 {
     /**
-     * Attempts to authenticate a user.
-     *
-     * @param array<string, mixed> $credentials
-     *
-     * @return array{
-     *   ok?: bool,
-     *   error?: string,
-     *   errors?: list<string>,
-     *   old?: array<string, mixed>
-     * }
-     */
+    * Attempts to authenticate a user.
+    *
+    * @param array<string, mixed> $credentials
+    *
+    * @return array{
+    *   ok?: true,
+    *   remember_me_token?: string,
+    *   error?: string,
+    *   errors?: list<string|int>,
+    *   old?: array{identifier:string, remember_me?: string}
+    * }
+    */
     public function login(array $credentials): array;
 }

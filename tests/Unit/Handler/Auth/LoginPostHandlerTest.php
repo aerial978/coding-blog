@@ -7,6 +7,7 @@ namespace Tests\Unit\Handler\Auth;
 use App\Core\Contract\FlashInterface;
 use App\Handler\Auth\LoginPostHandler;
 use App\Http\Contract\ResponderInterface;
+use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
 use App\Security\Guard\Contract\RateLimitGuardInterface;
 use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
@@ -22,6 +23,7 @@ final class LoginPostHandlerTest extends TestCase
     private HoneypotGuardInterface&MockObject $honeypotGuard;
     private SubmissionDelayGuardInterface&MockObject $submissionDelayGuard;
     private RateLimitGuardInterface&MockObject $rateLimitGuard;
+    private RememberMeCookieManagerInterface&MockObject $rememberMeCookieManager;
 
     private LoginPostHandler $handler;
 
@@ -29,12 +31,13 @@ final class LoginPostHandlerTest extends TestCase
     {
         parent::setUp();
 
-        $this->securityService      = $this->createMock(SecurityServiceInterface::class);
-        $this->flash                = $this->createMock(FlashInterface::class);
-        $this->responder            = $this->createMock(ResponderInterface::class);
-        $this->honeypotGuard        = $this->createMock(HoneypotGuardInterface::class);
-        $this->submissionDelayGuard = $this->createMock(SubmissionDelayGuardInterface::class);
-        $this->rateLimitGuard       = $this->createMock(RateLimitGuardInterface::class);
+        $this->securityService         = $this->createMock(SecurityServiceInterface::class);
+        $this->flash                   = $this->createMock(FlashInterface::class);
+        $this->responder               = $this->createMock(ResponderInterface::class);
+        $this->honeypotGuard           = $this->createMock(HoneypotGuardInterface::class);
+        $this->submissionDelayGuard    = $this->createMock(SubmissionDelayGuardInterface::class);
+        $this->rateLimitGuard          = $this->createMock(RateLimitGuardInterface::class);
+        $this->rememberMeCookieManager = $this->createMock(RememberMeCookieManagerInterface::class);
 
         $this->handler = new LoginPostHandler(
             $this->securityService,
@@ -43,6 +46,7 @@ final class LoginPostHandlerTest extends TestCase
             $this->honeypotGuard,
             $this->submissionDelayGuard,
             $this->rateLimitGuard,
+            $this->rememberMeCookieManager,
         );
     }
 
@@ -52,8 +56,8 @@ final class LoginPostHandlerTest extends TestCase
     private function validForm(): array
     {
         return [
-            'email'    => 'john@example.com',
-            'password' => 'StrongPassword123!',
+            'identifier'    => 'john@example.com',
+            'password'      => 'StrongPassword123!',
         ];
     }
 
@@ -177,6 +181,10 @@ final class LoginPostHandlerTest extends TestCase
             ->method('redirect')
             ->with('/coding-blog');
 
+        $this->rememberMeCookieManager
+            ->expects($this->never())
+            ->method('createCookie');
+
         $this->handler->handle($form);
     }
 
@@ -207,7 +215,7 @@ final class LoginPostHandlerTest extends TestCase
             ->expects($this->once())
             ->method('put')
             ->with('old', [
-                'email' => 'john@example.com',
+                'identifier' => 'john@example.com',
             ]);
 
         $this->responder
@@ -242,7 +250,7 @@ final class LoginPostHandlerTest extends TestCase
             ->expects($this->once())
             ->method('put')
             ->with('old', [
-                'email' => 'john@example.com',
+                'identifier' => 'john@example.com',
             ]);
 
         $this->responder
@@ -261,7 +269,7 @@ final class LoginPostHandlerTest extends TestCase
         $result = [
             'errors' => ['ERR_1'],
             'old'    => [
-                'email' => 'custom@example.com',
+                'identifier' => 'custom@example.com',
             ],
         ];
 
@@ -283,13 +291,131 @@ final class LoginPostHandlerTest extends TestCase
             ->expects($this->once())
             ->method('put')
             ->with('old', [
-                'email' => 'custom@example.com',
+                'identifier' => 'custom@example.com',
             ]);
 
         $this->responder
             ->expects($this->once())
             ->method('redirect')
             ->with('/coding-blog/login');
+
+        $this->handler->handle($form);
+    }
+
+    public function testHandleCreatesRememberMeCookieWhenLoginReturnsRememberMeToken(): void
+    {
+        $form = [
+            'identifier'  => 'john@example.com',
+            'password'    => 'StrongPassword123!',
+            'remember_me' => '1',
+        ];
+
+        $this->allowAllGuards();
+
+        $this->securityService
+            ->expects($this->once())
+            ->method('login')
+            ->with($form)
+            ->willReturn([
+                'ok'                => true,
+                'remember_me_token' => 'raw-token',
+            ]);
+
+        $this->rememberMeCookieManager
+            ->expects($this->once())
+            ->method('createCookie')
+            ->with('raw-token');
+
+        $this->flash
+            ->expects($this->once())
+            ->method('put')
+            ->with('old', []);
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('success', 'Connexion réussie.');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/coding-blog');
+
+        $this->handler->handle($form);
+    }
+
+    public function testHandleKeepsRememberMeOldValueWhenLoginFailsWithoutResultOld(): void
+    {
+        $form = [
+        'identifier'  => 'john@example.com',
+        'password'    => 'StrongPassword123!',
+        'remember_me' => '1',
+        ];
+
+        $this->allowAllGuards();
+
+        $this->securityService
+        ->expects($this->once())
+        ->method('login')
+        ->with($form)
+        ->willReturn([
+            'ok' => false,
+        ]);
+
+        $this->flash
+        ->expects($this->once())
+        ->method('add')
+        ->with('error', 'Échec de connexion.');
+
+        $this->flash
+        ->expects($this->once())
+        ->method('put')
+        ->with('old', [
+            'identifier'  => 'john@example.com',
+            'remember_me' => '1',
+        ]);
+
+        $this->responder
+        ->expects($this->once())
+        ->method('redirect')
+        ->with('/coding-blog/login');
+
+        $this->handler->handle($form);
+    }
+
+    public function testHandleDoesNotCreateRememberMeCookieWhenTokenIsEmpty(): void
+    {
+        $form = $this->validForm();
+
+        $this->allowAllGuards();
+
+        $this->securityService
+        ->expects($this->once())
+        ->method('login')
+        ->with($form)
+        ->willReturn([
+            'ok'                => true,
+            'remember_me_token' => '',
+        ]);
+
+        $this->rememberMeCookieManager
+        ->expects($this->never())
+        ->method('createCookie');
+
+        $this->flash
+        ->expects($this->once())
+        ->method('put')
+        ->with('old', []);
+
+        $this->flash
+        ->expects($this->once())
+        ->method('add')
+        ->with('success', 'Connexion réussie.');
+
+        $this->responder
+        ->expects($this->once())
+        ->method('redirect')
+        ->with('/coding-blog');
 
         $this->handler->handle($form);
     }

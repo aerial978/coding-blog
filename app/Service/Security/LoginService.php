@@ -10,6 +10,7 @@ use App\Core\Logger;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
 use App\Service\Security\Contract\LoginServiceInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Validation\Contract\FormValidatorInterface;
 
 final class LoginService implements LoginServiceInterface
@@ -18,6 +19,7 @@ final class LoginService implements LoginServiceInterface
         private FormValidatorInterface $validator,
         private UserModelInterface $userModel,
         private SessionInterface $session,
+        private RememberMeServiceInterface $rememberMeService,
         // Extension prévue : throttle dédié login
         // private LoginThrottleServiceInterface $throttle,
     ) {
@@ -27,8 +29,9 @@ final class LoginService implements LoginServiceInterface
      * @param array<string,mixed> $form
      * @return array{
      *   ok?: true,
+     *   remember_me_token?: string,
      *   errors?: list<string|int>,
-     *   old?: array{identifier:string}
+     *   old?: array{identifier:string, remember_me?: string}
      * }
      */
     public function login(array $form): array
@@ -54,15 +57,16 @@ final class LoginService implements LoginServiceInterface
      * @param array<string,mixed> $form
      * @return array{
      *   ok?: true,
+     *   remember_me_token?: string,
      *   errors?: list<string|int>,
-     *   old?: array{identifier:string}
+     *   old?: array{identifier:string, remember_me?: string}
      * }
      */
     private function doLoginFlow(array $form): array
     {
         $channel = 'auth';
 
-        [$identifier, $password, $old] = $this->sanitizeLoginForm($form);
+        [$identifier, $password, $rememberMe, $old] = $this->sanitizeLoginForm($form);
 
         $errors = $this->validateLoginForm($identifier, $password);
         if ($errors !== []) {
@@ -96,12 +100,12 @@ final class LoginService implements LoginServiceInterface
 
         $this->openAuthenticatedSession($userId, $client['ip'], $channel);
 
-        return ['ok' => true];
+        return $this->buildSuccessResult($rememberMe, $userId, $client['ip'], $channel);
     }
 
     /**
-     * @param array{identifier:string} $old
-     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
      */
     private function failIfUserMissing(?UserEntity $user, string $ip, array $old, string $channel): ?array
     {
@@ -118,8 +122,8 @@ final class LoginService implements LoginServiceInterface
     }
 
     /**
-     * @param array{identifier:string} $old
-     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
      */
     private function failIfPasswordInvalid(UserEntity $user, string $password, string $ip, array $old, string $channel): ?array
     {
@@ -139,8 +143,8 @@ final class LoginService implements LoginServiceInterface
     }
 
     /**
-     * @param array{identifier:string} $old
-     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
      */
     private function failIfUserInactive(UserEntity $user, string $ip, array $old, string $channel): ?array
     {
@@ -161,8 +165,8 @@ final class LoginService implements LoginServiceInterface
     }
 
     /**
-     * @param array{identifier:string} $old
-     * @return array{errors:list<string|int>, old:array{identifier:string}}|null
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
      */
     private function failIfUserIdInvalid(int $userId, string $ip, array $old, string $channel): ?array
     {
@@ -203,12 +207,20 @@ final class LoginService implements LoginServiceInterface
 
     /**
      * @param array<string,mixed> $form
-     * @return array{identifier:string}
+     * @return array{identifier:string, remember_me?: string}
      */
     private function safeOldFromForm(array $form): array
     {
         $identifier = is_string($form['identifier'] ?? null) ? trim($form['identifier']) : '';
-        return ['identifier' => $identifier];
+        $rememberMe = $this->normalizeRememberMeValue($form);
+
+        $old = ['identifier' => $identifier];
+
+        if ($rememberMe) {
+            $old['remember_me'] = '1';
+        }
+
+        return $old;
     }
 
     /**
@@ -241,14 +253,31 @@ final class LoginService implements LoginServiceInterface
 
     /**
      * @param array<string,mixed> $form
-     * @return array{0:string,1:string,2:array{identifier:string}}
+     */
+    private function normalizeRememberMeValue(array $form): bool
+    {
+        $value = $form['remember_me'] ?? null;
+
+        return $value === '1' || $value === 'on';
+    }
+
+    /**
+     * @param array<string,mixed> $form
+     * @return array{0:string,1:string,2:bool,3:array{identifier:string, remember_me?: string}}
      */
     private function sanitizeLoginForm(array $form): array
     {
         $identifier = $this->trimmedStringField($form, 'identifier');
         $password   = $this->rawStringField($form, 'password');
+        $rememberMe = $this->normalizeRememberMeValue($form);
 
-        return [$identifier, $password, ['identifier' => $identifier]];
+        $old = ['identifier' => $identifier];
+
+        if ($rememberMe) {
+            $old['remember_me'] = '1';
+        }
+
+        return [$identifier, $password, $rememberMe, $old];
     }
 
     /**
@@ -303,5 +332,32 @@ final class LoginService implements LoginServiceInterface
     private function extractUserStatus(UserEntity $user): ?string
     {
         return $user->getStatus();
+    }
+
+    /**
+     * @return array{ok:true, remember_me_token?: string}
+     */
+    private function buildSuccessResult(bool $rememberMe, int $userId, string $ip, string $channel): array
+    {
+        if (!$rememberMe) {
+            return ['ok' => true];
+        }
+
+        $rememberMeToken = $this->rememberMeService->createRememberMeToken($userId);
+
+        if ($rememberMeToken === null) {
+            Logger::logCodeAndGetMessage($channel, 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, [
+                'reason'  => 'remember_me_token_creation_failed',
+                'user_id' => $userId,
+                'ip'      => $ip,
+            ]);
+
+            return ['ok' => true];
+        }
+
+        return [
+            'ok'                => true,
+            'remember_me_token' => $rememberMeToken,
+        ];
     }
 }
