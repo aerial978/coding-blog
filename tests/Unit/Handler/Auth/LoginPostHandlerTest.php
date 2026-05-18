@@ -419,4 +419,44 @@ final class LoginPostHandlerTest extends TestCase
 
         $this->handler->handle($form);
     }
+
+    public function testHandleRedirectsTo2faWhenLoginRequiresTwoFactor(): void
+    {
+        $form = [
+            'identifier'  => 'john@example.com',
+            'password'    => 'StrongPassword123!',
+            'remember_me' => '1',
+        ];
+
+        $this->allowAllGuards();
+
+        $this->securityService
+            ->expects($this->once())
+            ->method('login')
+            ->with($form)
+            ->willReturn([
+                'two_factor_required' => true,
+            ]);
+
+        $this->rememberMeCookieManager
+            ->expects($this->never())
+            ->method('createCookie');
+
+        $this->flash
+            ->expects($this->once())
+            ->method('put')
+            ->with('old', []);
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('info', 'Un code de vérification vous a été envoyé par e-mail.');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/coding-blog/login/2fa');
+
+        $this->handler->handle($form);
+    }
 }

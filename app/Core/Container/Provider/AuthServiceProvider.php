@@ -37,6 +37,18 @@ use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Support\ErrorListNormalizer;
 use Psr\Container\ContainerInterface;
+use App\Core\Contract\SessionInterface;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Security\Email2faPendingSession;
+use App\Core\Mail\MailerInterface;
+use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
+use App\Service\Security\Email2faService;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
+use App\Model\Contract\UserModelInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 
 final class AuthServiceProvider
 {
@@ -48,9 +60,11 @@ final class AuthServiceProvider
         return array_merge(
             self::getGuardDefinitions(),
             self::getGuardBindings(),
+            self::getEmail2faDefinitions(),
             self::getRegisterHandlerDefinitions(),
             self::getResendConfirmationHandlerDefinitions(),
             self::getLoginHandlerDefinitions(),
+            self::getEmail2faHandlerDefinitions(),
             self::getForgotPasswordHandlerDefinitions(),
             self::getResetPasswordHandlerDefinitions(),
             self::getLogoutHandlerDefinitions(),
@@ -185,6 +199,49 @@ final class AuthServiceProvider
                 $guard = $container->get(TurnstileGuard::class);
 
                 return $guard;
+            },
+        ];
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getEmail2faDefinitions(): array
+    {
+        return [
+            Email2faPendingSession::class => static function (ContainerInterface $container): Email2faPendingSession {
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                return new Email2faPendingSession($session);
+            },
+
+            Email2faPendingSessionInterface::class => static function (
+                ContainerInterface $container
+            ): Email2faPendingSessionInterface {
+                /** @var Email2faPendingSessionInterface $pendingSession */
+                $pendingSession = $container->get(Email2faPendingSession::class);
+
+                return $pendingSession;
+            },
+
+            Email2faService::class => static function (ContainerInterface $container): Email2faService {
+                /** @var Email2faChallengeModelInterface $challengeModel */
+                $challengeModel = $container->get(Email2faChallengeModelInterface::class);
+
+                /** @var MailerInterface $mailer */
+                $mailer = $container->get(MailerInterface::class);
+
+                return new Email2faService($challengeModel, $mailer);
+            },
+
+            Email2faServiceInterface::class => static function (
+                ContainerInterface $container
+            ): Email2faServiceInterface {
+                /** @var Email2faServiceInterface $service */
+                $service = $container->get(Email2faService::class);
+
+                return $service;
             },
         ];
     }
@@ -508,6 +565,115 @@ final class AuthServiceProvider
                     $flash,
                     $responder,
                     $rememberMeManager,
+                );
+            },
+        ];
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getEmail2faHandlerDefinitions(): array
+    {
+        return [
+            Email2faGetHandler::class => static function (ContainerInterface $container): Email2faGetHandler {
+                /** @var View $view */
+                $view = $container->get(View::class);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+                /** @var HoneypotValidatorInterface $honeypot */
+                $honeypot = $container->get(HoneypotValidatorInterface::class);
+                /** @var SubmissionDelayValidatorInterface $submissionDelay */
+                $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
+                /** @var Email2faPendingSessionInterface $pendingSession */
+                $pendingSession = $container->get(Email2faPendingSessionInterface::class);
+
+                return new Email2faGetHandler(
+                    $view,
+                    $flash,
+                    $responder,
+                    $csrf,
+                    $honeypot,
+                    $submissionDelay,
+                    $pendingSession,
+                );
+            },
+
+            Email2faPostHandler::class => static function (ContainerInterface $container): Email2faPostHandler {
+                /** @var Email2faServiceInterface $email2faService */
+                $email2faService = $container->get(Email2faServiceInterface::class);
+                /** @var Email2faPendingSessionInterface $pendingSession */
+                $pendingSession = $container->get(Email2faPendingSessionInterface::class);
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+                /** @var HoneypotGuardInterface $honeypotGuard */
+                $honeypotGuard = $container->get(HoneypotGuardInterface::class);
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+                /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
+                $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
+                /** @var RateLimitGuardInterface $rateLimitGuard */
+                $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
+                /** @var RememberMeServiceInterface $rememberMeService */
+                $rememberMeService = $container->get(RememberMeServiceInterface::class);
+                /** @var RememberMeCookieManagerInterface $rememberMeManager */
+                $rememberMeManager = $container->get(RememberMeCookieManagerInterface::class);
+
+                return new Email2faPostHandler(
+                    $email2faService,
+                    $pendingSession,
+                    $session,
+                    $flash,
+                    $responder,
+                    $csrf,
+                    $honeypotGuard,
+                    $submissionDelayGuard,
+                    $rateLimitGuard,
+                    $rememberMeService,
+                    $rememberMeManager,
+                );
+            },
+
+            Email2faResendPostHandler::class => static function (
+                ContainerInterface $container
+            ): Email2faResendPostHandler {
+                /** @var Email2faServiceInterface $email2faService */
+                $email2faService = $container->get(Email2faServiceInterface::class);
+                /** @var Email2faPendingSessionInterface $pendingSession */
+                $pendingSession = $container->get(Email2faPendingSessionInterface::class);
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+                /** @var HoneypotGuardInterface $honeypotGuard */
+                $honeypotGuard = $container->get(HoneypotGuardInterface::class);
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+                /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
+                $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
+                /** @var RateLimitGuardInterface $rateLimitGuard */
+                $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
+
+                return new Email2faResendPostHandler(
+                    $email2faService,
+                    $pendingSession,
+                    $userModel,
+                    $flash,
+                    $responder,
+                    $csrf,
+                    $honeypotGuard,
+                    $submissionDelayGuard,
+                    $rateLimitGuard,
                 );
             },
         ];

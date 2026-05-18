@@ -10,6 +10,7 @@ use App\Controller\LogoutController;
 use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
+use App\Controller\Email2faController;
 use App\Core\Router;
 
 return [
@@ -19,6 +20,7 @@ return [
         '/confirm-account'     => [ConfirmAccountController::class, 'confirmAccount'],
         '/resend-confirmation' => [ResendConfirmationController::class, 'resendConfirmation'],
         '/login'               => [LoginController::class, 'login'],
+        '/login/2fa'           => [Email2faController::class, 'index'],
         '/forgot-password'     => [ForgotPasswordController::class, 'forgotPassword'],
         '/reset-password'      => [ResetPasswordController::class, 'resetPassword'],
         '/debug/whoami'        => [DebugController::class, 'whoami'],
@@ -28,6 +30,8 @@ return [
         '/register'            => [RegisterController::class, 'register'],
         '/resend-confirmation' => [ResendConfirmationController::class, 'resendConfirmation'],
         '/login'               => [LoginController::class, 'login'],
+        '/login/2fa'           => [Email2faController::class, 'verify'],
+        '/login/2fa/resend'    => [Email2faController::class, 'resend'],
         '/logout'              => [LogoutController::class, 'logout'],
         '/forgot-password'     => [ForgotPasswordController::class, 'forgotPassword'],
         '/reset-password'      => [ResetPasswordController::class, 'resetPassword'],

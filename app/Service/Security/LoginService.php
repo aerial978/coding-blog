@@ -12,6 +12,8 @@ use App\Model\Entity\UserEntity;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Validation\Contract\FormValidatorInterface;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
 
 final class LoginService implements LoginServiceInterface
 {
@@ -20,6 +22,8 @@ final class LoginService implements LoginServiceInterface
         private UserModelInterface $userModel,
         private SessionInterface $session,
         private RememberMeServiceInterface $rememberMeService,
+        private Email2faServiceInterface $email2faService,
+        private Email2faPendingSessionInterface $email2faPendingSession,
         // Extension prévue : throttle dédié login
         // private LoginThrottleServiceInterface $throttle,
     ) {
@@ -29,6 +33,7 @@ final class LoginService implements LoginServiceInterface
      * @param array<string,mixed> $form
      * @return array{
      *   ok?: true,
+     *   two_factor_required?: true,
      *   remember_me_token?: string,
      *   errors?: list<string|int>,
      *   old?: array{identifier:string, remember_me?: string}
@@ -57,6 +62,7 @@ final class LoginService implements LoginServiceInterface
      * @param array<string,mixed> $form
      * @return array{
      *   ok?: true,
+     *   two_factor_required?: true,
      *   remember_me_token?: string,
      *   errors?: list<string|int>,
      *   old?: array{identifier:string, remember_me?: string}
@@ -96,6 +102,10 @@ final class LoginService implements LoginServiceInterface
         $failure = $this->failIfUserIdInvalid($userId, $client['ip'], $old, $channel);
         if ($failure !== null) {
             return $failure;
+        }
+
+        if ($user->isEmail2faEnabled()) {
+            return $this->startEmail2faFlow($user, $userId, $rememberMe, $client['ip'], $channel, $old);
         }
 
         $this->openAuthenticatedSession($userId, $client['ip'], $channel);
@@ -358,6 +368,49 @@ final class LoginService implements LoginServiceInterface
         return [
             'ok'                => true,
             'remember_me_token' => $rememberMeToken,
+        ];
+    }
+
+    /**
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{
+     *   two_factor_required?: true,
+     *   errors?: list<string|int>,
+     *   old?: array{identifier:string, remember_me?: string}
+     * }
+     */
+    private function startEmail2faFlow(
+        UserEntity $user,
+        int $userId,
+        bool $rememberMe,
+        string $ip,
+        string $channel,
+        array $old
+    ): array {
+        $sent = $this->email2faService->generateAndSendCode($user);
+
+        if (!$sent) {
+            Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
+                'reason'  => 'email_2fa_code_send_failed',
+                'user_id' => $userId,
+                'ip'      => $ip,
+            ]);
+
+            return [
+                'errors' => [ErrorCode::AUTH_TECHNICAL_ERROR],
+                'old'    => $old,
+            ];
+        }
+
+        $this->email2faPendingSession->start($userId, $rememberMe);
+
+        Logger::logCodeAndGetMessage($channel, 'info', 'email_2fa_required', [
+            'user_id' => $userId,
+            'ip'      => $ip,
+        ]);
+
+        return [
+            'two_factor_required' => true,
         ];
     }
 }

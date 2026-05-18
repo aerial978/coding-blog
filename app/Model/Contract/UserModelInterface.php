@@ -24,6 +24,18 @@ interface UserModelInterface
     public function findOneByEmail(string $email): ?UserEntity;
 
     /**
+     * Retrieves a user by its unique identifier.
+     *
+     * Used notably for authenticated flows such as
+     * email 2FA resend and post-login verification.
+     *
+     * @param int $userId
+     *
+     * @return UserEntity|null
+     */
+    public function findOneById(int $userId): ?UserEntity;
+
+    /**
      * Login : retourne les champs nécessaires à l'auth (id, password, status, ...).
      */
     public function findAuthByUsername(string $username): ?UserEntity;

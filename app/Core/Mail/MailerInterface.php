@@ -31,4 +31,33 @@ interface MailerInterface
      *     True if the message was successfully sent, false otherwise.
      */
     public function send(string $toEmail, string $toName, string $subject, string $template, array $vars = []): bool;
+
+    /**
+     * Sends the email 2FA verification code.
+     *
+     * This method is dedicated to the second authentication factor
+     * during login. It sends a short-lived one-time verification code
+     * by email after successful password validation.
+     *
+     * @param string $email
+     *     Recipient email address.
+     *
+     * @param string $username
+     *     Recipient display name.
+     *
+     * @param string $code
+     *     The temporary one-time verification code.
+     *
+     * @param int $ttlMinutes
+     *     Code validity duration in minutes.
+     *
+     * @return bool
+     *     True if the email was successfully sent, false otherwise.
+     */
+    public function sendEmail2faCode(
+        string $email,
+        string $username,
+        string $code,
+        int $ttlMinutes
+    ): bool;
 }

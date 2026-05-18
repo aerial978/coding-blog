@@ -28,10 +28,12 @@ final class DebugControllerTest extends TestCase
         ];
 
         $this->session
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('get')
-            ->with('user')
-            ->willReturn($user);
+            ->willReturnMap([
+                ['user', null, $user],
+                ['auth_2fa_pending', null, null],
+            ]);
 
         $controller = new DebugController($this->session);
 
@@ -45,15 +47,19 @@ final class DebugControllerTest extends TestCase
         $this->assertArrayHasKey('session_id', $data);
         $this->assertSame($user, $data['user']);
         $this->assertTrue($data['has_user']);
+        $this->assertNull($data['email_2fa_pending']);
+        $this->assertFalse($data['has_email_2fa_pending']);
     }
 
     public function testBuildPayloadWithoutUser(): void
     {
         $this->session
-            ->expects($this->once())
-            ->method('get')
-            ->with('user')
-            ->willReturn(null);
+        ->expects($this->exactly(2))
+        ->method('get')
+        ->willReturnMap([
+            ['user', null, null],
+            ['auth_2fa_pending', null, null],
+        ]);
 
         $controller = new DebugController($this->session);
 
@@ -66,5 +72,7 @@ final class DebugControllerTest extends TestCase
         $this->assertIsArray($data);
         $this->assertNull($data['user']);
         $this->assertFalse($data['has_user']);
+        $this->assertNull($data['email_2fa_pending']);
+        $this->assertFalse($data['has_email_2fa_pending']);
     }
 }

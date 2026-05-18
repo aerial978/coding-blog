@@ -153,6 +153,7 @@ final class UserModelTest extends TestCase
             'status'     => 'inactive',
             'created_at' => '2026-01-01 10:00:00',
             'updated_at' => '2026-01-01 10:00:00',
+            'email_2fa_enabled' => 1,
         ];
 
         $this->sqlHelper
@@ -178,6 +179,7 @@ final class UserModelTest extends TestCase
         $this->assertSame('alice@example.com', $result->getEmail());
         $this->assertSame('hashed-password', $result->getPassword());
         $this->assertSame('inactive', $result->getStatus());
+        $this->assertTrue($result->isEmail2faEnabled());
     }
 
     public function testFindOneByEmailReturnsNullWhenNotFound(): void
@@ -276,6 +278,7 @@ final class UserModelTest extends TestCase
             'email'    => 'alice@example.com',
             'password' => 'hashed-password',
             'status'   => 'active',
+            'email_2fa_enabled' => 1,
         ];
 
         $this->sqlHelper
@@ -301,6 +304,7 @@ final class UserModelTest extends TestCase
         $this->assertSame('alice@example.com', $result->getEmail());
         $this->assertSame('hashed-password', $result->getPassword());
         $this->assertSame('active', $result->getStatus());
+        $this->assertTrue($result->isEmail2faEnabled());
     }
 
     public function testFindAuthByEmailReturnsNullWhenNotFound(): void
@@ -335,6 +339,7 @@ final class UserModelTest extends TestCase
             'email'    => 'alice@example.com',
             'password' => 'hashed-password',
             'status'   => 'active',
+            'email_2fa_enabled' => 1,
         ];
 
         $this->sqlHelper
@@ -360,6 +365,7 @@ final class UserModelTest extends TestCase
         $this->assertSame('alice@example.com', $result->getEmail());
         $this->assertSame('hashed-password', $result->getPassword());
         $this->assertSame('active', $result->getStatus());
+        $this->assertTrue($result->isEmail2faEnabled());
     }
 
     public function testFindAuthByUsernameReturnsNullWhenNotFound(): void
@@ -380,6 +386,71 @@ final class UserModelTest extends TestCase
             ->willReturn(false);
 
         $result = $this->model->findAuthByUsername('unknown');
+
+        $this->assertNull($result);
+    }
+
+    public function testFindOneByIdReturnsHydratedUserWhenFound(): void
+    {
+        $userId = 42;
+
+        $row = [
+            'user_id'           => 42,
+            'username'          => 'alice',
+            'slug'              => 'alice',
+            'email'             => 'alice@example.com',
+            'password'          => 'hashed-password',
+            'status'            => 'active',
+            'email_2fa_enabled' => 1,
+            'created_at'        => '2026-01-01 10:00:00',
+            'updated_at'        => '2026-01-01 10:00:00',
+        ];
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE id = :user_id'),
+                [':user_id' => $userId]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn($row);
+
+        $result = $this->model->findOneById($userId);
+
+        $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame(42, $result->getUserId());
+        $this->assertSame('alice', $result->getUsername());
+        $this->assertSame('alice', $result->getSlug());
+        $this->assertSame('alice@example.com', $result->getEmail());
+        $this->assertSame('hashed-password', $result->getPassword());
+        $this->assertSame('active', $result->getStatus());
+        $this->assertTrue($result->isEmail2faEnabled());
+    }
+
+    public function testFindOneByIdReturnsNullWhenNotFound(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE id = :user_id'),
+                [':user_id' => 999]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
+
+        $result = $this->model->findOneById(999);
 
         $this->assertNull($result);
     }

@@ -35,6 +35,10 @@ use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use Psr\Container\ContainerInterface;
+use App\Controller\Email2faController;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
 
 /**
  * Provides controller definitions for the dependency injection container.
@@ -165,6 +169,27 @@ final class ControllerServiceProvider
                 $postHandler = $container->get(LoginPostHandler::class);
 
                 return new LoginController($request, $getHandler, $postHandler);
+            },
+
+            Email2faController::class => static function (ContainerInterface $container): Email2faController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var Email2faGetHandler $getHandler */
+                $getHandler = $container->get(Email2faGetHandler::class);
+
+                /** @var Email2faPostHandler $postHandler */
+                $postHandler = $container->get(Email2faPostHandler::class);
+
+                /** @var Email2faResendPostHandler $resendPostHandler */
+                $resendPostHandler = $container->get(Email2faResendPostHandler::class);
+
+                return new Email2faController(
+                    $request,
+                    $getHandler,
+                    $postHandler,
+                    $resendPostHandler,
+                );
             },
 
             LogoutController::class => static function (ContainerInterface $container): LogoutController {

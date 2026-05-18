@@ -93,7 +93,9 @@ class UserModel implements UserModelInterface
         $sql = "SELECT 
                 id AS user_id, username, slug, email, password,
                 status,
-                created_at, updated_at
+                email_2fa_enabled,
+                created_at, 
+                updated_at
             FROM {$this->table}
             WHERE email = :email
             LIMIT 1";
@@ -104,6 +106,46 @@ class UserModel implements UserModelInterface
         $row  = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         return $row ? (new UserEntity())->hydrate((array) $row) : null;
+    }
+
+    /**
+     * Finds a single user by its primary identifier.
+     *
+     * Used for authenticated flows requiring a full user entity,
+     * especially email-based 2FA verification and resend flows.
+     *
+     * @param int $userId
+     *     The user identifier.
+     *
+     * @return UserEntity|null
+     *     A hydrated UserEntity if found, null otherwise.
+     */
+    public function findOneById(int $userId): ?UserEntity
+    {
+        $sql = "SELECT
+                    id AS user_id,
+                    username,
+                    slug,
+                    email,
+                    password,
+                    status,
+                    email_2fa_enabled,
+                    created_at,
+                    updated_at
+                FROM {$this->table}
+                WHERE id = :user_id
+                LIMIT 1";
+
+        $stmt = $this->sqlHelper->request($sql, [
+            ':user_id' => $userId,
+        ]);
+
+        /** @var array<string,mixed>|false $row */
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row
+            ? (new UserEntity())->hydrate((array) $row)
+            : null;
     }
 
     /**
@@ -164,7 +206,8 @@ class UserModel implements UserModelInterface
                     username,
                     email,
                     password,
-                    status
+                    status,
+                    email_2fa_enabled
                 FROM {$this->table}
                 WHERE email = :email
                 LIMIT 1";
@@ -187,7 +230,8 @@ class UserModel implements UserModelInterface
                     username,
                     email,
                     password,
-                    status
+                    status,
+                    email_2fa_enabled
                 FROM {$this->table}
                 WHERE username = :username
                 LIMIT 1";
