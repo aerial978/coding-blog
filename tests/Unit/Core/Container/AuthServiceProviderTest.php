@@ -39,6 +39,18 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Support\ErrorListNormalizer;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Security\Email2faPendingSession;
+use App\Core\Contract\SessionInterface;
+use App\Core\Mail\MailerInterface;
+use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
+use App\Service\Security\Email2faService;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
+use App\Model\Contract\UserModelInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 
 final class AuthServiceProviderTest extends TestCase
 {
@@ -85,11 +97,18 @@ final class AuthServiceProviderTest extends TestCase
             HoneypotValidatorInterface::class        => $this->createMock(HoneypotValidatorInterface::class),
             SubmissionDelayValidatorInterface::class => $this->createMock(SubmissionDelayValidatorInterface::class),
             TurnstileValidatorInterface::class       => $this->createMock(TurnstileValidatorInterface::class),
+            SessionInterface::class                  => $this->createMock(SessionInterface::class),
             RateLimiterFactoryInterface::class       => $this->createMock(RateLimiterFactoryInterface::class),
             LogContextNormalizer::class              => new LogContextNormalizer(),
             ErrorListNormalizer::class               => new ErrorListNormalizer(),
             SecurityServiceInterface::class          => $this->createMock(SecurityServiceInterface::class),
             ResetPasswordServiceInterface::class     => $this->createMock(ResetPasswordServiceInterface::class),
+            MailerInterface::class                   => $this->createMock(MailerInterface::class),
+            Email2faChallengeModelInterface::class   => $this->createMock(Email2faChallengeModelInterface::class),
+            Email2faPendingSessionInterface::class => $this->createMock(Email2faPendingSessionInterface::class),
+            Email2faServiceInterface::class        => $this->createMock(Email2faServiceInterface::class),
+            UserModelInterface::class              => $this->createMock(UserModelInterface::class),
+            RememberMeServiceInterface::class      => $this->createMock(RememberMeServiceInterface::class),
         ];
     }
 
@@ -106,6 +125,10 @@ final class AuthServiceProviderTest extends TestCase
         $this->assertArrayHasKey(RateLimitGuardInterface::class, $definitions);
         $this->assertArrayHasKey(SubmissionDelayGuardInterface::class, $definitions);
         $this->assertArrayHasKey(TurnstileGuardInterface::class, $definitions);
+        $this->assertArrayHasKey(Email2faPendingSession::class, $definitions);
+        $this->assertArrayHasKey(Email2faPendingSessionInterface::class, $definitions);
+        $this->assertArrayHasKey(Email2faService::class, $definitions);
+        $this->assertArrayHasKey(Email2faServiceInterface::class, $definitions);
 
         $this->assertArrayHasKey(RegisterGetHandler::class, $definitions);
         $this->assertArrayHasKey(RegisterPostHandler::class, $definitions);
@@ -118,6 +141,10 @@ final class AuthServiceProviderTest extends TestCase
         $this->assertArrayHasKey(ResetPasswordGetHandler::class, $definitions);
         $this->assertArrayHasKey(ResetPasswordPostHandler::class, $definitions);
         $this->assertArrayHasKey(LogoutHandler::class, $definitions);
+
+        $this->assertArrayHasKey(Email2faGetHandler::class, $definitions);
+        $this->assertArrayHasKey(Email2faPostHandler::class, $definitions);
+        $this->assertArrayHasKey(Email2faResendPostHandler::class, $definitions);
     }
 
     public function testGuardDefinitionsAreBuildable(): void
@@ -222,5 +249,79 @@ final class AuthServiceProviderTest extends TestCase
         $this->assertInstanceOf(ForgotPasswordPostHandler::class, $forgotPost);
         $this->assertInstanceOf(ResetPasswordPostHandler::class, $resetPost);
         $this->assertInstanceOf(LogoutHandler::class, $logout);
+    }
+
+    public function testEmail2faServiceDefinitionsAreBuildable(): void
+    {
+        $definitions = AuthServiceProvider::getDefinitions();
+
+        $email2faService = $definitions[Email2faService::class](
+            $this->makeContainer($this->baseServices())
+        );
+
+        $this->assertInstanceOf(Email2faService::class, $email2faService);
+    }
+
+    public function testEmail2faServiceInterfaceBindingResolvesCorrectly(): void
+    {
+        $definitions = AuthServiceProvider::getDefinitions();
+
+        $service = $this->createMock(Email2faServiceInterface::class);
+
+        $container = $this->makeContainer([
+            Email2faService::class => $service,
+        ]);
+
+        $this->assertSame(
+            $service,
+            $definitions[Email2faServiceInterface::class]($container)
+        );
+    }
+
+    public function testEmail2faPendingSessionDefinitionsAreBuildable(): void
+{
+    $definitions = AuthServiceProvider::getDefinitions();
+
+    $session = $this->createMock(SessionInterface::class);
+
+    $container = $this->makeContainer([
+        SessionInterface::class => $session,
+    ]);
+
+    $pendingSession = $definitions[Email2faPendingSession::class]($container);
+
+    $this->assertInstanceOf(Email2faPendingSession::class, $pendingSession);
+
+    $aliasContainer = $this->makeContainer([
+        Email2faPendingSession::class => $pendingSession,
+    ]);
+
+    $this->assertSame(
+        $pendingSession,
+        $definitions[Email2faPendingSessionInterface::class]($aliasContainer)
+    );
+}
+
+    public function testEmail2faHandlersAreBuildable(): void
+    {
+        $definitions = AuthServiceProvider::getDefinitions();
+
+        $honeypotGuard        = $this->createMock(HoneypotGuardInterface::class);
+        $submissionDelayGuard = $this->createMock(SubmissionDelayGuardInterface::class);
+        $rateLimitGuard       = $this->createMock(RateLimitGuardInterface::class);
+
+        $container = $this->makeContainer($this->baseServices() + [
+            HoneypotGuardInterface::class        => $honeypotGuard,
+            SubmissionDelayGuardInterface::class => $submissionDelayGuard,
+            RateLimitGuardInterface::class       => $rateLimitGuard,
+        ]);
+
+        $getHandler    = $definitions[Email2faGetHandler::class]($container);
+        $postHandler   = $definitions[Email2faPostHandler::class]($container);
+        $resendHandler = $definitions[Email2faResendPostHandler::class]($container);
+
+        $this->assertInstanceOf(Email2faGetHandler::class, $getHandler);
+        $this->assertInstanceOf(Email2faPostHandler::class, $postHandler);
+        $this->assertInstanceOf(Email2faResendPostHandler::class, $resendHandler);
     }
 }

@@ -8,6 +8,8 @@ use App\Core\Contract\SessionInterface;
 
 final class DebugController
 {
+    private const EMAIL_2FA_PENDING_KEY = 'auth_2fa_pending';
+
     public function __construct(private SessionInterface $session)
     {
     }
@@ -25,41 +27,47 @@ final class DebugController
      * @return array{
      *     session_id: string,
      *     user: array<string, mixed>|null,
-     *     has_user: bool
+     *     has_user: bool,
+     *     email_2fa_pending: array<string, mixed>|null,
+     *     has_email_2fa_pending: bool
      * }
      */
     private function buildPayload(): array
     {
-        $rawUser = $this->session->get('user');
-        $user    = $this->normalizeUser($rawUser);
+        $user = $this->normalizeArray($this->session->get('user'));
+        $email2faPending = $this->normalizeArray(
+            $this->session->get(self::EMAIL_2FA_PENDING_KEY)
+        );
 
         $sessionId = session_id();
         $sessionId = is_string($sessionId) ? $sessionId : '';
 
         return [
-            'session_id' => $sessionId,
-            'user'       => $user,
-            'has_user'   => $user !== null && isset($user['id']),
+            'session_id'             => $sessionId,
+            'user'                   => $user,
+            'has_user'               => $user !== null && isset($user['id']),
+            'email_2fa_pending'      => $email2faPending,
+            'has_email_2fa_pending'  => $email2faPending !== null,
         ];
     }
 
     /**
      * @return array<string, mixed>|null
      */
-    private function normalizeUser(mixed $rawUser): ?array
+    private function normalizeArray(mixed $raw): ?array
     {
-        if (!is_array($rawUser)) {
+        if (!is_array($raw)) {
             return null;
         }
 
-        $user = [];
+        $data = [];
 
-        foreach ($rawUser as $key => $value) {
+        foreach ($raw as $key => $value) {
             if (is_string($key)) {
-                $user[$key] = $value;
+                $data[$key] = $value;
             }
         }
 
-        return $user;
+        return $data;
     }
 }

@@ -21,6 +21,7 @@ final class LoginPostHandler
     private const FORM_ID          = 'login';
     private const TURNSTILE_FLAG   = 'turnstile_login';
     private const RATE_LIMIT_KEY   = 'login';
+    private const TWO_FACTOR_REDIRECT = '/coding-blog/login/2fa';
 
     public function __construct(
         private SecurityServiceInterface $securityService,
@@ -121,6 +122,11 @@ final class LoginPostHandler
 
         /** @var array<string, mixed> $result */
         $result = $this->securityService->login($form);
+
+        if (!empty($result['two_factor_required'])) {
+            $this->replyTwoFactorRequired();
+            return;
+        }
 
         if (!empty($result['ok'])) {
             $this->handleRememberMe($result);
@@ -246,5 +252,12 @@ final class LoginPostHandler
     private function strOrEmpty(mixed $value): string
     {
         return is_string($value) ? trim($value) : '';
+    }
+
+    private function replyTwoFactorRequired(): void
+    {
+        $this->flash->put('old', []);
+        $this->flash->add('info', 'Un code de vérification vous a été envoyé par e-mail.');
+        $this->responder->redirect(self::TWO_FACTOR_REDIRECT);
     }
 }

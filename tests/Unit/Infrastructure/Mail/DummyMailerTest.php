@@ -71,4 +71,21 @@ final class DummyMailerTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $mailer->send('to@example.test', 'Jane', 'Sujet', '_template_inexistant.html', ['username' => 'Jane']);
     }
+
+    public function testSendEmail2faCodeReturnsTrue(): void
+    {
+        $mailer = new DummyMailer(
+            'no-reply@coding-blog.test',
+            'Coding Blog'
+        );
+
+        $result = $mailer->sendEmail2faCode(
+            'user@example.com',
+            'Michel',
+            '123456',
+            10
+        );
+
+        self::assertTrue($result);
+    }
 }

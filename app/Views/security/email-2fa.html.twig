@@ -1,0 +1,68 @@
+{% extends "templates/layouts/base.html.twig" %}
+{% import 'templates/macros/form_fields.html.twig' as fields %}
+
+{% block title %}Vérification de connexion{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4 text-center">Vérification de connexion</h1>
+
+  {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+
+  <p class="text-center mb-4">
+    Un code de sécurité vous a été envoyé par e-mail.
+    Saisissez ce code pour finaliser votre connexion.
+  </p>
+
+  <form id="email2faForm" method="post" action="{{ base_path }}login/2fa" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="mb-4 text-center">
+      <label class="form-label fw-bold" for="code_digit_1">
+        Entrez le code que vous avez reçu par e-mail :
+      </label>
+
+      <input type="hidden" id="code" name="code" value="">
+
+      <div class="d-flex justify-content-center gap-2 mt-3" id="codeInputs">
+        {% for i in 1..6 %}
+          <input
+            id="code_digit_{{ i }}"
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            class="form-control text-center code-digit"
+            autocomplete="{% if i == 1 %}one-time-code{% else %}off{% endif %}"
+            aria-label="Chiffre {{ i }} du code de sécurité"
+          >
+        {% endfor %}
+      </div>
+
+      <div id="code_error" class="form-error" aria-live="polite"></div>
+    </div>
+
+    {{ fields.honeypot(honeypot_name) }}
+
+    <button type="submit" class="btn btn-primary w-100">
+      Valider le code
+    </button>
+  </form>
+
+  <form method="post" action="{{ base_path }}login/2fa/resend" class="mt-3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token_resend }}">
+    
+    {{ fields.honeypot(honeypot_name) }}
+
+    <button type="submit" class="btn btn-outline-secondary w-100">
+      Renvoyer un nouveau code
+    </button>
+  </form>
+
+  <div class="text-center mt-3">
+    <a href="{{ base_path }}login">Retour à la connexion</a>
+  </div>
+</div>
+{% block page_scripts %}
+<script type="module" src="{{ base_path }}public/assets/js/security/email-2fa.js"></script>
+{% endblock %}
+{% endblock %}

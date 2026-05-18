@@ -11,6 +11,8 @@ use App\Model\Entity\UserEntity;
 use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\LoginService;
 use App\Validation\Contract\FormValidatorInterface;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -20,6 +22,8 @@ final class LoginServiceTest extends TestCase
     private UserModelInterface&MockObject $userModel;
     private SessionInterface&MockObject $session;
     private RememberMeServiceInterface&MockObject $rememberMeService;
+    private Email2faServiceInterface&MockObject $email2faService;
+    private Email2faPendingSessionInterface&MockObject $email2faPendingSession;
 
     private LoginService $service;
 
@@ -34,12 +38,16 @@ final class LoginServiceTest extends TestCase
         $this->userModel         = $this->createMock(UserModelInterface::class);
         $this->session           = $this->createMock(SessionInterface::class);
         $this->rememberMeService = $this->createMock(RememberMeServiceInterface::class);
+        $this->email2faService = $this->createMock(Email2faServiceInterface::class);
+        $this->email2faPendingSession = $this->createMock(Email2faPendingSessionInterface::class);
 
         $this->service = new LoginService(
             $this->validator,
             $this->userModel,
             $this->session,
             $this->rememberMeService,
+            $this->email2faService,
+            $this->email2faPendingSession,
         );
     }
 
@@ -371,5 +379,104 @@ final class LoginServiceTest extends TestCase
         $result = $this->service->login($form);
 
         $this->assertSame(['ok' => true], $result);
+    }
+
+    public function testLoginWithEmail2faEnabledStartsPendingSessionAndDoesNotOpenAuthenticatedSession(): void
+    {
+        $form = [
+            'identifier'  => 'john@example.com',
+            'password'    => 'Password123!',
+            'remember_me' => '1',
+        ];
+
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setEmail('john@example.com');
+        $user->setUsername('john');
+        $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
+        $user->setStatus('active');
+        $user->setEmail2faEnabled(true);
+
+        $this->validator->method('validateLogin')->willReturn([]);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findAuthByEmail')
+            ->with('john@example.com')
+            ->willReturn($user);
+
+        $this->email2faService
+            ->expects($this->once())
+            ->method('generateAndSendCode')
+            ->with($user)
+            ->willReturn(true);
+
+        $this->email2faPendingSession
+            ->expects($this->once())
+            ->method('start')
+            ->with(42, true);
+
+        $this->session
+            ->expects($this->never())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->never())
+            ->method('set');
+
+        $this->rememberMeService
+            ->expects($this->never())
+            ->method('createRememberMeToken');
+
+        $result = $this->service->login($form);
+
+        $this->assertSame(['two_factor_required' => true], $result);
+    }
+
+    public function testLoginWithEmail2faEnabledReturnsTechnicalErrorWhenCodeSendFails(): void
+    {
+        $form = [
+            'identifier' => 'john@example.com',
+            'password'   => 'Password123!',
+        ];
+
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setEmail('john@example.com');
+        $user->setUsername('john');
+        $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
+        $user->setStatus('active');
+        $user->setEmail2faEnabled(true);
+
+        $this->validator->method('validateLogin')->willReturn([]);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findAuthByEmail')
+            ->with('john@example.com')
+            ->willReturn($user);
+
+        $this->email2faService
+            ->expects($this->once())
+            ->method('generateAndSendCode')
+            ->with($user)
+            ->willReturn(false);
+
+        $this->email2faPendingSession
+            ->expects($this->never())
+            ->method('start');
+
+        $this->session
+            ->expects($this->never())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->never())
+            ->method('set');
+
+        $result = $this->service->login($form);
+
+        $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $result['errors']);
+        $this->assertSame(['identifier' => 'john@example.com'], $result['old']);
     }
 }

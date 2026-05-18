@@ -35,6 +35,10 @@ use App\Service\Security\SecurityService;
 use App\Validation\Contract\FormValidatorInterface;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
+use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Email2faChallengeModel;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
 
 /**
  * Services liés aux utilisateurs et à la sécurité (DAL + services métier).
@@ -73,6 +77,12 @@ final class UserServiceProvider
                 /** @var SqlHelperInterface $sql */
                 $sql = $container->get(SqlHelperInterface::class);
                 return new UserTokenModel($sql);
+            },
+
+            Email2faChallengeModelInterface::class => static function (ContainerInterface $container): Email2faChallengeModelInterface {
+                /** @var SqlHelperInterface $sql */
+                $sql = $container->get(SqlHelperInterface::class);
+                return new Email2faChallengeModel($sql);
             },
 
             RegistrationEventModel::class => static function (ContainerInterface $container): RegistrationEventModel {
@@ -308,11 +318,19 @@ final class UserServiceProvider
                 /** @var RememberMeServiceInterface $rememberMe */
                 $rememberMe = $container->get(RememberMeServiceInterface::class);
 
+                /** @var Email2faServiceInterface $email2faService */
+                $email2faService = $container->get(Email2faServiceInterface::class);
+
+                /** @var Email2faPendingSessionInterface $email2faPendingSession */
+                $email2faPendingSession = $container->get(Email2faPendingSessionInterface::class);
+
                 return new LoginService(
                     $validator,
                     $userModel,
                     $session,
                     $rememberMe,
+                    $email2faService,
+                    $email2faPendingSession,
                 );
             },
         ];

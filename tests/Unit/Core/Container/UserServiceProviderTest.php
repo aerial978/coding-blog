@@ -37,6 +37,10 @@ use App\Validation\Contract\FormValidatorInterface;
 use Cocur\Slugify\Slugify;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Email2faChallengeModel;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
 
 final class UserServiceProviderTest extends TestCase
 {
@@ -77,13 +81,15 @@ final class UserServiceProviderTest extends TestCase
         $sqlHelper = $this->createMock(SqlHelperInterface::class);
 
         return [
-            SqlHelperInterface::class          => $sqlHelper,
-            FormValidatorInterface::class      => $this->createMock(FormValidatorInterface::class),
-            MailerInterface::class             => $this->createMock(MailerInterface::class),
-            TokenGeneratorInterface::class     => $this->createMock(TokenGeneratorInterface::class),
-            SessionInterface::class            => $this->createMock(SessionInterface::class),
-            RememberMeServiceInterface::class  => $this->createMock(RememberMeServiceInterface::class),
-            Slugify::class                     => new Slugify(),
+            SqlHelperInterface::class               => $sqlHelper,
+            FormValidatorInterface::class           => $this->createMock(FormValidatorInterface::class),
+            MailerInterface::class                  => $this->createMock(MailerInterface::class),
+            TokenGeneratorInterface::class          => $this->createMock(TokenGeneratorInterface::class),
+            SessionInterface::class                 => $this->createMock(SessionInterface::class),
+            RememberMeServiceInterface::class       => $this->createMock(RememberMeServiceInterface::class),
+            Email2faServiceInterface::class         => $this->createMock(Email2faServiceInterface::class),
+            Email2faPendingSessionInterface::class  => $this->createMock(Email2faPendingSessionInterface::class),
+            Slugify::class                          => new Slugify(),
         ];
     }
 
@@ -93,6 +99,7 @@ final class UserServiceProviderTest extends TestCase
 
         $this->assertArrayHasKey(UserModelInterface::class, $definitions);
         $this->assertArrayHasKey(UserTokenModelInterface::class, $definitions);
+        $this->assertArrayHasKey(Email2faChallengeModelInterface::class, $definitions);
         $this->assertArrayHasKey(RegistrationEventModel::class, $definitions);
         $this->assertArrayHasKey(EmailEventModel::class, $definitions);
 
@@ -126,12 +133,16 @@ final class UserServiceProviderTest extends TestCase
         $userTokenModel         = $definitions[UserTokenModelInterface::class]($container);
         $registrationEventModel = $definitions[RegistrationEventModel::class]($container);
         $emailEventModel        = $definitions[EmailEventModel::class]($container);
+        $email2faChallengeModel = $definitions[Email2faChallengeModelInterface::class]($container);
 
         $this->assertInstanceOf(UserModel::class, $userModel);
         $this->assertInstanceOf(UserModelInterface::class, $userModel);
 
         $this->assertInstanceOf(UserTokenModel::class, $userTokenModel);
         $this->assertInstanceOf(UserTokenModelInterface::class, $userTokenModel);
+
+        $this->assertInstanceOf(Email2faChallengeModel::class, $email2faChallengeModel);
+        $this->assertInstanceOf(Email2faChallengeModelInterface::class, $email2faChallengeModel);
 
         $this->assertInstanceOf(RegistrationEventModel::class, $registrationEventModel);
         $this->assertInstanceOf(EmailEventModel::class, $emailEventModel);

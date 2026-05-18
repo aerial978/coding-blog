@@ -46,6 +46,28 @@ final class MailjetMailer implements MailerInterface
         }
     }
 
+    /**
+     * Sends the email 2FA verification code.
+     */
+    public function sendEmail2faCode(
+        string $email,
+        string $username,
+        string $code,
+        int $ttlMinutes
+    ): bool {
+        return $this->send(
+            $email,
+            $username,
+            'Your login verification code',
+            'email-2fa-code.html',
+            [
+                'username'    => $username,
+                'code'        => $code,
+                'ttl_minutes' => (string) $ttlMinutes,
+            ]
+        );
+    }
+
     // ─────────────────────────────
     // Helpers (petites responsabilités)
     // ─────────────────────────────

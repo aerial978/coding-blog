@@ -37,6 +37,10 @@ use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use App\Controller\Email2faController;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
 
 final class ControllerServiceProviderTest extends TestCase
 {
@@ -82,7 +86,6 @@ final class ControllerServiceProviderTest extends TestCase
             Request::class                       => $this->createMock(Request::class),
             AuthCheckerInterface::class          => $this->createMock(AuthCheckerInterface::class),
             CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
-
             ConfirmAccountHandler::class         => $this->instantiateWithoutConstructor(ConfirmAccountHandler::class),
             RegisterGetHandler::class            => $this->instantiateWithoutConstructor(RegisterGetHandler::class),
             RegisterPostHandler::class           => $this->instantiateWithoutConstructor(RegisterPostHandler::class),
@@ -95,6 +98,9 @@ final class ControllerServiceProviderTest extends TestCase
             ForgotPasswordPostHandler::class     => $this->instantiateWithoutConstructor(ForgotPasswordPostHandler::class),
             ResetPasswordGetHandler::class       => $this->instantiateWithoutConstructor(ResetPasswordGetHandler::class),
             ResetPasswordPostHandler::class      => $this->instantiateWithoutConstructor(ResetPasswordPostHandler::class),
+            Email2faGetHandler::class        => $this->instantiateWithoutConstructor(Email2faGetHandler::class),
+            Email2faPostHandler::class       => $this->instantiateWithoutConstructor(Email2faPostHandler::class),
+            Email2faResendPostHandler::class => $this->instantiateWithoutConstructor(Email2faResendPostHandler::class),
         ];
     }
 
@@ -115,6 +121,8 @@ final class ControllerServiceProviderTest extends TestCase
         $this->assertArrayHasKey(ResetPasswordController::class, $definitions);
 
         $this->assertArrayHasKey(DebugController::class, $definitions);
+
+        $this->assertArrayHasKey(Email2faController::class, $definitions);
     }
 
     public function testCoreControllerDefinitionsAreBuildable(): void
@@ -143,6 +151,7 @@ final class ControllerServiceProviderTest extends TestCase
         $logout   = $definitions[LogoutController::class]($container);
         $forgot   = $definitions[ForgotPasswordController::class]($container);
         $reset    = $definitions[ResetPasswordController::class]($container);
+        $email2fa = $definitions[Email2faController::class]($container);
 
         $this->assertInstanceOf(RegisterController::class, $register);
         $this->assertInstanceOf(ConfirmAccountController::class, $confirm);
@@ -151,6 +160,7 @@ final class ControllerServiceProviderTest extends TestCase
         $this->assertInstanceOf(LogoutController::class, $logout);
         $this->assertInstanceOf(ForgotPasswordController::class, $forgot);
         $this->assertInstanceOf(ResetPasswordController::class, $reset);
+        $this->assertInstanceOf(Email2faController::class, $email2fa);
     }
 
     public function testUtilityControllerDefinitionsAreBuildable(): void

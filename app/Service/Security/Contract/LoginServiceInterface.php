@@ -13,8 +13,8 @@ interface LoginServiceInterface
     *
     * @return array{
     *   ok?: true,
+    *   two_factor_required?: true,
     *   remember_me_token?: string,
-    *   error?: string,
     *   errors?: list<string|int>,
     *   old?: array{identifier:string, remember_me?: string}
     * }

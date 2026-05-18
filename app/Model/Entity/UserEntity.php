@@ -33,6 +33,8 @@ class UserEntity extends AbstractEntity
 
     private ?string $status = null;
 
+    private bool $email2faEnabled = false;
+
     /**
      * Gets the user ID.
      *
@@ -188,6 +190,29 @@ class UserEntity extends AbstractEntity
     public function setStatus(string $status): self
     {
         $this->status = $status;
+        return $this;
+    }
+
+    /**
+     * Checks whether email two-factor authentication is enabled for the user.
+     *
+     * @return bool True when email 2FA is enabled, false otherwise.
+     */
+    public function isEmail2faEnabled(): bool
+    {
+        return $this->email2faEnabled;
+    }
+
+    /**
+     * Sets whether email two-factor authentication is enabled for the user.
+     *
+     * @param bool $email2faEnabled Whether email 2FA is enabled.
+     * @return self
+     */
+    public function setEmail2faEnabled(bool $email2faEnabled): self
+    {
+        $this->email2faEnabled = $email2faEnabled;
+
         return $this;
     }
 }

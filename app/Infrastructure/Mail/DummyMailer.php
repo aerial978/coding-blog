@@ -88,4 +88,44 @@ final class DummyMailer implements MailerInterface
 
         return true;
     }
+
+    /**
+     * Simulates sending the email 2FA verification code.
+     *
+     * This method uses the generic send() method with the dedicated
+     * email 2FA template and logs the email instead of actually sending it.
+     *
+     * @param string $email
+     *     Recipient email address.
+     *
+     * @param string $username
+     *     Recipient display name.
+     *
+     * @param string $code
+     *     Temporary one-time verification code.
+     *
+     * @param int $ttlMinutes
+     *     Code validity duration in minutes.
+     *
+     * @return bool
+     *     Always returns true in development mode.
+     */
+    public function sendEmail2faCode(
+        string $email,
+        string $username,
+        string $code,
+        int $ttlMinutes
+    ): bool {
+        return $this->send(
+            $email,
+            $username,
+            'Your login verification code',
+            'email-2fa-code.html',
+            [
+                'username'    => $username,
+                'code'        => $code,
+                'ttl_minutes' => (string) $ttlMinutes,
+            ]
+        );
+    }
 }
