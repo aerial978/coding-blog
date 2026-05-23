@@ -4,48 +4,40 @@ declare(strict_types=1);
 
 namespace App\Handler\Auth;
 
-use App\Controller\BaseController;
 use App\Core\Contract\FlashInterface;
 use App\Core\FormId;
-use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 
-final class RegisterGetHandler extends BaseController
+final class RegisterGetHandler
 {
     public function __construct(
-        View $view,
-        FlashInterface $flash,
+        private FlashInterface $flash,
         private ResponderInterface $responder,
         private CsrfTokenInterface $csrf,
         private HoneypotValidatorInterface $honeypot,
         private SubmissionDelayValidatorInterface $submissionDelay,
     ) {
-        parent::__construct($view, $flash);
     }
 
     public function handle(): void
     {
-        // === Extraction directe de renderRegisterForm() ===
         [$old, $state] = $this->consumeRegisterFlashes();
+
         $this->markRegisterStartIfEmptyOld($old);
 
-        $mode             = $this->determineRegisterMode($state);
-        $obfuscatedEmail  = $this->obfuscateEmailFromState($state);
-        $turnstileSiteKey = $this->readTurnstileSiteKey();
-
-        $viewData = $this->buildRegisterViewModel(
-            $mode,
-            $obfuscatedEmail,
-            $old,
-            $turnstileSiteKey
-        );
+        $mode            = $this->determineRegisterMode($state);
+        $obfuscatedEmail = $this->obfuscateEmailFromState($state);
 
         $this->responder->render(
             'security/register.html.twig',
-            $this->withFlashes($viewData)
+            $this->buildRegisterViewModel(
+                $mode,
+                $obfuscatedEmail,
+                $old
+            )
         );
     }
 
@@ -63,7 +55,7 @@ final class RegisterGetHandler extends BaseController
     private function markRegisterStartIfEmptyOld(mixed $old): void
     {
         if (empty($old)) {
-            $this->submissionDelay->markFormStart('register');
+            $this->submissionDelay->markFormStart(FormId::REGISTER);
         }
     }
 
@@ -86,14 +78,8 @@ final class RegisterGetHandler extends BaseController
         }
 
         $masked = preg_replace('/(^.).*(@.*$)/', '$1***$2', $email);
-        return $masked !== null ? $masked : $email;
-    }
 
-    private function readTurnstileSiteKey(): string
-    {
-        return is_string($_ENV['TURNSTILE_SITE_KEY'] ?? null)
-            ? trim($_ENV['TURNSTILE_SITE_KEY'])
-            : '';
+        return $masked !== null ? $masked : $email;
     }
 
     /**
@@ -102,17 +88,15 @@ final class RegisterGetHandler extends BaseController
     private function buildRegisterViewModel(
         string $mode,
         ?string $obfuscatedEmail,
-        mixed $old,
-        string $turnstileSiteKey
+        mixed $old
     ): array {
         return [
-            'title'              => 'User registration',
-            'mode'               => $mode,
-            'obfuscated_email'   => $obfuscatedEmail,
-            'csrf_token'         => $this->csrf->generateToken(FormId::REGISTER),
-            'old'                => is_array($old) ? $old : [],
-            'honeypot_name'      => $this->honeypot->fieldName(),
-            'turnstile_site_key' => $turnstileSiteKey,
+            'title'            => 'User registration',
+            'mode'             => $mode,
+            'obfuscated_email' => $obfuscatedEmail,
+            'csrf_token'       => $this->csrf->generateToken(FormId::REGISTER),
+            'old'              => is_array($old) ? $old : [],
+            'honeypot_name'    => $this->honeypot->fieldName(),
         ];
     }
 }

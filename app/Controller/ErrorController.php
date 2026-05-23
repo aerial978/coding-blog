@@ -1,19 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
+
+use App\Http\Contract\ResponderInterface;
 
 /**
  * Controller dedicated to handling HTTP errors.
  */
-class ErrorController extends BaseController
+class ErrorController
 {
+    public function __construct(
+        private ResponderInterface $responder,
+    ) {
+    }
+
     /**
      * Displays a 404 page.
      */
     public function notFound(): void
     {
         http_response_code(404);
-        $this->render('errors/404.html.twig');
+
+        $this->responder->render('errors/404.html.twig');
     }
 
     /**
@@ -23,8 +33,8 @@ class ErrorController extends BaseController
     {
         http_response_code(500);
 
-        $this->render('errors/500.html.twig', [
-            'errorId' => $errorId
+        $this->responder->render('errors/500.html.twig', [
+            'errorId' => $errorId,
         ]);
     }
 }

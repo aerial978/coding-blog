@@ -145,14 +145,14 @@ final class UserModelTest extends TestCase
         $email = 'alice@example.com';
 
         $row = [
-            'user_id'    => 12,
-            'username'   => 'alice',
-            'slug'       => 'alice',
-            'email'      => 'alice@example.com',
-            'password'   => 'hashed-password',
-            'status'     => 'inactive',
-            'created_at' => '2026-01-01 10:00:00',
-            'updated_at' => '2026-01-01 10:00:00',
+            'user_id'           => 12,
+            'username'          => 'alice',
+            'slug'              => 'alice',
+            'email'             => 'alice@example.com',
+            'password'          => 'hashed-password',
+            'status'            => 'inactive',
+            'created_at'        => '2026-01-01 10:00:00',
+            'updated_at'        => '2026-01-01 10:00:00',
             'email_2fa_enabled' => 1,
         ];
 
@@ -273,11 +273,11 @@ final class UserModelTest extends TestCase
         $email = 'alice@example.com';
 
         $row = [
-            'user_id'  => 7,
-            'username' => 'alice',
-            'email'    => 'alice@example.com',
-            'password' => 'hashed-password',
-            'status'   => 'active',
+            'user_id'           => 7,
+            'username'          => 'alice',
+            'email'             => 'alice@example.com',
+            'password'          => 'hashed-password',
+            'status'            => 'active',
             'email_2fa_enabled' => 1,
         ];
 
@@ -334,11 +334,11 @@ final class UserModelTest extends TestCase
         $username = 'alice';
 
         $row = [
-            'user_id'  => 8,
-            'username' => 'alice',
-            'email'    => 'alice@example.com',
-            'password' => 'hashed-password',
-            'status'   => 'active',
+            'user_id'           => 8,
+            'username'          => 'alice',
+            'email'             => 'alice@example.com',
+            'password'          => 'hashed-password',
+            'status'            => 'active',
             'email_2fa_enabled' => 1,
         ];
 

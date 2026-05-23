@@ -1,22 +1,31 @@
-export function createFormValidator(formSelector, options = {}) {
+const DEFAULT_MESSAGES = {
+  required: 'Champ requis',
+  email: 'Format d’email invalide',
+  invalid: 'Valeur invalide',
+};
+
+function findForm(formSelector) {
   const formEl = document.querySelector(formSelector);
+
   if (!formEl) {
     console.warn(`[validation.factory] Form not found: ${formSelector}`);
     return null;
   }
 
-  if (!window.JustValidate) {
-    console.error('[validation.factory] JustValidate introuvable sur la page');
-    return null;
+  return formEl;
+}
+
+function hasJustValidate() {
+  if (window.JustValidate) {
+    return true;
   }
 
-  const DEFAULT_MESSAGES = {
-    required: 'Champ requis',
-    email: 'Format d’email invalide',
-    invalid: 'Valeur invalide',
-  };
+  console.error('[validation.factory] JustValidate introuvable sur la page');
+  return false;
+}
 
-  const engine = new window.JustValidate(formSelector, {
+function createEngine(formSelector, options) {
+  return new window.JustValidate(formSelector, {
     validateBeforeSubmitting: true,
     focusInvalidField: true,
     lockForm: true,
@@ -26,71 +35,122 @@ export function createFormValidator(formSelector, options = {}) {
     successLabelCssClass: 'jv-success-label',
     ...options,
   });
+}
 
-  function setSubmitting(state) {
-    const submit = formEl.querySelector('[type="submit"]');
-    if (submit) {
-      submit.disabled = state;
-      submit.setAttribute('aria-busy', state ? 'true' : 'false');
-    }
+function setSubmitState(formEl, state) {
+  const submit = formEl.querySelector('[type="submit"]');
+
+  if (!submit) {
+    return;
   }
 
-  function mapRuleFactory(DEFAULT_MESSAGES) {
-    // constructeurs par type de règle
-    const withMsg = (fallback) => (r) => ({ errorMessage: r.message || fallback });
-    const required = (r) => ({ rule: 'required', ...withMsg(DEFAULT_MESSAGES.required)(r) });
-    const email    = (r) => ({ rule: 'email',    ...withMsg(DEFAULT_MESSAGES.email)(r) });
-    const regex    = (r) => ({ rule: 'customRegexp', value: r.value, ...withMsg(DEFAULT_MESSAGES.invalid)(r) });
-    const validator= (r) => ({ validator: r.validator, ...withMsg(DEFAULT_MESSAGES.invalid)(r) });
+  submit.disabled = state;
+  submit.setAttribute('aria-busy', state ? 'true' : 'false');
+}
 
-    // ‘custom’ et ‘async’ partagent la même forme { validator }
-    const BUILDERS = {
-      required,
-      email,
-      regex,
-      custom: validator,
-      async:  validator,
-    };
+function withMessage(fallback) {
+  return (rule) => ({
+    errorMessage: rule.message || fallback,
+  });
+}
 
-    return (r) => {
-      const builder = r && BUILDERS[r.type];
-      if (!builder) {
-        console.warn(`[validation.factory] Unknown rule type: ${r?.type}`);
-        return null;
-      }
-      return builder(r);
-    };
+function buildValidatorRule(rule) {
+  return {
+    validator: rule.validator,
+    ...withMessage(DEFAULT_MESSAGES.invalid)(rule),
+  };
+}
+
+function createRuleBuilders() {
+  return {
+    required: (rule) => ({
+      rule: 'required',
+      ...withMessage(DEFAULT_MESSAGES.required)(rule),
+    }),
+    email: (rule) => ({
+      rule: 'email',
+      ...withMessage(DEFAULT_MESSAGES.email)(rule),
+    }),
+    regex: (rule) => ({
+      rule: 'customRegexp',
+      value: rule.value,
+      ...withMessage(DEFAULT_MESSAGES.invalid)(rule),
+    }),
+    custom: buildValidatorRule,
+    async: buildValidatorRule,
+  };
+}
+
+function mapRule(rule) {
+  const builders = createRuleBuilders();
+  const builder = rule ? builders[rule.type] : null;
+
+  if (!builder) {
+    console.warn(`[validation.factory] Unknown rule type: ${rule?.type}`);
+    return null;
   }
 
-  function addRules(fieldSelector, rules = [], opts = {}) {
-    const mapRule = mapRuleFactory(DEFAULT_MESSAGES);
+  return builder(rule);
+}
 
-    const mapped = rules.map(mapRule).filter(Boolean);
+function addRulesToEngine(engine, fieldSelector, rules = [], opts = {}) {
+  const mapped = rules.map(mapRule).filter(Boolean);
+  const thirdArg = opts.errorsContainer
+    ? { errorsContainer: opts.errorsContainer }
+    : undefined;
 
-    // Paramètre optionnel unique pour éviter un if/else
-    const thirdArg = (opts && opts.errorsContainer)
-      ? { errorsContainer: opts.errorsContainer }
-      : undefined;
+  engine.addField(fieldSelector, mapped, thirdArg);
+}
 
-    engine.addField(fieldSelector, mapped, thirdArg);
+function revalidateTargetField(engine, event) {
+  const id = event.target?.id;
+
+  if (id && typeof engine.revalidateField === 'function') {
+    engine.revalidateField(`#${id}`);
   }
+}
 
-  function enableLiveValidation() {
-    ['input', 'blur', 'change'].forEach((evt) => {
-      formEl.addEventListener(evt, (e) => {
-        const id = e.target?.id;
-        if (id && typeof engine.revalidateField === 'function') {
-          engine.revalidateField(`#${id}`);
-        }
-      }, { passive: true });
-    });
-  }
+function enableLiveValidationFor(formEl, engine) {
+  ['input', 'blur', 'change'].forEach((eventName) => {
+    formEl.addEventListener(eventName, (event) => {
+      revalidateTargetField(engine, event);
+    }, { passive: true });
+  });
+}
 
+function bindSubmitLifecycle(engine, formEl) {
   engine.onSuccess((event) => {
-    setSubmitting(true);
+    setSubmitState(formEl, true);
     event.target.submit();
   });
-  engine.onFail?.(() => setSubmitting(false));
 
-  return { engine, formEl, addRules, enableLiveValidation, setSubmitting };
+  engine.onFail?.(() => {
+    setSubmitState(formEl, false);
+  });
+}
+
+export function createFormValidator(formSelector, options = {}) {
+  const formEl = findForm(formSelector);
+
+  if (!formEl || !hasJustValidate()) {
+    return null;
+  }
+
+  const engine = createEngine(formSelector, options);
+
+  bindSubmitLifecycle(engine, formEl);
+
+  return {
+    engine,
+    formEl,
+    addRules(fieldSelector, rules = [], opts = {}) {
+      addRulesToEngine(engine, fieldSelector, rules, opts);
+    },
+    enableLiveValidation() {
+      enableLiveValidationFor(formEl, engine);
+    },
+    setSubmitting(state) {
+      setSubmitState(formEl, state);
+    },
+  };
 }

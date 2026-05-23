@@ -3,6 +3,7 @@
 use App\Controller\AccountController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
+use App\Controller\Email2faController;
 use App\Controller\ForgotPasswordController;
 use App\Controller\HomeController;
 use App\Controller\LoginController;
@@ -10,7 +11,6 @@ use App\Controller\LogoutController;
 use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
-use App\Controller\Email2faController;
 use App\Core\Router;
 
 return [

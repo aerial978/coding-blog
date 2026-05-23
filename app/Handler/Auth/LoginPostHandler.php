@@ -16,11 +16,11 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 
 final class LoginPostHandler
 {
-    private const REDIRECT         = '/coding-blog/login';
-    private const SUCCESS_REDIRECT = '/coding-blog';
-    private const FORM_ID          = 'login';
-    private const TURNSTILE_FLAG   = 'turnstile_login';
-    private const RATE_LIMIT_KEY   = 'login';
+    private const REDIRECT            = '/coding-blog/login';
+    private const SUCCESS_REDIRECT    = '/coding-blog';
+    private const FORM_ID             = 'login';
+    private const TURNSTILE_FLAG      = 'turnstile_login';
+    private const RATE_LIMIT_KEY      = 'login';
     private const TWO_FACTOR_REDIRECT = '/coding-blog/login/2fa';
 
     public function __construct(

@@ -7,7 +7,12 @@ namespace Tests\Unit\Core\Container;
 use App\Core\Container\Provider\AuthServiceProvider;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\RateLimiterFactoryInterface;
+use App\Core\Contract\SessionInterface;
+use App\Core\Mail\MailerInterface;
 use App\Core\View;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Handler\Auth\LoginGetHandler;
@@ -21,11 +26,15 @@ use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Log\LogContextNormalizer;
+use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
 use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Contract\TurnstileValidatorInterface;
+use App\Security\Email2faPendingSession;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
 use App\Security\Guard\Contract\RateLimitGuardInterface;
 use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
@@ -34,23 +43,14 @@ use App\Security\Guard\HoneypotGuard;
 use App\Security\Guard\RateLimitGuard;
 use App\Security\Guard\SubmissionDelayGuard;
 use App\Security\Guard\TurnstileGuard;
+use App\Service\Security\Contract\Email2faServiceInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
+use App\Service\Security\Email2faService;
 use App\Support\ErrorListNormalizer;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use App\Security\Contract\Email2faPendingSessionInterface;
-use App\Security\Email2faPendingSession;
-use App\Core\Contract\SessionInterface;
-use App\Core\Mail\MailerInterface;
-use App\Model\Contract\Email2faChallengeModelInterface;
-use App\Service\Security\Contract\Email2faServiceInterface;
-use App\Service\Security\Email2faService;
-use App\Handler\Auth\Email2faGetHandler;
-use App\Handler\Auth\Email2faPostHandler;
-use App\Handler\Auth\Email2faResendPostHandler;
-use App\Model\Contract\UserModelInterface;
-use App\Service\Security\Contract\RememberMeServiceInterface;
 
 final class AuthServiceProviderTest extends TestCase
 {
@@ -105,10 +105,10 @@ final class AuthServiceProviderTest extends TestCase
             ResetPasswordServiceInterface::class     => $this->createMock(ResetPasswordServiceInterface::class),
             MailerInterface::class                   => $this->createMock(MailerInterface::class),
             Email2faChallengeModelInterface::class   => $this->createMock(Email2faChallengeModelInterface::class),
-            Email2faPendingSessionInterface::class => $this->createMock(Email2faPendingSessionInterface::class),
-            Email2faServiceInterface::class        => $this->createMock(Email2faServiceInterface::class),
-            UserModelInterface::class              => $this->createMock(UserModelInterface::class),
-            RememberMeServiceInterface::class      => $this->createMock(RememberMeServiceInterface::class),
+            Email2faPendingSessionInterface::class   => $this->createMock(Email2faPendingSessionInterface::class),
+            Email2faServiceInterface::class          => $this->createMock(Email2faServiceInterface::class),
+            UserModelInterface::class                => $this->createMock(UserModelInterface::class),
+            RememberMeServiceInterface::class        => $this->createMock(RememberMeServiceInterface::class),
         ];
     }
 
@@ -279,28 +279,28 @@ final class AuthServiceProviderTest extends TestCase
     }
 
     public function testEmail2faPendingSessionDefinitionsAreBuildable(): void
-{
-    $definitions = AuthServiceProvider::getDefinitions();
+    {
+        $definitions = AuthServiceProvider::getDefinitions();
 
-    $session = $this->createMock(SessionInterface::class);
+        $session = $this->createMock(SessionInterface::class);
 
-    $container = $this->makeContainer([
+        $container = $this->makeContainer([
         SessionInterface::class => $session,
-    ]);
+        ]);
 
-    $pendingSession = $definitions[Email2faPendingSession::class]($container);
+        $pendingSession = $definitions[Email2faPendingSession::class]($container);
 
-    $this->assertInstanceOf(Email2faPendingSession::class, $pendingSession);
+        $this->assertInstanceOf(Email2faPendingSession::class, $pendingSession);
 
-    $aliasContainer = $this->makeContainer([
+        $aliasContainer = $this->makeContainer([
         Email2faPendingSession::class => $pendingSession,
-    ]);
+        ]);
 
-    $this->assertSame(
-        $pendingSession,
-        $definitions[Email2faPendingSessionInterface::class]($aliasContainer)
-    );
-}
+        $this->assertSame(
+            $pendingSession,
+            $definitions[Email2faPendingSessionInterface::class]($aliasContainer)
+        );
+    }
 
     public function testEmail2faHandlersAreBuildable(): void
     {

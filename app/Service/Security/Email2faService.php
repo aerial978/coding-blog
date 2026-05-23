@@ -9,17 +9,18 @@ use App\Model\Contract\Email2faChallengeModelInterface;
 use App\Model\Entity\Email2faChallengeEntity;
 use App\Model\Entity\UserEntity;
 use App\Service\Security\Contract\Email2faServiceInterface;
+use DateTimeImmutable;
 
 final class Email2faService implements Email2faServiceInterface
 {
-    public const VERIFY_SUCCESS = 'success';
-    public const VERIFY_INVALID = 'invalid';
+    public const VERIFY_SUCCESS           = 'success';
+    public const VERIFY_INVALID           = 'invalid';
     public const VERIFY_TOO_MANY_ATTEMPTS = 'too_many_attempts';
 
-    private const CODE_MIN = 100000;
-    private const CODE_MAX = 999999;
+    private const CODE_MIN         = 100000;
+    private const CODE_MAX         = 999999;
     private const CODE_TTL_MINUTES = 10;
-    private const MAX_ATTEMPTS = 5;
+    private const MAX_ATTEMPTS     = 5;
 
     public function __construct(
         private readonly Email2faChallengeModelInterface $challengeModel,
@@ -29,16 +30,16 @@ final class Email2faService implements Email2faServiceInterface
 
     public function generateAndSendCode(UserEntity $user): bool
     {
-        $userId = $user->getUserId();
-        $email = $user->getEmail();
+        $userId   = $user->getUserId();
+        $email    = $user->getEmail();
         $username = $user->getUsername();
 
         if ($userId === null || $email === null || $username === null) {
             return false;
         }
 
-        $code = $this->generateCode();
-        $codeHash = $this->hashCode($code);
+        $code      = $this->generateCode();
+        $codeHash  = $this->hashCode($code);
         $expiresAt = $this->buildExpirationDate();
 
         $this->challengeModel->invalidateActiveChallengesForUser($userId);
@@ -72,42 +73,81 @@ final class Email2faService implements Email2faServiceInterface
             return self::VERIFY_INVALID;
         }
 
-        $challenge = $this->challengeModel->findActiveChallengeByUserId($userId);
+        $challenge = $this->resolveValidChallenge($userId);
 
         if (!$challenge instanceof Email2faChallengeEntity) {
             return self::VERIFY_INVALID;
         }
 
         $challengeId = $challenge->getId();
-        $storedHash = $challenge->getCodeHash();
 
-        if ($challengeId === null || $storedHash === null) {
+        if ($challengeId === null) {
             return self::VERIFY_INVALID;
         }
 
-        if ($challenge->getAttempts() >= self::MAX_ATTEMPTS) {
+        if ($this->isMaxAttemptsReached($challenge)) {
             $this->challengeModel->invalidateActiveChallengesForUser($userId);
 
             return self::VERIFY_TOO_MANY_ATTEMPTS;
         }
 
-        $submittedHash = $this->hashCode($submittedCode);
-
-        if (!hash_equals($storedHash, $submittedHash)) {
-            $this->challengeModel->incrementAttempts($challengeId);
-
-            if (($challenge->getAttempts() + 1) >= self::MAX_ATTEMPTS) {
-                $this->challengeModel->invalidateActiveChallengesForUser($userId);
-
-                return self::VERIFY_TOO_MANY_ATTEMPTS;
-            }
-
-            return self::VERIFY_INVALID;
+        if (!$this->isSubmittedCodeValid($challenge, $submittedCode)) {
+            return $this->handleInvalidSubmittedCode($challenge, $userId);
         }
 
         $this->challengeModel->markAsUsed($challengeId);
 
         return self::VERIFY_SUCCESS;
+    }
+
+    private function resolveValidChallenge(int $userId): ?Email2faChallengeEntity
+    {
+        $challenge = $this->challengeModel->findActiveChallengeByUserId($userId);
+
+        if (!$challenge instanceof Email2faChallengeEntity) {
+            return null;
+        }
+
+        if ($challenge->getId() === null || $challenge->getCodeHash() === null) {
+            return null;
+        }
+
+        return $challenge;
+    }
+
+    private function isMaxAttemptsReached(Email2faChallengeEntity $challenge): bool
+    {
+        return $challenge->getAttempts() >= self::MAX_ATTEMPTS;
+    }
+
+    private function isSubmittedCodeValid(Email2faChallengeEntity $challenge, string $submittedCode): bool
+    {
+        $storedHash = $challenge->getCodeHash();
+
+        if ($storedHash === null) {
+            return false;
+        }
+
+        return hash_equals($storedHash, $this->hashCode($submittedCode));
+    }
+
+    private function handleInvalidSubmittedCode(Email2faChallengeEntity $challenge, int $userId): string
+    {
+        $challengeId = $challenge->getId();
+
+        if ($challengeId === null) {
+            return self::VERIFY_INVALID;
+        }
+
+        $this->challengeModel->incrementAttempts($challengeId);
+
+        if (($challenge->getAttempts() + 1) >= self::MAX_ATTEMPTS) {
+            $this->challengeModel->invalidateActiveChallengesForUser($userId);
+
+            return self::VERIFY_TOO_MANY_ATTEMPTS;
+        }
+
+        return self::VERIFY_INVALID;
     }
 
     private function generateCode(): string
@@ -122,7 +162,7 @@ final class Email2faService implements Email2faServiceInterface
 
     private function buildExpirationDate(): string
     {
-        return (new \DateTimeImmutable())
+        return (new DateTimeImmutable())
             ->modify('+' . self::CODE_TTL_MINUTES . ' minutes')
             ->format('Y-m-d H:i:s');
     }

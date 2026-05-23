@@ -7,6 +7,7 @@ namespace App\Core\Container\Provider;
 use App\Controller\AccountController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
+use App\Controller\Email2faController;
 use App\Controller\ErrorController;
 use App\Controller\ForgotPasswordController;
 use App\Controller\HomeController;
@@ -15,10 +16,11 @@ use App\Controller\LogoutController;
 use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
-use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
-use App\Core\View;
 use App\Handler\Auth\ConfirmAccountHandler;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Handler\Auth\LoginGetHandler;
@@ -30,15 +32,12 @@ use App\Handler\Auth\ResendConfirmationGetHandler;
 use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use Psr\Container\ContainerInterface;
-use App\Controller\Email2faController;
-use App\Handler\Auth\Email2faGetHandler;
-use App\Handler\Auth\Email2faPostHandler;
-use App\Handler\Auth\Email2faResendPostHandler;
 
 /**
  * Provides controller definitions for the dependency injection container.
@@ -73,14 +72,8 @@ final class ControllerServiceProvider
     {
         return [
             HomeController::class => static function (ContainerInterface $container): HomeController {
-                /** @var View $view */
-                $view = $container->get(View::class);
-
                 /** @var UserModelInterface $userModel */
                 $userModel = $container->get(UserModelInterface::class);
-
-                /** @var FlashInterface $flash */
-                $flash = $container->get(FlashInterface::class);
 
                 /** @var Request $request */
                 $request = $container->get(Request::class);
@@ -91,30 +84,27 @@ final class ControllerServiceProvider
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
 
-                return new HomeController($view, $userModel, $flash, $request, $authChecker, $csrf);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new HomeController($userModel, $request, $authChecker, $csrf, $responder);
             },
 
             ErrorController::class => static function (ContainerInterface $container): ErrorController {
-                /** @var View $view */
-                $view = $container->get(View::class);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
 
-                /** @var FlashInterface $flash */
-                $flash = $container->get(FlashInterface::class);
-
-                return new ErrorController($view, $flash);
+                return new ErrorController($responder);
             },
 
             AccountController::class => static function (ContainerInterface $container): AccountController {
-                /** @var View $view */
-                $view = $container->get(View::class);
-
-                /** @var FlashInterface $flash */
-                $flash = $container->get(FlashInterface::class);
-
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
 
-                return new AccountController($view, $flash, $csrf);
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new AccountController($csrf, $responder);
             },
         ];
     }

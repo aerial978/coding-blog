@@ -10,13 +10,23 @@ use App\Http\Contract\ResponderInterface;
 class Responder implements ResponderInterface
 {
     public function __construct(
-        private View $view,
+        private readonly View $view,
+        private readonly ViewContextProvider $contextProvider,
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function render(string $template, array $data = []): void
     {
-        echo $this->view->render($template, $data);
+        echo $this->view->render(
+            $template,
+            array_merge(
+                $this->contextProvider->getContext(),
+                $data
+            )
+        );
     }
 
     public function redirect(string $path): void

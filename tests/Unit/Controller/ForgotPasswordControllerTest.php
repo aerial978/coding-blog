@@ -6,7 +6,7 @@ namespace Tests\Unit\Controller;
 
 use App\Controller\ForgotPasswordController;
 use App\Core\Contract\FlashInterface;
-use App\Core\View;
+use App\Core\FormId;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Http\Contract\ResponderInterface;
@@ -24,7 +24,6 @@ use PHPUnit\Framework\TestCase;
 final class ForgotPasswordControllerTest extends TestCase
 {
     private Request&MockObject $request;
-    private View&MockObject $view;
     private FlashInterface&MockObject $flash;
     private ResponderInterface&MockObject $responder;
     private CsrfTokenInterface&MockObject $csrf;
@@ -42,9 +41,7 @@ final class ForgotPasswordControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->request = $this->createMock(Request::class);
-
-        $this->view                     = $this->createMock(View::class);
+        $this->request                  = $this->createMock(Request::class);
         $this->flash                    = $this->createMock(FlashInterface::class);
         $this->responder                = $this->createMock(ResponderInterface::class);
         $this->csrf                     = $this->createMock(CsrfTokenInterface::class);
@@ -57,7 +54,6 @@ final class ForgotPasswordControllerTest extends TestCase
         $this->rateLimitGuard       = $this->createMock(RateLimitGuardInterface::class);
 
         $getHandler = new ForgotPasswordGetHandler(
-            $this->view,
             $this->flash,
             $this->responder,
             $this->csrf,
@@ -94,13 +90,18 @@ final class ForgotPasswordControllerTest extends TestCase
             ->method('request');
 
         $this->flash
-            ->expects($this->any())
+            ->expects($this->exactly(2))
             ->method('take')
-            ->willReturn(null);
+            ->willReturnMap([
+                ['old', [], []],
+                ['security_flags', [], []],
+            ]);
 
         $this->csrf
             ->expects($this->once())
-            ->method('generateToken');
+            ->method('generateToken')
+            ->with(FormId::FORGOT_PASSWORD)
+            ->willReturn('csrf-forgot-token');
 
         $this->honeypotValidator
             ->expects($this->once())
@@ -110,14 +111,26 @@ final class ForgotPasswordControllerTest extends TestCase
         $this->submissionDelayValidator
             ->expects($this->once())
             ->method('markFormStart')
-            ->with('forgot_password');
+            ->with(FormId::FORGOT_PASSWORD);
 
         $this->responder
             ->expects($this->once())
             ->method('render')
             ->with(
                 'security/forgot-password.html.twig',
-                $this->isType('array')
+                $this->callback(function (array $data): bool {
+                    $this->assertSame('Forgot password', $data['title']);
+                    $this->assertSame('csrf-forgot-token', $data['csrf_token']);
+                    $this->assertSame([], $data['old']);
+                    $this->assertSame('fax', $data['honeypot_name']);
+                    $this->assertFalse($data['turnstile_required']);
+                    $this->assertFalse($data['turnstile_enabled']);
+
+                    $this->assertArrayNotHasKey('flashes', $data);
+                    $this->assertArrayNotHasKey('turnstile_site_key', $data);
+
+                    return true;
+                })
             );
 
         $this->securityService

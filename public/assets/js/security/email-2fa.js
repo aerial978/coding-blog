@@ -1,62 +1,76 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const inputs = Array.from(document.querySelectorAll('.code-digit'));
-    const hiddenCode = document.getElementById('code');
+  const inputs = document.querySelectorAll('.code-digit');
+  const hiddenCode = document.getElementById('code');
 
-    if (!inputs.length || !hiddenCode) {
-        return;
+  if (!inputs.length || !hiddenCode) {
+    return;
+  }
+
+  function getInputAt(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= inputs.length) {
+      return null;
     }
 
-    function updateCode() {
-        hiddenCode.value = inputs
-            .map((input) => input.value)
-            .join('');
-    }
+    return inputs.item(index);
+  }
 
-    inputs.forEach((input, index) => {
-        input.addEventListener('input', () => {
-            input.value = input.value
-                .replace(/\D/g, '')
-                .slice(0, 1);
+  function updateCode() {
+    hiddenCode.value = Array.from(inputs)
+      .map((input) => input.value)
+      .join('');
+  }
 
-            if (input.value && inputs[index + 1]) {
-                inputs[index + 1].focus();
-            }
+  inputs.forEach((input, index) => {
+    input.addEventListener('input', () => {
+      input.value = input.value
+        .replace(/\D/g, '')
+        .slice(0, 1);
 
-            updateCode();
-        });
+      const nextInput = getInputAt(index + 1);
 
-        input.addEventListener('keydown', (event) => {
-            if (
-                event.key === 'Backspace' &&
-                !input.value &&
-                inputs[index - 1]
-            ) {
-                inputs[index - 1].focus();
-            }
-        });
+      if (input.value && nextInput) {
+        nextInput.focus();
+      }
 
-        input.addEventListener('paste', (event) => {
-            event.preventDefault();
-
-            const pasted = event.clipboardData
-                .getData('text')
-                .replace(/\D/g, '')
-                .slice(0, 6);
-
-            pasted.split('').forEach((digit, digitIndex) => {
-                if (inputs[digitIndex]) {
-                    inputs[digitIndex].value = digit;
-                }
-            });
-
-            updateCode();
-
-            const nextIndex = Math.min(
-                pasted.length,
-                inputs.length - 1
-            );
-
-            inputs[nextIndex].focus();
-        });
+      updateCode();
     });
+
+    input.addEventListener('keydown', (event) => {
+      const previousInput = getInputAt(index - 1);
+
+      if (event.key === 'Backspace' && !input.value && previousInput) {
+        previousInput.focus();
+      }
+    });
+
+    input.addEventListener('paste', (event) => {
+      event.preventDefault();
+
+      const pasted = event.clipboardData
+        .getData('text')
+        .replace(/\D/g, '')
+        .slice(0, 6);
+
+      pasted.split('').forEach((digit, digitIndex) => {
+        const digitInput = getInputAt(digitIndex);
+
+        if (digitInput) {
+          digitInput.value = digit;
+        }
+      });
+
+      updateCode();
+
+      const nextIndex = Math.min(
+        pasted.length,
+        inputs.length - 1
+      );
+
+      const nextInput = getInputAt(nextIndex);
+
+      if (nextInput) {
+        nextInput.focus();
+      }
+    });
+  });
 });

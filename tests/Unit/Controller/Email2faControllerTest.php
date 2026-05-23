@@ -7,20 +7,20 @@ namespace Tests\Unit\Controller;
 use App\Controller\Email2faController;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
-use App\Core\View;
 use App\Handler\Auth\Email2faGetHandler;
 use App\Handler\Auth\Email2faPostHandler;
 use App\Handler\Auth\Email2faResendPostHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
+use App\Model\Entity\UserEntity;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
 use App\Security\Contract\RememberMeCookieManagerInterface;
+use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
 use App\Security\Guard\Contract\RateLimitGuardInterface;
-use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
 use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\RememberMeServiceInterface;
@@ -31,7 +31,7 @@ final class Email2faControllerTest extends TestCase
 {
     public function testIndexDelegatesToGetHandler(): void
     {
-        $request = $this->createMock(Request::class);
+        $request   = $this->createMock(Request::class);
         $responder = $this->createMock(ResponderInterface::class);
 
         $pendingSession = $this->createMock(Email2faPendingSessionInterface::class);
@@ -67,7 +67,6 @@ final class Email2faControllerTest extends TestCase
         $controller = new Email2faController(
             $request,
             new Email2faGetHandler(
-                $this->createMock(View::class),
                 $this->createMock(FlashInterface::class),
                 $responder,
                 $csrf,
@@ -86,7 +85,7 @@ final class Email2faControllerTest extends TestCase
     {
         $form = [
             'csrf_token' => 'valid-csrf-token',
-            'code' => '123456',
+            'code'       => '123456',
         ];
 
         $request = $this->createMock(Request::class);
@@ -167,7 +166,7 @@ final class Email2faControllerTest extends TestCase
             ->with('email_2fa_resend_form', 'valid-resend-csrf-token')
             ->willReturn(true);
 
-        $user = new \App\Model\Entity\UserEntity();
+        $user = new UserEntity();
         $user->setUserId(42);
         $user->setUsername('john');
         $user->setEmail('john@example.com');
@@ -216,7 +215,6 @@ final class Email2faControllerTest extends TestCase
     private function dummyGetHandler(): Email2faGetHandler
     {
         return new Email2faGetHandler(
-            $this->createMock(View::class),
             $this->createMock(FlashInterface::class),
             $this->createMock(ResponderInterface::class),
             $this->createMock(CsrfTokenInterface::class),

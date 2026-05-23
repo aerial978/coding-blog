@@ -8,11 +8,11 @@ use App\Core\Contract\SessionInterface;
 use App\Core\ErrorCode;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\LoginService;
 use App\Validation\Contract\FormValidatorInterface;
-use App\Security\Contract\Email2faPendingSessionInterface;
-use App\Service\Security\Contract\Email2faServiceInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -34,11 +34,11 @@ final class LoginServiceTest extends TestCase
         $_SERVER['REMOTE_ADDR']     = '127.0.0.1';
         $_SERVER['HTTP_USER_AGENT'] = 'PHPUnit';
 
-        $this->validator         = $this->createMock(FormValidatorInterface::class);
-        $this->userModel         = $this->createMock(UserModelInterface::class);
-        $this->session           = $this->createMock(SessionInterface::class);
-        $this->rememberMeService = $this->createMock(RememberMeServiceInterface::class);
-        $this->email2faService = $this->createMock(Email2faServiceInterface::class);
+        $this->validator              = $this->createMock(FormValidatorInterface::class);
+        $this->userModel              = $this->createMock(UserModelInterface::class);
+        $this->session                = $this->createMock(SessionInterface::class);
+        $this->rememberMeService      = $this->createMock(RememberMeServiceInterface::class);
+        $this->email2faService        = $this->createMock(Email2faServiceInterface::class);
         $this->email2faPendingSession = $this->createMock(Email2faPendingSessionInterface::class);
 
         $this->service = new LoginService(

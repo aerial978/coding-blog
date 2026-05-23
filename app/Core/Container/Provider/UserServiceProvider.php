@@ -7,12 +7,15 @@ namespace App\Core\Container\Provider;
 use App\Core\Contract\SessionInterface;
 use App\Core\Contract\SqlHelperInterface;
 use App\Core\Mail\MailerInterface;
+use App\Model\Contract\Email2faChallengeModelInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
+use App\Model\Email2faChallengeModel;
 use App\Model\EmailEventModel;
 use App\Model\RegistrationEventModel;
 use App\Model\UserModel;
 use App\Model\UserTokenModel;
+use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
@@ -20,6 +23,7 @@ use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
 use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
+use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Service\Security\Contract\LogoutServiceInterface;
@@ -35,10 +39,6 @@ use App\Service\Security\SecurityService;
 use App\Validation\Contract\FormValidatorInterface;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
-use App\Model\Contract\Email2faChallengeModelInterface;
-use App\Model\Email2faChallengeModel;
-use App\Security\Contract\Email2faPendingSessionInterface;
-use App\Service\Security\Contract\Email2faServiceInterface;
 
 /**
  * Services liés aux utilisateurs et à la sécurité (DAL + services métier).
@@ -321,8 +321,8 @@ final class UserServiceProvider
                 /** @var Email2faServiceInterface $email2faService */
                 $email2faService = $container->get(Email2faServiceInterface::class);
 
-                /** @var Email2faPendingSessionInterface $email2faPendingSession */
-                $email2faPendingSession = $container->get(Email2faPendingSessionInterface::class);
+                /** @var Email2faPendingSessionInterface $email2faSession */
+                $email2faSession = $container->get(Email2faPendingSessionInterface::class);
 
                 return new LoginService(
                     $validator,
@@ -330,7 +330,7 @@ final class UserServiceProvider
                     $session,
                     $rememberMe,
                     $email2faService,
-                    $email2faPendingSession,
+                    $email2faSession,
                 );
             },
         ];

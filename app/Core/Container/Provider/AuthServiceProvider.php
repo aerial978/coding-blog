@@ -6,7 +6,11 @@ namespace App\Core\Container\Provider;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\RateLimiterFactoryInterface;
-use App\Core\View;
+use App\Core\Contract\SessionInterface;
+use App\Core\Mail\MailerInterface;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Handler\Auth\LoginGetHandler;
@@ -20,11 +24,15 @@ use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Log\LogContextNormalizer;
+use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
 use App\Security\Contract\RememberMeCookieManagerInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Security\Contract\TurnstileValidatorInterface;
+use App\Security\Email2faPendingSession;
 use App\Security\Guard\Contract\HoneypotGuardInterface;
 use App\Security\Guard\Contract\RateLimitGuardInterface;
 use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
@@ -33,22 +41,13 @@ use App\Security\Guard\HoneypotGuard;
 use App\Security\Guard\RateLimitGuard;
 use App\Security\Guard\SubmissionDelayGuard;
 use App\Security\Guard\TurnstileGuard;
+use App\Service\Security\Contract\Email2faServiceInterface;
+use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
+use App\Service\Security\Email2faService;
 use App\Support\ErrorListNormalizer;
 use Psr\Container\ContainerInterface;
-use App\Core\Contract\SessionInterface;
-use App\Security\Contract\Email2faPendingSessionInterface;
-use App\Security\Email2faPendingSession;
-use App\Core\Mail\MailerInterface;
-use App\Model\Contract\Email2faChallengeModelInterface;
-use App\Service\Security\Contract\Email2faServiceInterface;
-use App\Service\Security\Email2faService;
-use App\Handler\Auth\Email2faGetHandler;
-use App\Handler\Auth\Email2faPostHandler;
-use App\Handler\Auth\Email2faResendPostHandler;
-use App\Model\Contract\UserModelInterface;
-use App\Service\Security\Contract\RememberMeServiceInterface;
 
 final class AuthServiceProvider
 {
@@ -253,8 +252,6 @@ final class AuthServiceProvider
     {
         return [
             RegisterGetHandler::class => static function (ContainerInterface $container): RegisterGetHandler {
-                /** @var View $view */
-                $view = $container->get(View::class);
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
@@ -267,7 +264,6 @@ final class AuthServiceProvider
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
 
                 return new RegisterGetHandler(
-                    $view,
                     $flash,
                     $responder,
                     $csrf,
@@ -315,8 +311,6 @@ final class AuthServiceProvider
     {
         return [
             ResendConfirmationGetHandler::class => static function (ContainerInterface $container): ResendConfirmationGetHandler {
-                /** @var View $view */
-                $view = $container->get(View::class);
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
@@ -329,7 +323,6 @@ final class AuthServiceProvider
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
 
                 return new ResendConfirmationGetHandler(
-                    $view,
                     $flash,
                     $responder,
                     $submissionDelay,
@@ -371,8 +364,6 @@ final class AuthServiceProvider
     {
         return [
             LoginGetHandler::class => static function (ContainerInterface $container): LoginGetHandler {
-                /** @var View $view */
-                $view = $container->get(View::class);
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
@@ -385,7 +376,6 @@ final class AuthServiceProvider
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
 
                 return new LoginGetHandler(
-                    $view,
                     $flash,
                     $responder,
                     $csrf,
@@ -430,8 +420,6 @@ final class AuthServiceProvider
     {
         return [
             ForgotPasswordGetHandler::class => static function (ContainerInterface $container): ForgotPasswordGetHandler {
-                /** @var View $view */
-                $view = $container->get(View::class);
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
@@ -444,7 +432,6 @@ final class AuthServiceProvider
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
 
                 return new ForgotPasswordGetHandler(
-                    $view,
                     $flash,
                     $responder,
                     $csrf,
@@ -486,8 +473,6 @@ final class AuthServiceProvider
     {
         return [
             ResetPasswordGetHandler::class => static function (ContainerInterface $container): ResetPasswordGetHandler {
-                /** @var View $view */
-                $view = $container->get(View::class);
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
@@ -502,7 +487,6 @@ final class AuthServiceProvider
                 $resetPasswordService = $container->get(ResetPasswordServiceInterface::class);
 
                 return new ResetPasswordGetHandler(
-                    $view,
                     $flash,
                     $responder,
                     $csrf,
@@ -577,8 +561,6 @@ final class AuthServiceProvider
     {
         return [
             Email2faGetHandler::class => static function (ContainerInterface $container): Email2faGetHandler {
-                /** @var View $view */
-                $view = $container->get(View::class);
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
                 /** @var ResponderInterface $responder */
@@ -593,7 +575,6 @@ final class AuthServiceProvider
                 $pendingSession = $container->get(Email2faPendingSessionInterface::class);
 
                 return new Email2faGetHandler(
-                    $view,
                     $flash,
                     $responder,
                     $csrf,

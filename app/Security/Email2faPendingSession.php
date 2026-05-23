@@ -6,6 +6,7 @@ namespace App\Security;
 
 use App\Core\Contract\SessionInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
+use InvalidArgumentException;
 
 final class Email2faPendingSession implements Email2faPendingSessionInterface
 {
@@ -28,12 +29,12 @@ final class Email2faPendingSession implements Email2faPendingSessionInterface
     public function start(int $userId, bool $rememberMeRequested): void
     {
         if ($userId <= 0) {
-            throw new \InvalidArgumentException('The pending 2FA user ID must be a positive integer.');
+            throw new InvalidArgumentException('The pending 2FA user ID must be a positive integer.');
         }
 
         $this->session->set(self::SESSION_KEY, [
-            self::KEY_USER_ID => $userId,
-            self::KEY_STARTED_AT => time(),
+            self::KEY_USER_ID               => $userId,
+            self::KEY_STARTED_AT            => time(),
             self::KEY_REMEMBER_ME_REQUESTED => $rememberMeRequested,
         ]);
     }
@@ -42,8 +43,8 @@ final class Email2faPendingSession implements Email2faPendingSessionInterface
     {
         $payload = $this->getPayload();
 
-        return $payload !== null
-            && $this->extractUserId($payload) !== null
+        return $payload                          !== null
+            && $this->extractUserId($payload)    !== null
             && $this->extractStartedAt($payload) !== null;
     }
 
@@ -102,6 +103,7 @@ final class Email2faPendingSession implements Email2faPendingSessionInterface
             return null;
         }
 
+        /** @var array<string, mixed> $payload */
         return $payload;
     }
 

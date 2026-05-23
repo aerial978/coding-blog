@@ -16,7 +16,7 @@ final class Email2faServiceTest extends TestCase
     public function testGenerateAndSendCodeReturnsFalseWhenUserIsIncomplete(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $service = new Email2faService($challengeModel, $mailer);
 
@@ -28,7 +28,7 @@ final class Email2faServiceTest extends TestCase
     public function testGenerateAndSendCodeReturnsFalseWhenChallengeCreationFails(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $user = (new UserEntity())
             ->setUserId(42)
@@ -62,7 +62,7 @@ final class Email2faServiceTest extends TestCase
     public function testGenerateAndSendCodeCreatesChallengeAndSendsEmail(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $user = (new UserEntity())
             ->setUserId(42)
@@ -103,7 +103,7 @@ final class Email2faServiceTest extends TestCase
     public function testResendCodeDelegatesToGenerateAndSendCode(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $user = (new UserEntity())
             ->setUserId(42)
@@ -133,7 +133,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsInvalidForInvalidUserId(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challengeModel
             ->expects(self::never())
@@ -150,7 +150,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsInvalidForInvalidCodeFormat(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challengeModel
             ->expects(self::never())
@@ -167,7 +167,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsInvalidWhenNoActiveChallengeExists(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challengeModel
             ->expects(self::once())
@@ -186,7 +186,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsTooManyAttemptsWhenChallengeAlreadyReachedLimit(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challenge = (new Email2faChallengeEntity())
             ->setId(123)
@@ -216,7 +216,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsInvalidAndIncrementsAttemptsWhenCodeIsWrong(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challenge = (new Email2faChallengeEntity())
             ->setId(123)
@@ -250,7 +250,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsTooManyAttemptsWhenWrongCodeReachesLimit(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challenge = (new Email2faChallengeEntity())
             ->setId(123)
@@ -285,7 +285,7 @@ final class Email2faServiceTest extends TestCase
     public function testVerifyCodeReturnsSuccessAndMarksChallengeAsUsedWhenCodeIsCorrect(): void
     {
         $challengeModel = $this->createMock(Email2faChallengeModelInterface::class);
-        $mailer = $this->createMock(MailerInterface::class);
+        $mailer         = $this->createMock(MailerInterface::class);
 
         $challenge = (new Email2faChallengeEntity())
             ->setId(123)
