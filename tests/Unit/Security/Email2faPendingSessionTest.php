@@ -13,7 +13,7 @@ final class Email2faPendingSessionTest extends TestCase
 {
     public function testStartCreatesValidPendingSession(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session);
 
         $pendingSession->start(42, true);
@@ -26,7 +26,7 @@ final class Email2faPendingSessionTest extends TestCase
 
     public function testStartCreatesPendingSessionWithoutRememberMe(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session);
 
         $pendingSession->start(42, false);
@@ -38,7 +38,7 @@ final class Email2faPendingSessionTest extends TestCase
 
     public function testHasPendingReturnsFalseWhenNoPendingSessionExists(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session);
 
         self::assertFalse($pendingSession->hasPending());
@@ -49,7 +49,7 @@ final class Email2faPendingSessionTest extends TestCase
 
     public function testClearRemovesPendingSession(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session);
 
         $pendingSession->start(42, true);
@@ -66,7 +66,7 @@ final class Email2faPendingSessionTest extends TestCase
 
     public function testStartRejectsInvalidUserId(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session);
 
         $this->expectException(InvalidArgumentException::class);
@@ -77,7 +77,7 @@ final class Email2faPendingSessionTest extends TestCase
 
     public function testIsExpiredReturnsFalseBeforeExpiration(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session, 600);
 
         $pendingSession->start(42, false);
@@ -87,7 +87,7 @@ final class Email2faPendingSessionTest extends TestCase
 
     public function testIsExpiredReturnsTrueAfterExpiration(): void
     {
-        $session = new SessionFake();
+        $session        = new SessionFake();
         $pendingSession = new Email2faPendingSession($session, -1);
 
         $pendingSession->start(42, false);
@@ -114,7 +114,7 @@ final class Email2faPendingSessionTest extends TestCase
         $session = new SessionFake();
 
         $session->set('auth_2fa_pending', [
-            'started_at' => time(),
+            'started_at'            => time(),
             'remember_me_requested' => true,
         ]);
 
@@ -130,7 +130,7 @@ final class Email2faPendingSessionTest extends TestCase
         $session = new SessionFake();
 
         $session->set('auth_2fa_pending', [
-            'user_id' => 42,
+            'user_id'               => 42,
             'remember_me_requested' => true,
         ]);
 
@@ -146,8 +146,8 @@ final class Email2faPendingSessionTest extends TestCase
         $session = new SessionFake();
 
         $session->set('auth_2fa_pending', [
-            'user_id' => 0,
-            'started_at' => time(),
+            'user_id'               => 0,
+            'started_at'            => time(),
             'remember_me_requested' => false,
         ]);
 
@@ -162,8 +162,8 @@ final class Email2faPendingSessionTest extends TestCase
         $session = new SessionFake();
 
         $session->set('auth_2fa_pending', [
-            'user_id' => 42,
-            'started_at' => 0,
+            'user_id'               => 42,
+            'started_at'            => 0,
             'remember_me_requested' => false,
         ]);
 

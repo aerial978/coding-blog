@@ -4,30 +4,26 @@ declare(strict_types=1);
 
 namespace App\Handler\Auth;
 
-use App\Controller\BaseController;
 use App\Core\Contract\FlashInterface;
 use App\Core\FormId;
 use App\Core\Logger;
 use App\Core\MessageManager;
-use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
 use App\Security\Contract\SubmissionDelayValidatorInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 
-final class ResetPasswordGetHandler extends BaseController
+final class ResetPasswordGetHandler
 {
     public function __construct(
-        View $view,
-        FlashInterface $flash,
+        private FlashInterface $flash,
         private ResponderInterface $responder,
         private CsrfTokenInterface $csrf,
         private HoneypotValidatorInterface $honeypot,
         private SubmissionDelayValidatorInterface $submissionDelay,
         private ResetPasswordServiceInterface $resetPasswordService,
     ) {
-        parent::__construct($view, $flash);
     }
 
     public function handle(string $token): void
@@ -35,7 +31,7 @@ final class ResetPasswordGetHandler extends BaseController
         $token = trim($token);
 
         $this->logEntry($token);
-        $this->submissionDelay->markFormStart('reset_password');
+        $this->submissionDelay->markFormStart(FormId::RESET_PASSWORD);
 
         $turnstileRequired = $this->isTurnstileRequired();
         $check             = $this->resetPasswordService->validateResetToken($token);
@@ -86,14 +82,13 @@ final class ResetPasswordGetHandler extends BaseController
 
     private function renderForm(string $token, bool $turnstileRequired): void
     {
-        $this->responder->render('security/reset-password.html.twig', $this->withFlashes([
+        $this->responder->render('security/reset-password.html.twig', [
             'title'              => 'Réinitialiser le mot de passe',
             'csrf_token'         => $this->csrf->generateToken(FormId::RESET_PASSWORD),
             'honeypot_name'      => $this->honeypot->fieldName(),
             'turnstile_required' => $turnstileRequired,
             'turnstile_enabled'  => $turnstileRequired,
-            'turnstile_site_key' => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
             'token'              => $token,
-        ]));
+        ]);
     }
 }

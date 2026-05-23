@@ -7,6 +7,7 @@ namespace Tests\Unit\Core\Container;
 use App\Controller\AccountController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
+use App\Controller\Email2faController;
 use App\Controller\ErrorController;
 use App\Controller\ForgotPasswordController;
 use App\Controller\HomeController;
@@ -20,6 +21,9 @@ use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
 use App\Core\View;
 use App\Handler\Auth\ConfirmAccountHandler;
+use App\Handler\Auth\Email2faGetHandler;
+use App\Handler\Auth\Email2faPostHandler;
+use App\Handler\Auth\Email2faResendPostHandler;
 use App\Handler\Auth\ForgotPasswordGetHandler;
 use App\Handler\Auth\ForgotPasswordPostHandler;
 use App\Handler\Auth\LoginGetHandler;
@@ -37,10 +41,7 @@ use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use App\Controller\Email2faController;
-use App\Handler\Auth\Email2faGetHandler;
-use App\Handler\Auth\Email2faPostHandler;
-use App\Handler\Auth\Email2faResendPostHandler;
+use App\Http\Contract\ResponderInterface;
 
 final class ControllerServiceProviderTest extends TestCase
 {
@@ -86,6 +87,7 @@ final class ControllerServiceProviderTest extends TestCase
             Request::class                       => $this->createMock(Request::class),
             AuthCheckerInterface::class          => $this->createMock(AuthCheckerInterface::class),
             CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
+            ResponderInterface::class            => $this->createMock(ResponderInterface::class),
             ConfirmAccountHandler::class         => $this->instantiateWithoutConstructor(ConfirmAccountHandler::class),
             RegisterGetHandler::class            => $this->instantiateWithoutConstructor(RegisterGetHandler::class),
             RegisterPostHandler::class           => $this->instantiateWithoutConstructor(RegisterPostHandler::class),
@@ -98,9 +100,9 @@ final class ControllerServiceProviderTest extends TestCase
             ForgotPasswordPostHandler::class     => $this->instantiateWithoutConstructor(ForgotPasswordPostHandler::class),
             ResetPasswordGetHandler::class       => $this->instantiateWithoutConstructor(ResetPasswordGetHandler::class),
             ResetPasswordPostHandler::class      => $this->instantiateWithoutConstructor(ResetPasswordPostHandler::class),
-            Email2faGetHandler::class        => $this->instantiateWithoutConstructor(Email2faGetHandler::class),
-            Email2faPostHandler::class       => $this->instantiateWithoutConstructor(Email2faPostHandler::class),
-            Email2faResendPostHandler::class => $this->instantiateWithoutConstructor(Email2faResendPostHandler::class),
+            Email2faGetHandler::class            => $this->instantiateWithoutConstructor(Email2faGetHandler::class),
+            Email2faPostHandler::class           => $this->instantiateWithoutConstructor(Email2faPostHandler::class),
+            Email2faResendPostHandler::class     => $this->instantiateWithoutConstructor(Email2faResendPostHandler::class),
         ];
     }
 

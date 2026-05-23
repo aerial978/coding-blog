@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Handler\Auth;
 
 use App\Core\Contract\FlashInterface;
-use App\Core\View;
 use App\Handler\Auth\Email2faGetHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Security\Contract\CsrfTokenInterface;
@@ -17,7 +16,6 @@ use PHPUnit\Framework\TestCase;
 
 final class Email2faGetHandlerTest extends TestCase
 {
-    private View&MockObject $view;
     private FlashInterface&MockObject $flash;
     private ResponderInterface&MockObject $responder;
     private CsrfTokenInterface&MockObject $csrf;
@@ -31,16 +29,14 @@ final class Email2faGetHandlerTest extends TestCase
     {
         parent::setUp();
 
-        $this->view = $this->createMock(View::class);
-        $this->flash = $this->createMock(FlashInterface::class);
-        $this->responder = $this->createMock(ResponderInterface::class);
-        $this->csrf = $this->createMock(CsrfTokenInterface::class);
-        $this->honeypot = $this->createMock(HoneypotValidatorInterface::class);
+        $this->flash           = $this->createMock(FlashInterface::class);
+        $this->responder       = $this->createMock(ResponderInterface::class);
+        $this->csrf            = $this->createMock(CsrfTokenInterface::class);
+        $this->honeypot        = $this->createMock(HoneypotValidatorInterface::class);
         $this->submissionDelay = $this->createMock(SubmissionDelayValidatorInterface::class);
-        $this->pendingSession = $this->createMock(Email2faPendingSessionInterface::class);
+        $this->pendingSession  = $this->createMock(Email2faPendingSessionInterface::class);
 
         $this->handler = new Email2faGetHandler(
-            $this->view,
             $this->flash,
             $this->responder,
             $this->csrf,
@@ -166,30 +162,14 @@ final class Email2faGetHandlerTest extends TestCase
             ->with(
                 'security/email-2fa.html.twig',
                 $this->callback(function (array $data): bool {
-                    $this->assertSame(
-                        'Vérification de connexion',
-                        $data['title']
-                    );
+                    $this->assertSame('Vérification de connexion', $data['title']);
+                    $this->assertSame('csrf-main-token', $data['csrf_token']);
+                    $this->assertSame('csrf-resend-token', $data['csrf_token_resend']);
+                    $this->assertSame('hp_email_2fa', $data['honeypot_name']);
+                    $this->assertSame('email_2fa_form', $data['form_id']);
 
-                    $this->assertSame(
-                        'csrf-main-token',
-                        $data['csrf_token']
-                    );
-
-                    $this->assertSame(
-                        'csrf-resend-token',
-                        $data['csrf_token_resend']
-                    );
-
-                    $this->assertSame(
-                        'hp_email_2fa',
-                        $data['honeypot_name']
-                    );
-
-                    $this->assertSame(
-                        'email_2fa_form',
-                        $data['form_id']
-                    );
+                    $this->assertArrayNotHasKey('flashes', $data);
+                    $this->assertArrayNotHasKey('show_header', $data);
 
                     return true;
                 })

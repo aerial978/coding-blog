@@ -19,7 +19,6 @@ use App\Core\View;
 use App\Handler\Auth\ConfirmAccountHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
-use App\Http\Responder;
 use App\Infrastructure\Mail\DummyMailer;
 use App\Infrastructure\Mail\MailjetMailer;
 use App\Log\LogContextNormalizer;
@@ -102,19 +101,6 @@ final class SystemServiceProvider
         return [
             View::class    => static fn (): View => new View(),
             Request::class => static fn (): Request => new Request(),
-
-            Responder::class => static function (ContainerInterface $container): Responder {
-                /** @var View $view */
-                $view = $container->get(View::class);
-                return new Responder($view);
-            },
-
-            // Correction PHPStan: on force le type retourné (plus de "mixed")
-            ResponderInterface::class => static function (ContainerInterface $container): ResponderInterface {
-                /** @var Responder $responder */
-                $responder = $container->get(Responder::class);
-                return $responder;
-            },
         ];
     }
 

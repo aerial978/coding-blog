@@ -140,9 +140,6 @@ class Email2faChallengeModel implements Email2faChallengeModelInterface
         return $query->rowCount() === 1;
     }
 
-    /**
-     * Invalidates all current active challenges for a user.
-     */
     public function invalidateActiveChallengesForUser(int $userId): bool
     {
         $sql = "UPDATE {$this->table}
@@ -150,13 +147,13 @@ class Email2faChallengeModel implements Email2faChallengeModelInterface
                     used = 1,
                     used_at = NOW()
                 WHERE user_id = :user_id
-                  AND used = 0";
+                AND used = 0";
 
-        $query = $this->sqlHelper->request($sql, [
+        $this->sqlHelper->request($sql, [
             ':user_id' => $userId,
         ]);
 
-        return $query->rowCount() >= 0;
+        return true;
     }
 
     /**

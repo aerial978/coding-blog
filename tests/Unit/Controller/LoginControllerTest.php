@@ -6,7 +6,7 @@ namespace Tests\Unit\Controller;
 
 use App\Controller\LoginController;
 use App\Core\Contract\FlashInterface;
-use App\Core\View;
+use App\Core\FormId;
 use App\Handler\Auth\LoginGetHandler;
 use App\Handler\Auth\LoginPostHandler;
 use App\Http\Contract\ResponderInterface;
@@ -25,7 +25,6 @@ use PHPUnit\Framework\TestCase;
 final class LoginControllerTest extends TestCase
 {
     private Request&MockObject $request;
-    private View&MockObject $view;
     private FlashInterface&MockObject $flash;
     private ResponderInterface&MockObject $responder;
     private CsrfTokenInterface&MockObject $csrf;
@@ -43,9 +42,7 @@ final class LoginControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->request = $this->createMock(Request::class);
-
-        $this->view                     = $this->createMock(View::class);
+        $this->request                  = $this->createMock(Request::class);
         $this->flash                    = $this->createMock(FlashInterface::class);
         $this->responder                = $this->createMock(ResponderInterface::class);
         $this->csrf                     = $this->createMock(CsrfTokenInterface::class);
@@ -58,7 +55,6 @@ final class LoginControllerTest extends TestCase
         $this->rememberMeCookieManager  = $this->createMock(RememberMeCookieManagerInterface::class);
 
         $getHandler = new LoginGetHandler(
-            $this->view,
             $this->flash,
             $this->responder,
             $this->csrf,
@@ -94,22 +90,48 @@ final class LoginControllerTest extends TestCase
             ->expects($this->never())
             ->method('request');
 
-        // Exemple typique : récupération des flash messages
         $this->flash
-            ->expects($this->any())
+            ->expects($this->exactly(2))
             ->method('take')
-            ->willReturn(null);
+            ->willReturnMap([
+                ['old', [], []],
+                ['security_flags', [], []],
+            ]);
+
+        $this->submissionDelayValidator
+            ->expects($this->once())
+            ->method('markFormStart')
+            ->with(FormId::LOGIN);
 
         $this->csrf
             ->expects($this->once())
-            ->method('generateToken');
+            ->method('generateToken')
+            ->with(FormId::LOGIN)
+            ->willReturn('csrf-login-token');
+
+        $this->honeypotValidator
+            ->expects($this->once())
+            ->method('fieldName')
+            ->willReturn('fax');
 
         $this->responder
             ->expects($this->once())
             ->method('render')
             ->with(
                 'security/login.html.twig',
-                $this->isType('array')
+                $this->callback(function (array $data): bool {
+                    $this->assertSame('Login', $data['title']);
+                    $this->assertSame('csrf-login-token', $data['csrf_token']);
+                    $this->assertSame([], $data['old']);
+                    $this->assertSame('fax', $data['honeypot_name']);
+                    $this->assertFalse($data['turnstile_required']);
+                    $this->assertFalse($data['turnstile_enabled']);
+
+                    $this->assertArrayNotHasKey('flashes', $data);
+                    $this->assertArrayNotHasKey('turnstile_site_key', $data);
+
+                    return true;
+                })
             );
 
         $this->securityService
@@ -137,9 +159,9 @@ final class LoginControllerTest extends TestCase
             ->willReturn($form);
 
         $this->honeypotGuard
-        ->expects($this->once())
-        ->method('assertClean')
-        ->willReturn(true);
+            ->expects($this->once())
+            ->method('assertClean')
+            ->willReturn(true);
 
         $this->submissionDelayGuard
             ->expects($this->once())
@@ -160,14 +182,25 @@ final class LoginControllerTest extends TestCase
                 'errors' => [],
             ]);
 
-        $this->responder
+        $this->flash
             ->expects($this->once())
-            ->method('redirect');
+            ->method('put')
+            ->with('old', []);
 
-        $this->controller->login();
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('success', 'Connexion réussie.');
 
         $this->rememberMeCookieManager
             ->expects($this->never())
             ->method('createCookie');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/coding-blog');
+
+        $this->controller->login();
     }
 }

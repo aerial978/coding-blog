@@ -9,11 +9,11 @@ use App\Core\ErrorCode;
 use App\Core\Logger;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
+use App\Security\Contract\Email2faPendingSessionInterface;
+use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Validation\Contract\FormValidatorInterface;
-use App\Security\Contract\Email2faPendingSessionInterface;
-use App\Service\Security\Contract\Email2faServiceInterface;
 
 final class LoginService implements LoginServiceInterface
 {
@@ -23,7 +23,7 @@ final class LoginService implements LoginServiceInterface
         private SessionInterface $session,
         private RememberMeServiceInterface $rememberMeService,
         private Email2faServiceInterface $email2faService,
-        private Email2faPendingSessionInterface $email2faPendingSession,
+        private Email2faPendingSessionInterface $email2faSession,
         // Extension prévue : throttle dédié login
         // private LoginThrottleServiceInterface $throttle,
     ) {
@@ -402,7 +402,7 @@ final class LoginService implements LoginServiceInterface
             ];
         }
 
-        $this->email2faPendingSession->start($userId, $rememberMe);
+        $this->email2faSession->start($userId, $rememberMe);
 
         Logger::logCodeAndGetMessage($channel, 'info', 'email_2fa_required', [
             'user_id' => $userId,

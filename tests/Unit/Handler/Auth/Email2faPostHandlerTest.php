@@ -6,6 +6,7 @@ namespace Tests\Unit\Handler\Auth;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
+use App\Handler\Auth\Email2faPostHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
@@ -16,7 +17,6 @@ use App\Security\Guard\Contract\SubmissionDelayGuardInterface;
 use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\Email2faService;
-use App\Handler\Auth\Email2faPostHandler;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -40,17 +40,17 @@ final class Email2faPostHandlerTest extends TestCase
     {
         parent::setUp();
 
-        $this->email2faService     = $this->createMock(Email2faServiceInterface::class);
-        $this->pendingSession      = $this->createMock(Email2faPendingSessionInterface::class);
-        $this->session             = $this->createMock(SessionInterface::class);
-        $this->flash               = $this->createMock(FlashInterface::class);
-        $this->responder           = $this->createMock(ResponderInterface::class);
-        $this->csrf                = $this->createMock(CsrfTokenInterface::class);
-        $this->honeypotGuard       = $this->createMock(HoneypotGuardInterface::class);
+        $this->email2faService      = $this->createMock(Email2faServiceInterface::class);
+        $this->pendingSession       = $this->createMock(Email2faPendingSessionInterface::class);
+        $this->session              = $this->createMock(SessionInterface::class);
+        $this->flash                = $this->createMock(FlashInterface::class);
+        $this->responder            = $this->createMock(ResponderInterface::class);
+        $this->csrf                 = $this->createMock(CsrfTokenInterface::class);
+        $this->honeypotGuard        = $this->createMock(HoneypotGuardInterface::class);
         $this->submissionDelayGuard = $this->createMock(SubmissionDelayGuardInterface::class);
-        $this->rateLimitGuard      = $this->createMock(RateLimitGuardInterface::class);
-        $this->rememberMeService   = $this->createMock(RememberMeServiceInterface::class);
-        $this->rememberMeManager   = $this->createMock(RememberMeCookieManagerInterface::class);
+        $this->rateLimitGuard       = $this->createMock(RateLimitGuardInterface::class);
+        $this->rememberMeService    = $this->createMock(RememberMeServiceInterface::class);
+        $this->rememberMeManager    = $this->createMock(RememberMeCookieManagerInterface::class);
 
         $this->handler = new Email2faPostHandler(
             $this->email2faService,

@@ -209,9 +209,8 @@ final class Email2faChallengeModelTest extends TestCase
             ->willReturn($this->statement);
 
         $this->statement
-            ->expects($this->once())
-            ->method('rowCount')
-            ->willReturn(0);
+            ->expects($this->never())
+            ->method('rowCount');
 
         $this->assertTrue(
             $this->model->invalidateActiveChallengesForUser(42)

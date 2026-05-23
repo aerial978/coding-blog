@@ -34,7 +34,7 @@ final class DebugController
      */
     private function buildPayload(): array
     {
-        $user = $this->normalizeArray($this->session->get('user'));
+        $user            = $this->normalizeArray($this->session->get('user'));
         $email2faPending = $this->normalizeArray(
             $this->session->get(self::EMAIL_2FA_PENDING_KEY)
         );

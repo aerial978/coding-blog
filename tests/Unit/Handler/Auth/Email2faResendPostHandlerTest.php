@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Handler\Auth;
 
 use App\Core\Contract\FlashInterface;
-use App\Http\Contract\ResponderInterface;
 use App\Handler\Auth\Email2faResendPostHandler;
+use App\Http\Contract\ResponderInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
 use App\Security\Contract\CsrfTokenInterface;

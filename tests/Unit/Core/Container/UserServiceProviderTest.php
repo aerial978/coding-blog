@@ -8,12 +8,15 @@ use App\Core\Container\Provider\UserServiceProvider;
 use App\Core\Contract\SessionInterface;
 use App\Core\Contract\SqlHelperInterface;
 use App\Core\Mail\MailerInterface;
+use App\Model\Contract\Email2faChallengeModelInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
+use App\Model\Email2faChallengeModel;
 use App\Model\EmailEventModel;
 use App\Model\RegistrationEventModel;
 use App\Model\UserModel;
 use App\Model\UserTokenModel;
+use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
@@ -21,6 +24,7 @@ use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
 use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
+use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\ForgotPasswordServiceInterface;
 use App\Service\Security\Contract\LoginServiceInterface;
 use App\Service\Security\Contract\LogoutServiceInterface;
@@ -37,10 +41,6 @@ use App\Validation\Contract\FormValidatorInterface;
 use Cocur\Slugify\Slugify;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use App\Model\Contract\Email2faChallengeModelInterface;
-use App\Model\Email2faChallengeModel;
-use App\Security\Contract\Email2faPendingSessionInterface;
-use App\Service\Security\Contract\Email2faServiceInterface;
 
 final class UserServiceProviderTest extends TestCase
 {

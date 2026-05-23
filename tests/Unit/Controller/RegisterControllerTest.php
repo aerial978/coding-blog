@@ -6,7 +6,7 @@ namespace Tests\Unit\Controller;
 
 use App\Controller\RegisterController;
 use App\Core\Contract\FlashInterface;
-use App\Core\View;
+use App\Core\FormId;
 use App\Handler\Auth\RegisterGetHandler;
 use App\Handler\Auth\RegisterPostHandler;
 use App\Http\Contract\ResponderInterface;
@@ -26,7 +26,6 @@ use PHPUnit\Framework\TestCase;
 final class RegisterControllerTest extends TestCase
 {
     private Request&MockObject $request;
-    private View&MockObject $view;
     private FlashInterface&MockObject $flash;
     private ResponderInterface&MockObject $responder;
     private CsrfTokenInterface&MockObject $csrf;
@@ -45,9 +44,7 @@ final class RegisterControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->request = $this->createMock(Request::class);
-
-        $this->view                     = $this->createMock(View::class);
+        $this->request                  = $this->createMock(Request::class);
         $this->flash                    = $this->createMock(FlashInterface::class);
         $this->responder                = $this->createMock(ResponderInterface::class);
         $this->csrf                     = $this->createMock(CsrfTokenInterface::class);
@@ -61,7 +58,6 @@ final class RegisterControllerTest extends TestCase
         $this->turnstileGuard       = $this->createMock(TurnstileGuardInterface::class);
 
         $getHandler = new RegisterGetHandler(
-            $this->view,
             $this->flash,
             $this->responder,
             $this->csrf,
@@ -101,44 +97,45 @@ final class RegisterControllerTest extends TestCase
         $this->flash
             ->expects($this->exactly(2))
             ->method('take')
-            ->willReturnCallback(function (string $key, mixed $default): mixed {
-                static $call = 0;
-                $call++;
-
-                if ($call === 1) {
-                    TestCase::assertSame('old', $key);
-                    TestCase::assertSame([], $default);
-                    return [];
-                }
-
-                if ($call === 2) {
-                    TestCase::assertSame('register_state', $key);
-                    TestCase::assertNull($default);
-                    return null;
-                }
-
-                TestCase::fail('flash->take() appelée trop de fois.');
-            });
+            ->willReturnMap([
+                ['old', [], []],
+                ['register_state', null, null],
+            ]);
 
         $this->submissionDelayValidator
             ->expects($this->once())
             ->method('markFormStart')
-            ->with('register');
+            ->with(FormId::REGISTER);
 
         $this->csrf
             ->expects($this->once())
-            ->method('generateToken');
+            ->method('generateToken')
+            ->with(FormId::REGISTER)
+            ->willReturn('csrf-register-token');
 
         $this->honeypotValidator
             ->expects($this->once())
-            ->method('fieldName');
+            ->method('fieldName')
+            ->willReturn('fax');
 
         $this->responder
             ->expects($this->once())
             ->method('render')
             ->with(
                 'security/register.html.twig',
-                $this->isType('array')
+                $this->callback(function (array $data): bool {
+                    $this->assertSame('User registration', $data['title']);
+                    $this->assertSame('form', $data['mode']);
+                    $this->assertNull($data['obfuscated_email']);
+                    $this->assertSame('csrf-register-token', $data['csrf_token']);
+                    $this->assertSame([], $data['old']);
+                    $this->assertSame('fax', $data['honeypot_name']);
+
+                    $this->assertArrayNotHasKey('flashes', $data);
+                    $this->assertArrayNotHasKey('turnstile_site_key', $data);
+
+                    return true;
+                })
             );
 
         $this->securityService

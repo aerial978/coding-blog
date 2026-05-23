@@ -18,7 +18,6 @@ use App\Core\View;
 use App\Handler\Auth\ConfirmAccountHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
-use App\Http\Responder;
 use App\Infrastructure\Mail\DummyMailer;
 use App\Log\LogContextNormalizer;
 use App\Middleware\AuthenticationMiddleware;
@@ -116,8 +115,6 @@ final class SystemServiceProviderTest extends TestCase
 
         $this->assertArrayHasKey(View::class, $definitions);
         $this->assertArrayHasKey(Request::class, $definitions);
-        $this->assertArrayHasKey(Responder::class, $definitions);
-        $this->assertArrayHasKey(ResponderInterface::class, $definitions);
 
         $this->assertArrayHasKey(FormValidator::class, $definitions);
         $this->assertArrayHasKey(FormValidatorInterface::class, $definitions);
@@ -157,42 +154,29 @@ final class SystemServiceProviderTest extends TestCase
         $this->assertArrayHasKey('logger.error', $definitions);
     }
 
-    public function testHttpDefinitionsAreBuildableAndResponderAliasReturnsResponder(): void
+    public function testHttpDefinitionsAreBuildable(): void
     {
         $definitions = SystemServiceProvider::getDefinitions();
 
-        $view    = $definitions[View::class]();
-        $request = $definitions[Request::class]();
+        $container = $this->makeContainer([]);
+
+        $view    = $definitions[View::class]($container);
+        $request = $definitions[Request::class]($container);
 
         $this->assertInstanceOf(View::class, $view);
         $this->assertInstanceOf(Request::class, $request);
-
-        $container = $this->makeContainer([
-            View::class => $view,
-        ]);
-
-        $responder = $definitions[Responder::class]($container);
-
-        $this->assertInstanceOf(Responder::class, $responder);
-
-        $aliasContainer = $this->makeContainer([
-            Responder::class => $responder,
-        ]);
-
-        $this->assertSame(
-            $responder,
-            $definitions[ResponderInterface::class]($aliasContainer)
-        );
     }
 
     public function testValidationAndApplicationDefinitionsAreBuildable(): void
     {
         $definitions = SystemServiceProvider::getDefinitions();
 
-        $validator       = $definitions[FormValidator::class]();
-        $slugify         = $definitions[Slugify::class]();
-        $logNormalizer   = $definitions[LogContextNormalizer::class]();
-        $errorNormalizer = $definitions[ErrorListNormalizer::class]();
+        $emptyContainer = $this->makeContainer([]);
+
+        $validator       = $definitions[FormValidator::class]($emptyContainer);
+        $slugify         = $definitions[Slugify::class]($emptyContainer);
+        $logNormalizer   = $definitions[LogContextNormalizer::class]($emptyContainer);
+        $errorNormalizer = $definitions[ErrorListNormalizer::class]($emptyContainer);
 
         $this->assertInstanceOf(FormValidator::class, $validator);
         $this->assertInstanceOf(Slugify::class, $slugify);
@@ -286,9 +270,11 @@ final class SystemServiceProviderTest extends TestCase
             $definitions[SubmissionDelayValidatorInterface::class]($submissionAliasContainer)
         );
 
-        $tokenGenerator     = $definitions[TokenGenerator::class]();
-        $honeypotValidator  = $definitions[HoneypotValidator::class]();
-        $turnstileValidator = $definitions[TurnstileValidator::class]();
+        $emptyContainer = $this->makeContainer([]);
+
+        $tokenGenerator     = $definitions[TokenGenerator::class]($emptyContainer);
+        $honeypotValidator  = $definitions[HoneypotValidator::class]($emptyContainer);
+        $turnstileValidator = $definitions[TurnstileValidator::class]($emptyContainer);
         $authChecker        = $definitions[SessionAuthChecker::class]($flashContainer);
 
         $this->assertInstanceOf(TokenGenerator::class, $tokenGenerator);
@@ -347,7 +333,7 @@ final class SystemServiceProviderTest extends TestCase
 
         $authenticationMiddleware  = $definitions[AuthenticationMiddleware::class]($authContainer);
         $csrfMiddleware            = $definitions[CsrfMiddleware::class]($csrfContainer);
-        $securityHeadersMiddleware = $definitions[SecurityHeadersMiddleware::class]();
+        $securityHeadersMiddleware = $definitions[SecurityHeadersMiddleware::class]($this->makeContainer([]));
 
         $this->assertInstanceOf(AuthenticationMiddleware::class, $authenticationMiddleware);
         $this->assertInstanceOf(CsrfMiddleware::class, $csrfMiddleware);
@@ -362,7 +348,9 @@ final class SystemServiceProviderTest extends TestCase
 
         $definitions = SystemServiceProvider::getDefinitions();
 
-        $mailer = $definitions[MailerInterface::class]();
+        $emptyContainer = $this->makeContainer([]);
+
+        $mailer = $definitions[MailerInterface::class]($emptyContainer);
 
         $this->assertInstanceOf(DummyMailer::class, $mailer);
     }

@@ -6,7 +6,7 @@ namespace Tests\Unit\Controller;
 
 use App\Controller\ResetPasswordController;
 use App\Core\Contract\FlashInterface;
-use App\Core\View;
+use App\Core\FormId;
 use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
 use App\Http\Contract\ResponderInterface;
@@ -30,7 +30,6 @@ use PHPUnit\Framework\TestCase;
 final class ResetPasswordControllerTest extends TestCase
 {
     private Request&MockObject $request;
-    private View&MockObject $view;
     private FlashInterface&MockObject $flash;
     private ResponderInterface&MockObject $responder;
     private CsrfTokenInterface&MockObject $csrf;
@@ -53,9 +52,7 @@ final class ResetPasswordControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->request = $this->createMock(Request::class);
-
-        $this->view                     = $this->createMock(View::class);
+        $this->request                  = $this->createMock(Request::class);
         $this->flash                    = $this->createMock(FlashInterface::class);
         $this->responder                = $this->createMock(ResponderInterface::class);
         $this->csrf                     = $this->createMock(CsrfTokenInterface::class);
@@ -79,7 +76,6 @@ final class ResetPasswordControllerTest extends TestCase
         $this->turnstileGuard       = $this->createMock(TurnstileGuardInterface::class);
 
         $getHandler = new ResetPasswordGetHandler(
-            $this->view,
             $this->flash,
             $this->responder,
             $this->csrf,
@@ -132,7 +128,7 @@ final class ResetPasswordControllerTest extends TestCase
         $this->submissionDelayValidator
             ->expects($this->once())
             ->method('markFormStart')
-            ->with('reset_password');
+            ->with(FormId::RESET_PASSWORD);
 
         $this->flash
             ->expects($this->once())
@@ -158,7 +154,9 @@ final class ResetPasswordControllerTest extends TestCase
 
         $this->csrf
             ->expects($this->once())
-            ->method('generateToken');
+            ->method('generateToken')
+            ->with(FormId::RESET_PASSWORD)
+            ->willReturn('csrf-reset-token');
 
         $this->honeypotValidator
             ->expects($this->once())
@@ -171,10 +169,17 @@ final class ResetPasswordControllerTest extends TestCase
             ->with(
                 'security/reset-password.html.twig',
                 $this->callback(function (array $data) use ($trimmedToken): bool {
-                    return isset($data['token'], $data['turnstile_required'], $data['turnstile_enabled'])
-                        && $data['token']              === $trimmedToken
-                        && $data['turnstile_required'] === false
-                        && $data['turnstile_enabled']  === false;
+                    $this->assertSame('Réinitialiser le mot de passe', $data['title']);
+                    $this->assertSame($trimmedToken, $data['token']);
+                    $this->assertSame('csrf-reset-token', $data['csrf_token']);
+                    $this->assertSame('fax', $data['honeypot_name']);
+                    $this->assertFalse($data['turnstile_required']);
+                    $this->assertFalse($data['turnstile_enabled']);
+
+                    $this->assertArrayNotHasKey('flashes', $data);
+                    $this->assertArrayNotHasKey('turnstile_site_key', $data);
+
+                    return true;
                 })
             );
 
