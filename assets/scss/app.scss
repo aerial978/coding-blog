@@ -3,12 +3,10 @@
 
 /* 2) Charger ton fichier de styles custom (sans namespace) */
 @use "custom";
-
 @use "bootstrap/scss/bootstrap" as *;
 
-// tes styles à toi
+/* styles */
 @use "components/password-strength";
-
 @use "components/honeypot";
-
 @use "components/code-digit";
+@use "components/social-auth-buttons";

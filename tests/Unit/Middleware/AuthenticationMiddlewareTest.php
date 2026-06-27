@@ -73,7 +73,6 @@ final class AuthenticationMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($this->request)
             ->willReturn(true);
 
         $this->flash
@@ -96,7 +95,6 @@ final class AuthenticationMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($this->request)
             ->willReturn(false);
 
         $this->flash
@@ -121,7 +119,6 @@ final class AuthenticationMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($this->request)
             ->willReturn(false);
 
         $this->flash

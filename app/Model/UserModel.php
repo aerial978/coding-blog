@@ -80,6 +80,46 @@ class UserModel implements UserModelInterface
     }
 
     /**
+     * Finds a single user by its slug.
+     *
+     * Used notably to ensure slug uniqueness during OAuth
+     * auto-provisioning and other account creation workflows.
+     *
+     * @param string $slug
+     *     The slug to look up.
+     *
+     * @return UserEntity|null
+     *     A hydrated UserEntity if found, null otherwise.
+     */
+    public function findOneBySlug(string $slug): ?UserEntity
+    {
+        $sql = "SELECT
+                    id AS user_id,
+                    username,
+                    slug,
+                    email,
+                    password,
+                    status,
+                    email_2fa_enabled,
+                    created_at,
+                    updated_at
+                FROM {$this->table}
+                WHERE slug = :slug
+                LIMIT 1";
+
+        $stmt = $this->sqlHelper->request($sql, [
+            ':slug' => $slug,
+        ]);
+
+        /** @var array<string,mixed>|false $row */
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row
+            ? (new UserEntity())->hydrate((array) $row)
+            : null;
+    }
+
+    /**
      * Finds a single user by their email address.
      *
      * @param string $email
@@ -178,6 +218,60 @@ class UserModel implements UserModelInterface
                     NOW(),
                     NOW(),
                     'inactive'
+                )";
+
+        $params = [
+            ':username' => $user->getUsername(),
+            ':slug'     => $user->getSlug(),
+            ':email'    => $user->getEmail(),
+            ':password' => $user->getPassword(),
+        ];
+
+        $query = $this->sqlHelper->request($sql, $params);
+
+        if ($query->rowCount() !== 1) {
+            return 0;
+        }
+
+        return $this->sqlHelper->lastInsertId();
+    }
+
+    /**
+     * Creates a new active user account from an OAuth provider.
+     *
+     * This method is dedicated to OAuth auto-provisioning.
+     * Unlike classic registration, the account is created as active because
+     * the OAuth provider has already verified the user's email address.
+     *
+     * The password must contain a technical hashed password generated
+     * before calling this method.
+     *
+     * @param UserEntity $user
+     *     The OAuth user entity containing username, slug, email and password.
+     *
+     * @return int
+     *     The ID of the newly created user record, or 0 if the insertion failed.
+     */
+    public function createOAuthUser(UserEntity $user): int
+    {
+        $sql = "INSERT INTO {$this->table} (
+                    username,
+                    slug,
+                    email,
+                    password,
+                    created_at,
+                    updated_at,
+                    status,
+                    email_2fa_enabled
+                ) VALUES (
+                    :username,
+                    :slug,
+                    :email,
+                    :password,
+                    NOW(),
+                    NOW(),
+                    'active',
+                    0
                 )";
 
         $params = [

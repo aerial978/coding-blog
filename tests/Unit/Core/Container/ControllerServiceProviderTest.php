@@ -35,13 +35,13 @@ use App\Handler\Auth\ResendConfirmationGetHandler;
 use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
+use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use App\Http\Contract\ResponderInterface;
 
 final class ControllerServiceProviderTest extends TestCase
 {

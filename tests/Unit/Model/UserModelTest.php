@@ -454,4 +454,146 @@ final class UserModelTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function testFindOneBySlugReturnsHydratedUserWhenFound(): void
+    {
+        $slug = 'alice';
+
+        $row = [
+            'user_id'           => 42,
+            'username'          => 'alice',
+            'slug'              => 'alice',
+            'email'             => 'alice@example.com',
+            'password'          => 'hashed-password',
+            'status'            => 'active',
+            'email_2fa_enabled' => 1,
+            'created_at'        => '2026-01-01 10:00:00',
+            'updated_at'        => '2026-01-01 10:00:00',
+        ];
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE slug = :slug'),
+                [':slug' => $slug]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn($row);
+
+        $result = $this->model->findOneBySlug($slug);
+
+        $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame(42, $result->getUserId());
+        $this->assertSame('alice', $result->getUsername());
+        $this->assertSame('alice', $result->getSlug());
+        $this->assertSame('alice@example.com', $result->getEmail());
+        $this->assertSame('hashed-password', $result->getPassword());
+        $this->assertSame('active', $result->getStatus());
+        $this->assertTrue($result->isEmail2faEnabled());
+    }
+
+    public function testFindOneBySlugReturnsNullWhenNotFound(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('WHERE slug = :slug'),
+                [':slug' => 'unknown']
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('fetch')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn(false);
+
+        $result = $this->model->findOneBySlug('unknown');
+
+        $this->assertNull($result);
+    }
+
+    public function testCreateOAuthUserReturnsInsertedIdWhenInsertSucceeds(): void
+    {
+        $user = (new UserEntity())
+            ->setUsername('oauth_user')
+            ->setSlug('oauth-user')
+            ->setEmail('oauth@example.com')
+            ->setPassword('technical-hashed-password');
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->logicalAnd(
+                    $this->stringContains('INSERT INTO user'),
+                    $this->stringContains("'active'"),
+                    $this->stringContains('email_2fa_enabled')
+                ),
+                [
+                    ':username' => 'oauth_user',
+                    ':slug'     => 'oauth-user',
+                    ':email'    => 'oauth@example.com',
+                    ':password' => 'technical-hashed-password',
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('lastInsertId')
+            ->willReturn(77);
+
+        $result = $this->model->createOAuthUser($user);
+
+        $this->assertSame(77, $result);
+    }
+
+    public function testCreateOAuthUserReturnsZeroWhenInsertFails(): void
+    {
+        $user = (new UserEntity())
+            ->setUsername('oauth_user')
+            ->setSlug('oauth-user')
+            ->setEmail('oauth@example.com')
+            ->setPassword('technical-hashed-password');
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->stringContains('INSERT INTO user'),
+                [
+                    ':username' => 'oauth_user',
+                    ':slug'     => 'oauth-user',
+                    ':email'    => 'oauth@example.com',
+                    ':password' => 'technical-hashed-password',
+                ]
+            )
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(0);
+
+        $this->sqlHelper
+            ->expects($this->never())
+            ->method('lastInsertId');
+
+        $result = $this->model->createOAuthUser($user);
+
+        $this->assertSame(0, $result);
+    }
 }

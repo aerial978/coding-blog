@@ -6,7 +6,6 @@ namespace App\Controller;
 
 use App\Core\FormId;
 use App\Http\Contract\ResponderInterface;
-use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
@@ -15,7 +14,6 @@ class HomeController
 {
     public function __construct(
         private UserModelInterface $userModel,
-        private Request $request,
         private AuthCheckerInterface $authChecker,
         private CsrfTokenInterface $csrf,
         private ResponderInterface $responder,
@@ -26,7 +24,7 @@ class HomeController
     {
         $users = $this->userModel->findAll();
 
-        $isAuthenticated = $this->authChecker->isAuthenticated($this->request);
+        $isAuthenticated = $this->authChecker->isAuthenticated();
 
         $this->responder->render('home/index.html.twig', [
             'show_header'       => true,

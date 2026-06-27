@@ -8,10 +8,12 @@ use App\Core\Contract\SessionInterface;
 use App\Core\Contract\SqlHelperInterface;
 use App\Core\Mail\MailerInterface;
 use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Contract\OAuthAccountModelInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
 use App\Model\Email2faChallengeModel;
 use App\Model\EmailEventModel;
+use App\Model\OAuthAccountModel;
 use App\Model\RegistrationEventModel;
 use App\Model\UserModel;
 use App\Model\UserTokenModel;
@@ -83,6 +85,12 @@ final class UserServiceProvider
                 /** @var SqlHelperInterface $sql */
                 $sql = $container->get(SqlHelperInterface::class);
                 return new Email2faChallengeModel($sql);
+            },
+
+            OAuthAccountModelInterface::class => static function (ContainerInterface $container): OAuthAccountModelInterface {
+                /** @var SqlHelperInterface $sql */
+                $sql = $container->get(SqlHelperInterface::class);
+                return new OAuthAccountModel($sql);
             },
 
             RegistrationEventModel::class => static function (ContainerInterface $container): RegistrationEventModel {

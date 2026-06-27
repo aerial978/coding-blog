@@ -42,6 +42,36 @@ final class LoginPostHandler
         $identifier = $this->strOrEmpty($form['identifier'] ?? null);
         $context    = $this->makeContext($identifier);
 
+        if (!$this->validateSecurityGuards($form, $identifier, $context)) {
+            return;
+        }
+
+        /** @var array<string, mixed> $result */
+        $result = $this->securityService->login($form);
+
+        if (!empty($result['two_factor_required'])) {
+            $this->replyTwoFactorRequired();
+            return;
+        }
+
+        if (!empty($result['ok'])) {
+            $this->handleRememberMe($result);
+            $this->replySuccess();
+            return;
+        }
+
+        $this->replyFailure($result, $identifier, $form);
+    }
+
+    /**
+     * @param array<string, mixed> $form
+     * @param array<string, mixed> $context
+     */
+    private function validateSecurityGuards(
+        array $form,
+        string $identifier,
+        array $context
+    ): bool {
         /** @var array{
          *   form: array<string, mixed>,
          *   redirect: string,
@@ -65,7 +95,7 @@ final class LoginPostHandler
         ], $this->turnstileStepUp());
 
         if (!$this->honeypotGuard->assertClean($honeypotOptions)) {
-            return;
+            return false;
         }
 
         /** @var array{
@@ -83,13 +113,19 @@ final class LoginPostHandler
             'redirect' => self::REDIRECT,
             'context'  => $context,
             'policy'   => [
-                'max_delay_exceeded' => ['flash' => 'error', 'code' => ErrorCode::AUTH_FORM_EXPIRED],
+                'max_delay_exceeded' => [
+                    'flash' => 'error',
+                    'code'  => ErrorCode::AUTH_FORM_EXPIRED,
+                ],
             ],
-            'default' => ['flash' => 'error', 'code' => ErrorCode::AUTH_RETRY],
+            'default' => [
+                'flash' => 'error',
+                'code'  => ErrorCode::AUTH_RETRY,
+            ],
         ], $this->turnstileStepUp());
 
         if (!$this->submissionDelayGuard->assertPassed($delayOptions)) {
-            return;
+            return false;
         }
 
         /** @var array{
@@ -117,24 +153,10 @@ final class LoginPostHandler
         ], $this->turnstileStepUp());
 
         if (!$this->rateLimitGuard->assertAllowed($rateLimitOptions)) {
-            return;
+            return false;
         }
 
-        /** @var array<string, mixed> $result */
-        $result = $this->securityService->login($form);
-
-        if (!empty($result['two_factor_required'])) {
-            $this->replyTwoFactorRequired();
-            return;
-        }
-
-        if (!empty($result['ok'])) {
-            $this->handleRememberMe($result);
-            $this->replySuccess();
-            return;
-        }
-
-        $this->replyFailure($result, $identifier, $form);
+        return true;
     }
 
     /**
