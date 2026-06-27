@@ -42,7 +42,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
             return true; // Route publique → OK
         }
 
-        if ($this->authChecker->isAuthenticated($request)) {
+        if ($this->authChecker->isAuthenticated()) {
             return true; // Authentifié → OK
         }
 

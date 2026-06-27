@@ -10,6 +10,7 @@ use App\Controller\DebugController;
 use App\Controller\Email2faController;
 use App\Controller\ErrorController;
 use App\Controller\ForgotPasswordController;
+use App\Controller\GoogleOAuthController;
 use App\Controller\HomeController;
 use App\Controller\LoginController;
 use App\Controller\LogoutController;
@@ -32,6 +33,8 @@ use App\Handler\Auth\ResendConfirmationGetHandler;
 use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
+use App\Handler\OAuth\GoogleOAuthCallbackHandler;
+use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
@@ -75,9 +78,6 @@ final class ControllerServiceProvider
                 /** @var UserModelInterface $userModel */
                 $userModel = $container->get(UserModelInterface::class);
 
-                /** @var Request $request */
-                $request = $container->get(Request::class);
-
                 /** @var AuthCheckerInterface $authChecker */
                 $authChecker = $container->get(AuthCheckerInterface::class);
 
@@ -87,7 +87,7 @@ final class ControllerServiceProvider
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
 
-                return new HomeController($userModel, $request, $authChecker, $csrf, $responder);
+                return new HomeController($userModel, $authChecker, $csrf, $responder);
             },
 
             ErrorController::class => static function (ContainerInterface $container): ErrorController {
@@ -113,6 +113,36 @@ final class ControllerServiceProvider
      * @return array<class-string, \Closure(ContainerInterface):object>
      */
     private static function getAuthControllerDefinitions(): array
+    {
+        return array_merge(
+            self::getRegistrationControllerDefinitions(),
+            self::getLoginControllerDefinitions(),
+            self::getGoogleOAuthControllerDefinitions(),
+            self::getPasswordControllerDefinitions(),
+            self::getEmail2faControllerDefinitions(),
+            self::getLogoutControllerDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getUtilityControllerDefinitions(): array
+    {
+        return [
+            DebugController::class => static function (ContainerInterface $container): DebugController {
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                return new DebugController($session);
+            },
+        ];
+    }
+
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getRegistrationControllerDefinitions(): array
     {
         return [
             RegisterController::class => static function (ContainerInterface $container): RegisterController {
@@ -147,7 +177,15 @@ final class ControllerServiceProvider
 
                 return new ResendConfirmationController($request, $getHandler, $postHandler);
             },
+        ];
+    }
 
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getLoginControllerDefinitions(): array
+    {
+        return [
             LoginController::class => static function (ContainerInterface $container): LoginController {
                 /** @var Request $request */
                 $request = $container->get(Request::class);
@@ -160,35 +198,46 @@ final class ControllerServiceProvider
 
                 return new LoginController($request, $getHandler, $postHandler);
             },
+        ];
+    }
 
-            Email2faController::class => static function (ContainerInterface $container): Email2faController {
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getGoogleOAuthControllerDefinitions(): array
+    {
+        return [
+            GoogleOAuthController::class => static function (
+                ContainerInterface $container
+            ): GoogleOAuthController {
+                /** @var GoogleOAuthStartHandler $startHandler */
+                $startHandler = $container->get(
+                    GoogleOAuthStartHandler::class
+                );
+
+                /** @var GoogleOAuthCallbackHandler $callbackHandler */
+                $callbackHandler = $container->get(
+                    GoogleOAuthCallbackHandler::class
+                );
+
                 /** @var Request $request */
                 $request = $container->get(Request::class);
 
-                /** @var Email2faGetHandler $getHandler */
-                $getHandler = $container->get(Email2faGetHandler::class);
-
-                /** @var Email2faPostHandler $postHandler */
-                $postHandler = $container->get(Email2faPostHandler::class);
-
-                /** @var Email2faResendPostHandler $resendPostHandler */
-                $resendPostHandler = $container->get(Email2faResendPostHandler::class);
-
-                return new Email2faController(
+                return new GoogleOAuthController(
+                    $startHandler,
+                    $callbackHandler,
                     $request,
-                    $getHandler,
-                    $postHandler,
-                    $resendPostHandler,
                 );
             },
+        ];
+    }
 
-            LogoutController::class => static function (ContainerInterface $container): LogoutController {
-                /** @var LogoutHandler $handler */
-                $handler = $container->get(LogoutHandler::class);
-
-                return new LogoutController($handler);
-            },
-
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getPasswordControllerDefinitions(): array
+    {
+        return [
             ForgotPasswordController::class => static function (ContainerInterface $container): ForgotPasswordController {
                 /** @var Request $request */
                 $request = $container->get(Request::class);
@@ -220,14 +269,43 @@ final class ControllerServiceProvider
     /**
      * @return array<class-string, \Closure(ContainerInterface):object>
      */
-    private static function getUtilityControllerDefinitions(): array
+    private static function getEmail2faControllerDefinitions(): array
     {
         return [
-            DebugController::class => static function (ContainerInterface $container): DebugController {
-                /** @var SessionInterface $session */
-                $session = $container->get(SessionInterface::class);
+            Email2faController::class => static function (ContainerInterface $container): Email2faController {
+                /** @var Request $request */
+                $request = $container->get(Request::class);
 
-                return new DebugController($session);
+                /** @var Email2faGetHandler $getHandler */
+                $getHandler = $container->get(Email2faGetHandler::class);
+
+                /** @var Email2faPostHandler $postHandler */
+                $postHandler = $container->get(Email2faPostHandler::class);
+
+                /** @var Email2faResendPostHandler $resendPostHandler */
+                $resendPostHandler = $container->get(Email2faResendPostHandler::class);
+
+                return new Email2faController(
+                    $request,
+                    $getHandler,
+                    $postHandler,
+                    $resendPostHandler,
+                );
+            },
+        ];
+    }
+
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getLogoutControllerDefinitions(): array
+    {
+        return [
+            LogoutController::class => static function (ContainerInterface $container): LogoutController {
+                /** @var LogoutHandler $handler */
+                $handler = $container->get(LogoutHandler::class);
+
+                return new LogoutController($handler);
             },
         ];
     }

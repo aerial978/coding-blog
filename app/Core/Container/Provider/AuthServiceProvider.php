@@ -22,9 +22,12 @@ use App\Handler\Auth\ResendConfirmationGetHandler;
 use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
+use App\Handler\OAuth\GoogleOAuthCallbackHandler;
+use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Log\LogContextNormalizer;
 use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Contract\OAuthAccountModelInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
@@ -41,12 +44,21 @@ use App\Security\Guard\HoneypotGuard;
 use App\Security\Guard\RateLimitGuard;
 use App\Security\Guard\SubmissionDelayGuard;
 use App\Security\Guard\TurnstileGuard;
+use App\Service\OAuth\Contract\GoogleOAuthProviderInterface;
+use App\Service\OAuth\Contract\GoogleOAuthServiceInterface;
+use App\Service\OAuth\Contract\OAuthUserProvisioningServiceInterface;
+use App\Service\OAuth\Factory\GoogleOAuthProviderFactory;
+use App\Service\OAuth\GoogleOAuthProviderAdapter;
+use App\Service\OAuth\GoogleOAuthService;
+use App\Service\OAuth\OAuthUserProvisioningService;
 use App\Service\Security\Contract\Email2faServiceInterface;
 use App\Service\Security\Contract\RememberMeServiceInterface;
 use App\Service\Security\Contract\ResetPasswordServiceInterface;
 use App\Service\Security\Contract\SecurityServiceInterface;
 use App\Service\Security\Email2faService;
 use App\Support\ErrorListNormalizer;
+use Cocur\Slugify\Slugify;
+use League\OAuth2\Client\Provider\Google;
 use Psr\Container\ContainerInterface;
 
 final class AuthServiceProvider
@@ -60,6 +72,8 @@ final class AuthServiceProvider
             self::getGuardDefinitions(),
             self::getGuardBindings(),
             self::getEmail2faDefinitions(),
+            self::getGoogleOAuthDefinitions(),
+            self::getGoogleOAuthHandlerDefinitions(),
             self::getRegisterHandlerDefinitions(),
             self::getResendConfirmationHandlerDefinitions(),
             self::getLoginHandlerDefinitions(),
@@ -241,6 +255,157 @@ final class AuthServiceProvider
                 $service = $container->get(Email2faService::class);
 
                 return $service;
+            },
+        ];
+    }
+
+    /**
+ * @return array<string, callable(ContainerInterface): mixed>
+ */
+    private static function getGoogleOAuthDefinitions(): array
+    {
+        return [
+        GoogleOAuthProviderFactory::class => static function (): GoogleOAuthProviderFactory {
+            return new GoogleOAuthProviderFactory();
+        },
+
+        Google::class => static function (ContainerInterface $container): Google {
+            /** @var GoogleOAuthProviderFactory $factory */
+            $factory = $container->get(GoogleOAuthProviderFactory::class);
+
+            return $factory->create();
+        },
+
+        GoogleOAuthProviderAdapter::class => static function (
+            ContainerInterface $container
+        ): GoogleOAuthProviderAdapter {
+            /** @var Google $provider */
+            $provider = $container->get(Google::class);
+
+            return new GoogleOAuthProviderAdapter($provider);
+        },
+
+        GoogleOAuthProviderInterface::class => static function (
+            ContainerInterface $container
+        ): GoogleOAuthProviderInterface {
+            /** @var GoogleOAuthProviderInterface $provider */
+            $provider = $container->get(GoogleOAuthProviderAdapter::class);
+
+            return $provider;
+        },
+
+        GoogleOAuthService::class => static function (
+            ContainerInterface $container
+        ): GoogleOAuthService {
+            /** @var GoogleOAuthProviderInterface $provider */
+            $provider = $container->get(GoogleOAuthProviderInterface::class);
+
+            return new GoogleOAuthService($provider);
+        },
+
+        GoogleOAuthServiceInterface::class => static function (
+            ContainerInterface $container
+        ): GoogleOAuthServiceInterface {
+            /** @var GoogleOAuthServiceInterface $service */
+            $service = $container->get(GoogleOAuthService::class);
+
+            return $service;
+        },
+
+        OAuthUserProvisioningService::class => static function (
+            ContainerInterface $container
+        ): OAuthUserProvisioningService {
+            /** @var UserModelInterface $userModel */
+            $userModel = $container->get(UserModelInterface::class);
+
+            /** @var Slugify $slugify */
+            $slugify = $container->get(Slugify::class);
+
+            return new OAuthUserProvisioningService(
+                $userModel,
+                $slugify,
+            );
+        },
+
+        OAuthUserProvisioningServiceInterface::class => static function (
+            ContainerInterface $container
+        ): OAuthUserProvisioningServiceInterface {
+            /** @var OAuthUserProvisioningServiceInterface $service */
+            $service = $container->get(OAuthUserProvisioningService::class);
+
+            return $service;
+        },
+        ];
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getGoogleOAuthHandlerDefinitions(): array
+    {
+        return [
+            GoogleOAuthStartHandler::class => static function (
+                ContainerInterface $container
+            ): GoogleOAuthStartHandler {
+                /** @var GoogleOAuthServiceInterface $googleOAuthService */
+                $googleOAuthService = $container->get(
+                    GoogleOAuthServiceInterface::class
+                );
+
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new GoogleOAuthStartHandler(
+                    $googleOAuthService,
+                    $session,
+                    $responder,
+                );
+            },
+
+            GoogleOAuthCallbackHandler::class => static function (
+                ContainerInterface $container
+            ): GoogleOAuthCallbackHandler {
+                /** @var GoogleOAuthServiceInterface $googleOAuthService */
+                $googleOAuthService = $container->get(
+                    GoogleOAuthServiceInterface::class
+                );
+
+                /** @var OAuthAccountModelInterface $oauthAccountModel */
+                $oauthAccountModel = $container->get(
+                    OAuthAccountModelInterface::class
+                );
+
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(
+                    UserModelInterface::class
+                );
+
+                /** @var OAuthUserProvisioningServiceInterface $oauthProvisioning */
+                $oauthProvisioning = $container->get(
+                    OAuthUserProvisioningServiceInterface::class
+                );
+
+                /** @var SessionInterface $session */
+                $session = $container->get(SessionInterface::class);
+
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new GoogleOAuthCallbackHandler(
+                    $googleOAuthService,
+                    $oauthAccountModel,
+                    $userModel,
+                    $oauthProvisioning,
+                    $session,
+                    $flash,
+                    $responder,
+                );
             },
         ];
     }
@@ -559,18 +724,37 @@ final class AuthServiceProvider
      */
     private static function getEmail2faHandlerDefinitions(): array
     {
+        return array_merge(
+            self::getEmail2faGetHandlerDefinitions(),
+            self::getEmail2faPostHandlerDefinitions(),
+            self::getEmail2faResendHandlerDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getEmail2faGetHandlerDefinitions(): array
+    {
         return [
-            Email2faGetHandler::class => static function (ContainerInterface $container): Email2faGetHandler {
+            Email2faGetHandler::class => static function (
+                ContainerInterface $container
+            ): Email2faGetHandler {
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
+
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
+
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
+
                 /** @var HoneypotValidatorInterface $honeypot */
                 $honeypot = $container->get(HoneypotValidatorInterface::class);
+
                 /** @var SubmissionDelayValidatorInterface $submissionDelay */
                 $submissionDelay = $container->get(SubmissionDelayValidatorInterface::class);
+
                 /** @var Email2faPendingSessionInterface $pendingSession */
                 $pendingSession = $container->get(Email2faPendingSessionInterface::class);
 
@@ -583,28 +767,48 @@ final class AuthServiceProvider
                     $pendingSession,
                 );
             },
+        ];
+    }
 
-            Email2faPostHandler::class => static function (ContainerInterface $container): Email2faPostHandler {
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getEmail2faPostHandlerDefinitions(): array
+    {
+        return [
+            Email2faPostHandler::class => static function (
+                ContainerInterface $container
+            ): Email2faPostHandler {
                 /** @var Email2faServiceInterface $email2faService */
                 $email2faService = $container->get(Email2faServiceInterface::class);
+
                 /** @var Email2faPendingSessionInterface $pendingSession */
                 $pendingSession = $container->get(Email2faPendingSessionInterface::class);
+
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
+
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
+
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
+
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
+
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
+
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
+
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
+
                 /** @var RememberMeServiceInterface $rememberMeService */
                 $rememberMeService = $container->get(RememberMeServiceInterface::class);
+
                 /** @var RememberMeCookieManagerInterface $rememberMeManager */
                 $rememberMeManager = $container->get(RememberMeCookieManagerInterface::class);
 
@@ -622,26 +826,42 @@ final class AuthServiceProvider
                     $rememberMeManager,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getEmail2faResendHandlerDefinitions(): array
+    {
+        return [
             Email2faResendPostHandler::class => static function (
                 ContainerInterface $container
             ): Email2faResendPostHandler {
                 /** @var Email2faServiceInterface $email2faService */
                 $email2faService = $container->get(Email2faServiceInterface::class);
+
                 /** @var Email2faPendingSessionInterface $pendingSession */
                 $pendingSession = $container->get(Email2faPendingSessionInterface::class);
+
                 /** @var UserModelInterface $userModel */
                 $userModel = $container->get(UserModelInterface::class);
+
                 /** @var FlashInterface $flash */
                 $flash = $container->get(FlashInterface::class);
+
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
+
                 /** @var HoneypotGuardInterface $honeypotGuard */
                 $honeypotGuard = $container->get(HoneypotGuardInterface::class);
+
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
+
                 /** @var SubmissionDelayGuardInterface $submissionDelayGuard */
                 $submissionDelayGuard = $container->get(SubmissionDelayGuardInterface::class);
+
                 /** @var RateLimitGuardInterface $rateLimitGuard */
                 $rateLimitGuard = $container->get(RateLimitGuardInterface::class);
 

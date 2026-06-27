@@ -48,7 +48,6 @@ final class RememberMeMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($request)
             ->willReturn(true);
 
         $this->cookieManager
@@ -75,7 +74,6 @@ final class RememberMeMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($request)
             ->willReturn(false);
 
         $this->cookieManager
@@ -103,7 +101,6 @@ final class RememberMeMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($request)
             ->willReturn(false);
 
         $this->cookieManager
@@ -137,7 +134,6 @@ final class RememberMeMiddlewareTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($request)
             ->willReturn(false);
 
         $this->cookieManager

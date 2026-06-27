@@ -19,6 +19,11 @@ interface UserModelInterface
     public function findOneByUsername(string $username): ?UserEntity;
 
     /**
+     * Finds a single user by its slug.
+     */
+    public function findOneBySlug(string $slug): ?UserEntity;
+
+    /**
      * Utilisé pour l'unicité et certains flux (peut retourner complet).
      */
     public function findOneByEmail(string $email): ?UserEntity;
@@ -47,4 +52,14 @@ interface UserModelInterface
 
     /** Retourne l'ID créé (>0) ou <=0 en cas d'échec */
     public function createUser(UserEntity $user): int;
+
+    /**
+     * Crée automatiquement un utilisateur à partir d'un fournisseur OAuth.
+     *
+     * Le compte est créé actif et pourra ensuite être lié à une entrée
+     * dans la table user_oauth_account.
+     *
+     * Retourne l'ID créé (>0) ou <=0 en cas d'échec.
+     */
+    public function createOAuthUser(UserEntity $user): int;
 }

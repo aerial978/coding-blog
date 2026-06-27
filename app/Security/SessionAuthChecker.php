@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Core\Contract\SessionInterface;
-use App\Http\Request;
 use App\Security\Contract\AuthCheckerInterface;
 
 /**
@@ -24,7 +23,7 @@ final class SessionAuthChecker implements AuthCheckerInterface
     }
 
     // @SuppressWarnings(PHPMD.UnusedFormalParameter)
-    public function isAuthenticated(Request $_request): bool
+    public function isAuthenticated(): bool
     {
         $user = $this->session->get('user');
         return is_array($user) && isset($user['id']);
@@ -32,7 +31,7 @@ final class SessionAuthChecker implements AuthCheckerInterface
 
     /** @return list<string> */
     // @SuppressWarnings(PHPMD.UnusedFormalParameter)
-    public function getRoles(Request $_request): array
+    public function getRoles(): array
     {
         $user = $this->session->get('user');
         if (!is_array($user)) {
@@ -54,8 +53,7 @@ final class SessionAuthChecker implements AuthCheckerInterface
         return $out;
     }
 
-    // @SuppressWarnings(PHPMD.UnusedFormalParameter)
-    public function getUserId(Request $_request): ?int
+    public function getUserId(): ?int
     {
         $user = $this->session->get('user');
         return (is_array($user) && isset($user['id']) && is_int($user['id']))

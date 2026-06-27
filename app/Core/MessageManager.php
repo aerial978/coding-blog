@@ -50,6 +50,18 @@ class MessageManager
             ErrorCode::AUTH_PASSWORD_RESET_PASSWORD_INVALID     => 'Le mot de passe ne respecte pas les règles de sécurité.',
             ErrorCode::AUTH_PASSWORD_RESET_CONFIRM_MISMATCH     => 'La confirmation du mot de passe ne correspond pas.',
 
+            // ==== Auth - Google OAuth ====
+            ErrorCode::AUTH_GOOGLE_INVALID_RESPONSE        => 'Réponse Google invalide.',
+            ErrorCode::AUTH_GOOGLE_INVALID_STATE           => 'Session Google invalide ou expirée.',
+            ErrorCode::AUTH_GOOGLE_PROFILE_INVALID         => 'Profil Google invalide ou email non vérifié.',
+            ErrorCode::AUTH_GOOGLE_LOCAL_ACCOUNT_NOT_FOUND => 'Aucun compte local ne correspond à cette adresse Google.',
+            ErrorCode::AUTH_GOOGLE_LINKED_ACCOUNT_INVALID  => 'Compte Google lié invalide.',
+            ErrorCode::AUTH_GOOGLE_USER_INVALID            => 'Compte utilisateur invalide.',
+            ErrorCode::AUTH_GOOGLE_LINK_CREATION_FAILED    => 'Impossible de créer le lien avec votre compte Google.',
+            ErrorCode::AUTH_GOOGLE_TECHNICAL_ERROR         => 'Connexion Google impossible pour le moment.',
+            ErrorCode::AUTH_GOOGLE_LOCAL_ACCOUNT_INACTIVE  => 'Votre compte n’est pas autorisé à se connecter actuellement.',
+            ErrorCode::AUTH_GOOGLE_ACCESS_DENIED           => 'Vous avez annulé la connexion Google.',
+
             // ==== Auth - Logout ====
             ErrorCode::AUTH_LOGOUT_SUCCESS                      => 'Vous avez été déconnecté.',
 

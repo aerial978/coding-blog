@@ -57,10 +57,11 @@ final class Email2faControllerTest extends TestCase
             ->method('render')
             ->with(
                 'security/email-2fa.html.twig',
-                $this->callback(static fn (array $data): bool =>
-                    ($data['csrf_token'] ?? null) === 'csrf-main-token'
+                $this->callback(
+                    static fn (array $data): bool =>
+                    ($data['csrf_token'] ?? null)           === 'csrf-main-token'
                     && ($data['csrf_token_resend'] ?? null) === 'csrf-resend-token'
-                    && ($data['honeypot_name'] ?? null) === 'hp_field'
+                    && ($data['honeypot_name'] ?? null)     === 'hp_field'
                 )
             );
 

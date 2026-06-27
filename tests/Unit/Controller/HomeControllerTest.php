@@ -7,7 +7,6 @@ namespace Tests\Unit\Controller;
 use App\Controller\HomeController;
 use App\Core\FormId;
 use App\Http\Contract\ResponderInterface;
-use App\Http\Request;
 use App\Model\Entity\UserEntity;
 use App\Model\UserModel;
 use App\Security\Contract\AuthCheckerInterface;
@@ -51,17 +50,6 @@ final class HomeControllerTest extends TestCase
     }
 
     /**
-     * @return Request&MockObject
-     */
-    private function mockRequest(): Request
-    {
-        /** @var Request&MockObject $mock */
-        $mock = $this->createMock(Request::class);
-
-        return $mock;
-    }
-
-    /**
      * @return ResponderInterface&MockObject
      */
     private function mockResponder(): ResponderInterface
@@ -74,7 +62,6 @@ final class HomeControllerTest extends TestCase
 
     public function testIndexRendersHomeTemplateWithUsersAndStaticData(): void
     {
-        $request     = $this->mockRequest();
         $authChecker = $this->mockAuthChecker();
         $csrf        = $this->mockCsrf();
         $responder   = $this->mockResponder();
@@ -94,7 +81,6 @@ final class HomeControllerTest extends TestCase
         $authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($request)
             ->willReturn(false);
 
         $csrf
@@ -122,7 +108,6 @@ final class HomeControllerTest extends TestCase
 
         $controller = new HomeController(
             $userModel,
-            $request,
             $authChecker,
             $csrf,
             $responder,
@@ -133,7 +118,6 @@ final class HomeControllerTest extends TestCase
 
     public function testIndexAddsLogoutTokenWhenUserIsAuthenticated(): void
     {
-        $request     = $this->mockRequest();
         $authChecker = $this->mockAuthChecker();
         $csrf        = $this->mockCsrf();
         $responder   = $this->mockResponder();
@@ -148,7 +132,6 @@ final class HomeControllerTest extends TestCase
         $authChecker
             ->expects($this->once())
             ->method('isAuthenticated')
-            ->with($request)
             ->willReturn(true);
 
         $csrf
@@ -175,7 +158,6 @@ final class HomeControllerTest extends TestCase
 
         $controller = new HomeController(
             $userModel,
-            $request,
             $authChecker,
             $csrf,
             $responder,

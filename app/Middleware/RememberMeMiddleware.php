@@ -21,7 +21,7 @@ final class RememberMeMiddleware implements MiddlewareInterface
 
     public function handle(Request $request, string $uri, string $method): bool
     {
-        if ($this->authChecker->isAuthenticated($request)) {
+        if ($this->authChecker->isAuthenticated()) {
             return true;
         }
 

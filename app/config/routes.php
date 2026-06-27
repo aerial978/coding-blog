@@ -5,6 +5,7 @@ use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
 use App\Controller\Email2faController;
 use App\Controller\ForgotPasswordController;
+use App\Controller\GoogleOAuthController;
 use App\Controller\HomeController;
 use App\Controller\LoginController;
 use App\Controller\LogoutController;
@@ -15,16 +16,18 @@ use App\Core\Router;
 
 return [
     Router::METHOD_GET => [
-        '/'                    => [HomeController::class, 'index'],
-        '/register'            => [RegisterController::class, 'register'],
-        '/confirm-account'     => [ConfirmAccountController::class, 'confirmAccount'],
-        '/resend-confirmation' => [ResendConfirmationController::class, 'resendConfirmation'],
-        '/login'               => [LoginController::class, 'login'],
-        '/login/2fa'           => [Email2faController::class, 'index'],
-        '/forgot-password'     => [ForgotPasswordController::class, 'forgotPassword'],
-        '/reset-password'      => [ResetPasswordController::class, 'resetPassword'],
-        '/debug/whoami'        => [DebugController::class, 'whoami'],
-        '/account'             => [AccountController::class, 'index'],
+        '/'                     => [HomeController::class, 'index'],
+        '/register'             => [RegisterController::class, 'register'],
+        '/confirm-account'      => [ConfirmAccountController::class, 'confirmAccount'],
+        '/resend-confirmation'  => [ResendConfirmationController::class, 'resendConfirmation'],
+        '/auth/google'          => [GoogleOAuthController::class, 'redirect'],
+        '/auth/google/callback' => [GoogleOAuthController::class, 'callback'],
+        '/login'                => [LoginController::class, 'login'],
+        '/login/2fa'            => [Email2faController::class, 'index'],
+        '/forgot-password'      => [ForgotPasswordController::class, 'forgotPassword'],
+        '/reset-password'       => [ResetPasswordController::class, 'resetPassword'],
+        '/debug/whoami'         => [DebugController::class, 'whoami'],
+        '/account'              => [AccountController::class, 'index'],
     ],
     Router::METHOD_POST => [
         '/register'            => [RegisterController::class, 'register'],

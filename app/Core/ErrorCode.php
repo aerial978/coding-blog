@@ -43,6 +43,17 @@ final class ErrorCode
     public const AUTH_PASSWORD_RESET_PASSWORD_INVALID   = 'auth.password.reset.password.invalid';
     public const AUTH_PASSWORD_RESET_CONFIRM_MISMATCH   = 'auth.password.reset.confirm.mismatch';
 
+    public const AUTH_GOOGLE_INVALID_RESPONSE         = 'auth.google.invalid_response';
+    public const AUTH_GOOGLE_INVALID_STATE            = 'auth.google.invalid_state';
+    public const AUTH_GOOGLE_PROFILE_INVALID          = 'auth.google.profile_invalid';
+    public const AUTH_GOOGLE_LOCAL_ACCOUNT_NOT_FOUND  = 'auth.google.local_account_not_found';
+    public const AUTH_GOOGLE_LINKED_ACCOUNT_INVALID   = 'auth.google.linked_account_invalid';
+    public const AUTH_GOOGLE_USER_INVALID             = 'auth.google.user_invalid';
+    public const AUTH_GOOGLE_LINK_CREATION_FAILED     = 'auth.google.link_creation_failed';
+    public const AUTH_GOOGLE_TECHNICAL_ERROR          = 'auth.google.technical_error';
+    public const AUTH_GOOGLE_LOCAL_ACCOUNT_INACTIVE   = 'auth.google.local_account_inactive';
+    public const AUTH_GOOGLE_ACCESS_DENIED            = 'auth.google.access_denied';
+
     public const AUTH_LOGOUT_SUCCESS                    = 'auth.logout.success';
 
     public const AUTH_RETRY                     = 'auth.retry';
