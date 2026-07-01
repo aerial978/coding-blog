@@ -10,6 +10,7 @@ use App\Controller\DebugController;
 use App\Controller\Email2faController;
 use App\Controller\ErrorController;
 use App\Controller\ForgotPasswordController;
+use App\Controller\GoogleOAuthController;
 use App\Controller\HomeController;
 use App\Controller\LoginController;
 use App\Controller\LogoutController;
@@ -35,6 +36,8 @@ use App\Handler\Auth\ResendConfirmationGetHandler;
 use App\Handler\Auth\ResendConfirmationPostHandler;
 use App\Handler\Auth\ResetPasswordGetHandler;
 use App\Handler\Auth\ResetPasswordPostHandler;
+use App\Handler\OAuth\GoogleOAuthCallbackHandler;
+use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
@@ -103,6 +106,8 @@ final class ControllerServiceProviderTest extends TestCase
             Email2faGetHandler::class            => $this->instantiateWithoutConstructor(Email2faGetHandler::class),
             Email2faPostHandler::class           => $this->instantiateWithoutConstructor(Email2faPostHandler::class),
             Email2faResendPostHandler::class     => $this->instantiateWithoutConstructor(Email2faResendPostHandler::class),
+            GoogleOAuthStartHandler::class       => $this->instantiateWithoutConstructor(GoogleOAuthStartHandler::class),
+            GoogleOAuthCallbackHandler::class    => $this->instantiateWithoutConstructor(GoogleOAuthCallbackHandler::class),
         ];
     }
 
@@ -125,6 +130,8 @@ final class ControllerServiceProviderTest extends TestCase
         $this->assertArrayHasKey(DebugController::class, $definitions);
 
         $this->assertArrayHasKey(Email2faController::class, $definitions);
+
+        $this->assertArrayHasKey(GoogleOAuthController::class, $definitions);
     }
 
     public function testCoreControllerDefinitionsAreBuildable(): void
@@ -139,6 +146,10 @@ final class ControllerServiceProviderTest extends TestCase
         $this->assertInstanceOf(HomeController::class, $home);
         $this->assertInstanceOf(ErrorController::class, $error);
         $this->assertInstanceOf(AccountController::class, $account);
+
+        $googleOAuth = $definitions[GoogleOAuthController::class]($container);
+
+        $this->assertInstanceOf(GoogleOAuthController::class, $googleOAuth);
     }
 
     public function testAuthControllerDefinitionsAreBuildable(): void
