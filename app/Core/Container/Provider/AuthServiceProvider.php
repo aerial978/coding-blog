@@ -13,6 +13,7 @@ final class AuthServiceProvider
     {
         return array_merge(
             AuthGuardServiceProvider::getDefinitions(),
+            AccountServiceProvider::getDefinitions(),
             Email2faServiceProvider::getDefinitions(),
             GoogleOAuthServiceProvider::getDefinitions(),
             RegisterHandlerServiceProvider::getDefinitions(),
