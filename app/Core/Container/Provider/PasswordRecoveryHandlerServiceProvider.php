@@ -110,6 +110,17 @@ final class PasswordRecoveryHandlerServiceProvider
      */
     private static function getResetPasswordHandlerDefinitions(): array
     {
+        return array_merge(
+            self::getResetPasswordGetHandlerDefinitions(),
+            self::getResetPasswordPostHandlerDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getResetPasswordGetHandlerDefinitions(): array
+    {
         return [
             ResetPasswordGetHandler::class => static function (
                 ContainerInterface $container
@@ -145,7 +156,15 @@ final class PasswordRecoveryHandlerServiceProvider
                     $resetPasswordService,
                 );
             },
+        ];
+    }
 
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getResetPasswordPostHandlerDefinitions(): array
+    {
+        return [
             ResetPasswordPostHandler::class => static function (
                 ContainerInterface $container
             ): ResetPasswordPostHandler {

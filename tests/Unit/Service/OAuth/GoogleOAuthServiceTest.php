@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Service\OAuth;
 
+use App\Service\OAuth\Contract\GoogleOAuthProfileMapperInterface;
 use App\Service\OAuth\Contract\GoogleOAuthProviderInterface;
 use App\Service\OAuth\GoogleOAuthService;
 use League\OAuth2\Client\Token\AccessTokenInterface;
@@ -14,6 +15,8 @@ final class GoogleOAuthServiceTest extends TestCase
 {
     private GoogleOAuthProviderInterface&MockObject $provider;
 
+    private GoogleOAuthProfileMapperInterface&MockObject $profileMapper;
+
     private GoogleOAuthService $service;
 
     protected function setUp(): void
@@ -22,7 +25,14 @@ final class GoogleOAuthServiceTest extends TestCase
             GoogleOAuthProviderInterface::class
         );
 
-        $this->service = new GoogleOAuthService($this->provider);
+        $this->profileMapper = $this->createMock(
+            GoogleOAuthProfileMapperInterface::class
+        );
+
+        $this->service = new GoogleOAuthService(
+            $this->provider,
+            $this->profileMapper
+        );
     }
 
     public function testGetAuthorizationUrlReturnsProviderUrl(): void
@@ -71,107 +81,41 @@ final class GoogleOAuthServiceTest extends TestCase
         );
     }
 
-    public function testGetUserProfileNormalizesGoogleProfile(): void
+    public function testGetUserProfileDelegatesProfileMapping(): void
     {
         $token = $this->createMock(AccessTokenInterface::class);
+
+        $rawData = [
+            'sub'            => 'google-id',
+            'email'          => 'michael@example.com',
+            'email_verified' => true,
+            'name'           => 'Michael Doe',
+            'picture'        => 'https://avatar.example.com/avatar.jpg',
+        ];
+
+        $mappedProfile = [
+            'id'             => 'google-id',
+            'email'          => 'michael@example.com',
+            'email_verified' => true,
+            'name'           => 'Michael Doe',
+            'avatar'         => 'https://avatar.example.com/avatar.jpg',
+        ];
 
         $this->provider
             ->expects($this->once())
             ->method('getResourceOwnerData')
             ->with($token)
-            ->willReturn([
-                'sub'            => 'google-id',
-                'email'          => 'michel@example.com',
-                'email_verified' => true,
-                'name'           => 'Michel Hathier',
-                'picture'        => 'https://avatar.example.com/avatar.jpg',
-            ]);
+            ->willReturn($rawData);
 
-        $profile = $this->service->getUserProfile($token);
+        $this->profileMapper
+            ->expects($this->once())
+            ->method('map')
+            ->with($rawData)
+            ->willReturn($mappedProfile);
 
-        $this->assertSame('google-id', $profile['id']);
-        $this->assertSame('michel@example.com', $profile['email']);
-        $this->assertTrue($profile['email_verified']);
-        $this->assertSame('Michel Hathier', $profile['name']);
         $this->assertSame(
-            'https://avatar.example.com/avatar.jpg',
-            $profile['avatar']
+            $mappedProfile,
+            $this->service->getUserProfile($token)
         );
-    }
-
-    public function testGetUserProfileUsesIdWhenSubIsMissing(): void
-    {
-        $token = $this->createMock(AccessTokenInterface::class);
-
-        $this->provider
-            ->expects($this->once())
-            ->method('getResourceOwnerData')
-            ->willReturn([
-                'id'             => 'legacy-id',
-                'email'          => 'michel@example.com',
-                'email_verified' => true,
-                'name'           => 'Michel Hathier',
-            ]);
-
-        $profile = $this->service->getUserProfile($token);
-
-        $this->assertSame('legacy-id', $profile['id']);
-    }
-
-    public function testGetUserProfileNormalizesMissingValues(): void
-    {
-        $token = $this->createMock(AccessTokenInterface::class);
-
-        $this->provider
-            ->expects($this->once())
-            ->method('getResourceOwnerData')
-            ->willReturn([]);
-
-        $profile = $this->service->getUserProfile($token);
-
-        $this->assertSame('', $profile['id']);
-        $this->assertSame('', $profile['email']);
-        $this->assertFalse($profile['email_verified']);
-        $this->assertSame('', $profile['name']);
-        $this->assertNull($profile['avatar']);
-    }
-
-    public function testGetUserProfileConvertsTruthyValues(): void
-    {
-        $token = $this->createMock(AccessTokenInterface::class);
-
-        $this->provider
-            ->expects($this->once())
-            ->method('getResourceOwnerData')
-            ->willReturn([
-                'sub'            => 'google-id',
-                'email'          => 'michel@example.com',
-                'email_verified' => '1',
-                'name'           => 'Michel',
-            ]);
-
-        $profile = $this->service->getUserProfile($token);
-
-        $this->assertTrue($profile['email_verified']);
-    }
-
-    public function testGetUserProfileReturnsNullAvatarWhenPictureIsEmpty(): void
-    {
-        $token = $this->createMock(AccessTokenInterface::class);
-
-        $this->provider
-            ->expects($this->once())
-            ->method('getResourceOwnerData')
-            ->willReturn([
-                'sub'            => 'google-id',
-                'email'          => 'michel@example.com',
-                'email_verified' => true,
-                'name'           => 'Michel',
-                'picture'        => '   ',
-            ]);
-
-        $profile = $this->service->getUserProfile($token);
-
-        $this->assertNull($profile['avatar']);
     }
 }

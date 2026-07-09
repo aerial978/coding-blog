@@ -32,22 +32,22 @@ final class OAuthUserProvisioningServiceTest extends TestCase
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
         $this->userModel
             ->expects($this->once())
             ->method('findOneByUsername')
-            ->with('michel_hathier')
+            ->with('michael_doe')
             ->willReturn(null);
 
         $this->userModel
             ->expects($this->once())
             ->method('findOneBySlug')
-            ->with('michel-hathier')
+            ->with('michael-doe')
             ->willReturn(null);
 
         $this->userModel
@@ -59,9 +59,9 @@ final class OAuthUserProvisioningServiceTest extends TestCase
 
         $this->assertInstanceOf(UserEntity::class, $user);
         $this->assertSame(123, $user->getUserId());
-        $this->assertSame('michel_hathier', $user->getUsername());
-        $this->assertSame('michel-hathier', $user->getSlug());
-        $this->assertSame('michel@example.com', $user->getEmail());
+        $this->assertSame('michael_doe', $user->getUsername());
+        $this->assertSame('michael-doe', $user->getSlug());
+        $this->assertSame('michael@example.com', $user->getEmail());
         $this->assertSame('active', $user->getStatus());
         $this->assertFalse($user->isEmail2faEnabled());
 
@@ -76,9 +76,9 @@ final class OAuthUserProvisioningServiceTest extends TestCase
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => false,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
@@ -97,7 +97,7 @@ final class OAuthUserProvisioningServiceTest extends TestCase
             'id'             => 'google_123',
             'email'          => '',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
@@ -114,15 +114,15 @@ final class OAuthUserProvisioningServiceTest extends TestCase
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
         $existingUser = (new UserEntity())
             ->setUserId(1)
-            ->setUsername('michel_hathier');
+            ->setUsername('michael_doe');
 
         $this->userModel
             ->expects($this->exactly(2))
@@ -135,7 +135,7 @@ final class OAuthUserProvisioningServiceTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneBySlug')
-            ->with('michel-hathier-2')
+            ->with('michael-doe-2')
             ->willReturn(null);
 
         $this->userModel
@@ -146,17 +146,17 @@ final class OAuthUserProvisioningServiceTest extends TestCase
         $user = $this->service->provisionFromGoogleProfile($profile);
 
         $this->assertInstanceOf(UserEntity::class, $user);
-        $this->assertSame('michel_hathier_2', $user->getUsername());
-        $this->assertSame('michel-hathier-2', $user->getSlug());
+        $this->assertSame('michael_doe_2', $user->getUsername());
+        $this->assertSame('michael-doe-2', $user->getSlug());
     }
 
     public function testProvisionReturnsNullWhenCreateOAuthUserFails(): void
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
@@ -252,9 +252,9 @@ final class OAuthUserProvisioningServiceTest extends TestCase
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
@@ -263,7 +263,7 @@ final class OAuthUserProvisioningServiceTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneByUsername')
-            ->with('michel_hathier')
+            ->with('michael_doe')
             ->willReturn(null);
 
         $this->userModel
@@ -282,17 +282,17 @@ final class OAuthUserProvisioningServiceTest extends TestCase
         $user = $this->service->provisionFromGoogleProfile($profile);
 
         $this->assertInstanceOf(UserEntity::class, $user);
-        $this->assertSame('michel_hathier', $user->getUsername());
-        $this->assertSame('michel-hathier-2', $user->getSlug());
+        $this->assertSame('michael_doe', $user->getUsername());
+        $this->assertSame('michael-doe-2', $user->getSlug());
     }
 
     public function testProvisionThrowsExceptionWhenUniqueUsernameCannotBeGenerated(): void
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 
@@ -317,9 +317,9 @@ final class OAuthUserProvisioningServiceTest extends TestCase
     {
         $profile = [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael Doe',
             'avatar'         => null,
         ];
 

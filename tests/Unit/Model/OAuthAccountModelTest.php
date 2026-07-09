@@ -57,7 +57,7 @@ final class OAuthAccountModelTest extends TestCase
         $this->assertSame(42, $account->getUserId());
         $this->assertSame('google', $account->getProvider());
         $this->assertSame('google_123', $account->getProviderUserId());
-        $this->assertSame('michel@example.com', $account->getEmail());
+        $this->assertSame('michael@example.com', $account->getEmail());
         $this->assertTrue($account->isEmailVerified());
     }
 
@@ -109,7 +109,7 @@ final class OAuthAccountModelTest extends TestCase
         $this->assertSame(42, $account->getUserId());
         $this->assertSame('google', $account->getProvider());
         $this->assertSame('google_123', $account->getProviderUserId());
-        $this->assertSame('michel@example.com', $account->getEmail());
+        $this->assertSame('michael@example.com', $account->getEmail());
         $this->assertTrue($account->isEmailVerified());
     }
 
@@ -137,7 +137,7 @@ final class OAuthAccountModelTest extends TestCase
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true);
 
         $this->sqlHelper
@@ -149,7 +149,7 @@ final class OAuthAccountModelTest extends TestCase
                     ':user_id'          => 42,
                     ':provider'         => 'google',
                     ':provider_user_id' => 'google_123',
-                    ':email'            => 'michel@example.com',
+                    ':email'            => 'michael@example.com',
                     ':email_verified'   => 1,
                 ]
             )
@@ -176,7 +176,7 @@ final class OAuthAccountModelTest extends TestCase
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(false);
 
         $this->sqlHelper
@@ -188,7 +188,7 @@ final class OAuthAccountModelTest extends TestCase
                     ':user_id'          => 42,
                     ':provider'         => 'google',
                     ':provider_user_id' => 'google_123',
-                    ':email'            => 'michel@example.com',
+                    ':email'            => 'michael@example.com',
                     ':email_verified'   => 0,
                 ]
             )
@@ -218,7 +218,7 @@ final class OAuthAccountModelTest extends TestCase
             'user_id'          => 42,
             'provider'         => 'google',
             'provider_user_id' => 'google_123',
-            'email'            => 'michel@example.com',
+            'email'            => 'michael@example.com',
             'email_verified'   => 1,
             'created_at'       => '2026-06-20 10:00:00',
             'updated_at'       => '2026-06-20 10:00:00',
