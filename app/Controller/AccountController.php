@@ -28,7 +28,7 @@ final class AccountController
         }
 
         $this->responder->render('account/index.html.twig', [
-            'title' => 'Mon compte',
+            'title'   => 'Mon compte',
             'account' => [
                 'username'          => $user->getUsername(),
                 'email'             => $user->getEmail(),

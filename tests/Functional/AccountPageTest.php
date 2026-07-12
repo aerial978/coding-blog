@@ -29,7 +29,7 @@ final class AccountPageTest extends TestCase
         parent::setUp();
 
         $this->serverBackup = [
-            'REQUEST_URI'    => $_SERVER['REQUEST_URI'] ?? null,
+            'REQUEST_URI'    => $_SERVER['REQUEST_URI']    ?? null,
             'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
         ];
     }
@@ -137,7 +137,7 @@ final class AccountPageTest extends TestCase
             ->with(
                 'account/index.html.twig',
                 [
-                    'title' => 'Mon compte',
+                    'title'   => 'Mon compte',
                     'account' => [
                         'username'          => 'michael',
                         'email'             => 'michael@example.com',

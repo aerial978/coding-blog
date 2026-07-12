@@ -40,8 +40,8 @@ use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
-use Psr\Container\ContainerInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Provides controller definitions for the dependency injection container.

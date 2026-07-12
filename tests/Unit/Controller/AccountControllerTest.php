@@ -27,8 +27,8 @@ final class AccountControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->csrf = $this->createMock(CsrfTokenInterface::class);
-        $this->responder = $this->createMock(ResponderInterface::class);
+        $this->csrf           = $this->createMock(CsrfTokenInterface::class);
+        $this->responder      = $this->createMock(ResponderInterface::class);
         $this->accountService = $this->createMock(
             AccountServiceInterface::class
         );
@@ -45,9 +45,9 @@ final class AccountControllerTest extends TestCase
         $expectedToken = 'logout-csrf-token';
 
         $user = (new UserEntity())->hydrate([
-            'user_id'          => 42,
-            'username'         => 'michael',
-            'email'            => 'michael@example.com',
+            'user_id'           => 42,
+            'username'          => 'michael',
+            'email'             => 'michael@example.com',
             'email_2fa_enabled' => 1,
         ]);
 
@@ -68,7 +68,7 @@ final class AccountControllerTest extends TestCase
             ->with(
                 'account/index.html.twig',
                 [
-                    'title' => 'Mon compte',
+                    'title'   => 'Mon compte',
                     'account' => [
                         'username'          => 'michael',
                         'email'             => 'michael@example.com',
