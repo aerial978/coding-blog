@@ -43,6 +43,7 @@ use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Service\Account\Contract\AccountServiceInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -91,6 +92,8 @@ final class ControllerServiceProviderTest extends TestCase
             AuthCheckerInterface::class          => $this->createMock(AuthCheckerInterface::class),
             CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
             ResponderInterface::class            => $this->createMock(ResponderInterface::class),
+            AccountServiceInterface::class       => $this->createMock(AccountServiceInterface::class),
+
             ConfirmAccountHandler::class         => $this->instantiateWithoutConstructor(ConfirmAccountHandler::class),
             RegisterGetHandler::class            => $this->instantiateWithoutConstructor(RegisterGetHandler::class),
             RegisterPostHandler::class           => $this->instantiateWithoutConstructor(RegisterPostHandler::class),

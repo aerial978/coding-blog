@@ -63,7 +63,7 @@ class MessageManager
             ErrorCode::AUTH_GOOGLE_ACCESS_DENIED           => 'Vous avez annulé la connexion Google.',
 
             // ==== Auth - Logout ====
-            ErrorCode::AUTH_LOGOUT_SUCCESS                      => 'Vous avez été déconnecté.',
+            ErrorCode::AUTH_LOGOUT_SUCCESS                 => 'Vous avez été déconnecté.',
 
             // ==== Technique générale ====
             ErrorCode::AUTH_RETRY                     => 'Veuillez réessayer.',
