@@ -3,13 +3,27 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<p>Vous êtes bien authentifié et avez accès à une route protégée.</p>
 
 {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
-<form method="post" action="/coding-blog/logout">
-    <input type="hidden" name="csrf_token" value="{{ logout_csrf_token }}">
-    <button type="submit">Déconnexion</button>
-</form>
+<section>
+    <h2>Informations du compte</h2>
 
+    <dl>
+        <dt>Nom d’utilisateur</dt>
+        <dd>{{ account.username }}</dd>
+
+        <dt>Adresse e-mail</dt>
+        <dd>{{ account.email }}</dd>
+
+        <dt>Authentification 2FA par e-mail</dt>
+        <dd>
+            {% if account.email_2fa_enabled %}
+                Activée
+            {% else %}
+                Désactivée
+            {% endif %}
+        </dd>
+    </dl>
+</section>
 {% endblock %}

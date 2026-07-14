@@ -83,9 +83,9 @@ final class GoogleOAuthProviderAdapterTest extends TestCase
             ->method('toArray')
             ->willReturn([
                 'sub'            => 'google-id',
-                'email'          => 'michel@example.com',
+                'email'          => 'michael@example.com',
                 'email_verified' => true,
-                'name'           => 'Michel Hathier',
+                'name'           => 'Michael Doe',
                 'picture'        => 'https://example.com/avatar.jpg',
             ]);
 
@@ -98,9 +98,9 @@ final class GoogleOAuthProviderAdapterTest extends TestCase
         $data = $this->adapter->getResourceOwnerData($token);
 
         $this->assertSame('google-id', $data['sub']);
-        $this->assertSame('michel@example.com', $data['email']);
+        $this->assertSame('michael@example.com', $data['email']);
         $this->assertTrue($data['email_verified']);
-        $this->assertSame('Michel Hathier', $data['name']);
+        $this->assertSame('Michael Doe', $data['name']);
         $this->assertSame('https://example.com/avatar.jpg', $data['picture']);
     }
 

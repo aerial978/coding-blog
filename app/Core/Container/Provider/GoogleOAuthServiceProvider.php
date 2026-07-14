@@ -11,10 +11,12 @@ use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Model\Contract\OAuthAccountModelInterface;
 use App\Model\Contract\UserModelInterface;
+use App\Service\OAuth\Contract\GoogleOAuthProfileMapperInterface;
 use App\Service\OAuth\Contract\GoogleOAuthProviderInterface;
 use App\Service\OAuth\Contract\GoogleOAuthServiceInterface;
 use App\Service\OAuth\Contract\OAuthUserProvisioningServiceInterface;
 use App\Service\OAuth\Factory\GoogleOAuthProviderFactory;
+use App\Service\OAuth\GoogleOAuthProfileMapper;
 use App\Service\OAuth\GoogleOAuthProviderAdapter;
 use App\Service\OAuth\GoogleOAuthService;
 use App\Service\OAuth\OAuthUserProvisioningService;
@@ -39,6 +41,17 @@ final class GoogleOAuthServiceProvider
      * @return array<string, callable(ContainerInterface): mixed>
      */
     private static function getGoogleOAuthDefinitions(): array
+    {
+        return array_merge(
+            self::getGoogleOAuthProviderDefinitions(),
+            self::getGoogleOAuthServiceDefinitions(),
+        );
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getGoogleOAuthProviderDefinitions(): array
     {
         return [
             GoogleOAuthProviderFactory::class => static function (): GoogleOAuthProviderFactory {
@@ -69,6 +82,27 @@ final class GoogleOAuthServiceProvider
 
                 return $provider;
             },
+        ];
+    }
+
+    /**
+     * @return array<string, callable(ContainerInterface): mixed>
+     */
+    private static function getGoogleOAuthServiceDefinitions(): array
+    {
+        return [
+            GoogleOAuthProfileMapper::class => static function (): GoogleOAuthProfileMapper {
+                return new GoogleOAuthProfileMapper();
+            },
+
+            GoogleOAuthProfileMapperInterface::class => static function (
+                ContainerInterface $container
+            ): GoogleOAuthProfileMapperInterface {
+                /** @var GoogleOAuthProfileMapperInterface $mapper */
+                $mapper = $container->get(GoogleOAuthProfileMapper::class);
+
+                return $mapper;
+            },
 
             GoogleOAuthService::class => static function (
                 ContainerInterface $container
@@ -76,7 +110,13 @@ final class GoogleOAuthServiceProvider
                 /** @var GoogleOAuthProviderInterface $provider */
                 $provider = $container->get(GoogleOAuthProviderInterface::class);
 
-                return new GoogleOAuthService($provider);
+                /** @var GoogleOAuthProfileMapperInterface $profileMapper */
+                $profileMapper = $container->get(GoogleOAuthProfileMapperInterface::class);
+
+                return new GoogleOAuthService(
+                    $provider,
+                    $profileMapper,
+                );
             },
 
             GoogleOAuthServiceInterface::class => static function (

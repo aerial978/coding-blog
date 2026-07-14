@@ -40,6 +40,7 @@ use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Service\Account\Contract\AccountServiceInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -104,7 +105,14 @@ final class ControllerServiceProvider
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
 
-                return new AccountController($csrf, $responder);
+                /** @var AccountServiceInterface $accountService */
+                $accountService = $container->get(AccountServiceInterface::class);
+
+                return new AccountController(
+                    $csrf,
+                    $responder,
+                    $accountService,
+                );
             },
         ];
     }

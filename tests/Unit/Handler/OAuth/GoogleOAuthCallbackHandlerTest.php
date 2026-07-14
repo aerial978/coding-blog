@@ -117,9 +117,9 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->method('getUserProfile')
             ->willReturn([
                 'id'             => 'google_123',
-                'email'          => 'michel@example.com',
+                'email'          => 'michael@example.com',
                 'email_verified' => false,
-                'name'           => 'Michel Hathier',
+                'name'           => 'Michael Doe',
                 'avatar'         => null,
             ]);
 
@@ -148,10 +148,10 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true);
 
-        $user = $this->activeUser(42, 'michel@example.com');
+        $user = $this->activeUser(42, 'michael@example.com');
 
         $this->mockValidGoogleProfile($profile);
 
@@ -189,10 +189,10 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true);
 
-        $user = $this->inactiveUser(42, 'michel@example.com');
+        $user = $this->inactiveUser(42, 'michael@example.com');
 
         $this->mockValidGoogleProfile($profile);
 
@@ -231,7 +231,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     public function testHandleCreatesUserWithAutoProvisioningThenCreatesOAuthLinkAndLogsIn(): void
     {
         $profile = $this->validProfile();
-        $user    = $this->activeUser(77, 'michel@example.com');
+        $user    = $this->activeUser(77, 'michael@example.com');
 
         $this->mockValidGoogleProfile($profile);
 
@@ -244,7 +244,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('michel@example.com')
+            ->with('michael@example.com')
             ->willReturn(null);
 
         $this->oauthProvisioning
@@ -267,7 +267,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
                     return $account->getUserId()         === 77
                         && $account->getProvider()       === 'google'
                         && $account->getProviderUserId() === 'google_123'
-                        && $account->getEmail()          === 'michel@example.com'
+                        && $account->getEmail()          === 'michael@example.com'
                         && $account->isEmailVerified()   === true;
                 }
             ))
@@ -301,7 +301,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('michel@example.com')
+            ->with('michael@example.com')
             ->willReturn(null);
 
         $this->oauthProvisioning
@@ -329,7 +329,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     public function testHandleRefusesInactiveLocalUserFoundByEmail(): void
     {
         $profile = $this->validProfile();
-        $user    = $this->inactiveUser(42, 'michel@example.com');
+        $user    = $this->inactiveUser(42, 'michael@example.com');
 
         $this->mockValidGoogleProfile($profile);
 
@@ -342,7 +342,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('michel@example.com')
+            ->with('michael@example.com')
             ->willReturn($user);
 
         $this->session
@@ -368,14 +368,14 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     public function testHandleLogsInWhenLocalUserAlreadyHasProviderLink(): void
     {
         $profile = $this->validProfile();
-        $user    = $this->activeUser(42, 'michel@example.com');
+        $user    = $this->activeUser(42, 'michael@example.com');
 
         $existingLink = (new OAuthAccountEntity())
             ->setId(2)
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('other_google_id')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true);
 
         $this->mockValidGoogleProfile($profile);
@@ -389,7 +389,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('michel@example.com')
+            ->with('michael@example.com')
             ->willReturn($user);
 
         $this->oauthAccountModel
@@ -487,9 +487,9 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     {
         return [
             'id'             => 'google_123',
-            'email'          => 'michel@example.com',
+            'email'          => 'michael@example.com',
             'email_verified' => true,
-            'name'           => 'Michel Hathier',
+            'name'           => 'Michael doe',
             'avatar'         => null,
         ];
     }
@@ -498,8 +498,8 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     {
         return (new UserEntity())
             ->setUserId($userId)
-            ->setUsername('michel')
-            ->setSlug('michel')
+            ->setUsername('michael')
+            ->setSlug('michael')
             ->setEmail($email)
             ->setPassword(password_hash('password', PASSWORD_DEFAULT))
             ->setStatus('active')
@@ -510,8 +510,8 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     {
         return (new UserEntity())
             ->setUserId($userId)
-            ->setUsername('michel')
-            ->setSlug('michel')
+            ->setUsername('michael')
+            ->setSlug('michael')
             ->setEmail($email)
             ->setPassword(password_hash('password', PASSWORD_DEFAULT))
             ->setStatus('inactive')
@@ -612,7 +612,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->setUserId(0)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true);
 
         $this->mockValidGoogleProfile($profile);
@@ -655,7 +655,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true);
 
         $this->mockValidGoogleProfile($profile);
@@ -696,9 +696,9 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $profile = $this->validProfile();
 
         $user = (new UserEntity())
-            ->setUsername('michel')
-            ->setSlug('michel')
-            ->setEmail('michel@example.com')
+            ->setUsername('michael')
+            ->setSlug('michael')
+            ->setEmail('michael@example.com')
             ->setPassword(password_hash('password', PASSWORD_DEFAULT))
             ->setStatus('active')
             ->setEmail2faEnabled(false);
@@ -714,7 +714,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->userModel
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('michel@example.com')
+            ->with('michael@example.com')
             ->willReturn($user);
 
         $this->flash
@@ -739,7 +739,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
     public function testHandleRedirectsWithTechnicalErrorWhenOAuthLinkCreationFails(): void
     {
         $profile = $this->validProfile();
-        $user    = $this->activeUser(42, 'michel@example.com');
+        $user    = $this->activeUser(42, 'michael@example.com');
 
         $this->mockValidGoogleProfile($profile);
 
@@ -752,7 +752,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->userModel
         ->expects($this->once())
         ->method('findOneByEmail')
-        ->with('michel@example.com')
+        ->with('michael@example.com')
         ->willReturn($user);
 
         $this->oauthAccountModel

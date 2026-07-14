@@ -12,10 +12,12 @@ use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Model\Contract\OAuthAccountModelInterface;
 use App\Model\Contract\UserModelInterface;
+use App\Service\OAuth\Contract\GoogleOAuthProfileMapperInterface;
 use App\Service\OAuth\Contract\GoogleOAuthProviderInterface;
 use App\Service\OAuth\Contract\GoogleOAuthServiceInterface;
 use App\Service\OAuth\Contract\OAuthUserProvisioningServiceInterface;
 use App\Service\OAuth\Factory\GoogleOAuthProviderFactory;
+use App\Service\OAuth\GoogleOAuthProfileMapper;
 use App\Service\OAuth\GoogleOAuthProviderAdapter;
 use App\Service\OAuth\GoogleOAuthService;
 use App\Service\OAuth\OAuthUserProvisioningService;
@@ -60,6 +62,8 @@ final class GoogleOAuthServiceProviderTest extends TestCase
         $this->assertArrayHasKey(OAuthUserProvisioningServiceInterface::class, $definitions);
         $this->assertArrayHasKey(GoogleOAuthStartHandler::class, $definitions);
         $this->assertArrayHasKey(GoogleOAuthCallbackHandler::class, $definitions);
+        $this->assertArrayHasKey(GoogleOAuthProfileMapper::class, $definitions);
+        $this->assertArrayHasKey(GoogleOAuthProfileMapperInterface::class, $definitions);
     }
 
     public function testGoogleOAuthServiceDefinitionsCanBeResolved(): void
@@ -88,9 +92,20 @@ final class GoogleOAuthServiceProviderTest extends TestCase
             ])
         );
 
+        $profileMapper = $definitions[GoogleOAuthProfileMapper::class](
+            $this->containerWith([])
+        );
+
+        $profileMapperInterface = $definitions[GoogleOAuthProfileMapperInterface::class](
+            $this->containerWith([
+                GoogleOAuthProfileMapper::class => $profileMapper,
+            ])
+        );
+
         $service = $definitions[GoogleOAuthService::class](
             $this->containerWith([
-                GoogleOAuthProviderInterface::class => $provider,
+                GoogleOAuthProviderInterface::class      => $provider,
+                GoogleOAuthProfileMapperInterface::class => $profileMapperInterface,
             ])
         );
 
@@ -119,6 +134,8 @@ final class GoogleOAuthServiceProviderTest extends TestCase
         $this->assertInstanceOf(GoogleOAuthProviderInterface::class, $provider);
         $this->assertInstanceOf(GoogleOAuthService::class, $service);
         $this->assertInstanceOf(GoogleOAuthServiceInterface::class, $serviceInterface);
+        $this->assertInstanceOf(GoogleOAuthProfileMapper::class, $profileMapper);
+        $this->assertInstanceOf(GoogleOAuthProfileMapperInterface::class, $profileMapperInterface);
         $this->assertInstanceOf(OAuthUserProvisioningService::class, $provisioning);
         $this->assertInstanceOf(OAuthUserProvisioningServiceInterface::class, $provisioningInterface);
     }

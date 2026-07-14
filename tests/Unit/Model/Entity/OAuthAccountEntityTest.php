@@ -30,7 +30,7 @@ final class OAuthAccountEntityTest extends TestCase
             ->setUserId(42)
             ->setProvider('google')
             ->setProviderUserId('google_123')
-            ->setEmail('michel@example.com')
+            ->setEmail('michael@example.com')
             ->setEmailVerified(true)
             ->setCreatedAt('2026-06-20 10:00:00')
             ->setUpdatedAt('2026-06-20 11:00:00');
@@ -39,7 +39,7 @@ final class OAuthAccountEntityTest extends TestCase
         $this->assertSame(42, $entity->getUserId());
         $this->assertSame('google', $entity->getProvider());
         $this->assertSame('google_123', $entity->getProviderUserId());
-        $this->assertSame('michel@example.com', $entity->getEmail());
+        $this->assertSame('michael@example.com', $entity->getEmail());
         $this->assertTrue($entity->isEmailVerified());
         $this->assertSame('2026-06-20 10:00:00', $entity->getCreatedAt());
         $this->assertSame('2026-06-20 11:00:00', $entity->getUpdatedAt());
@@ -53,7 +53,7 @@ final class OAuthAccountEntityTest extends TestCase
         $this->assertSame($entity, $entity->setUserId(42));
         $this->assertSame($entity, $entity->setProvider('google'));
         $this->assertSame($entity, $entity->setProviderUserId('google_123'));
-        $this->assertSame($entity, $entity->setEmail('michel@example.com'));
+        $this->assertSame($entity, $entity->setEmail('michael@example.com'));
         $this->assertSame($entity, $entity->setEmailVerified(true));
         $this->assertSame($entity, $entity->setCreatedAt('2026-06-20 10:00:00'));
         $this->assertSame($entity, $entity->setUpdatedAt('2026-06-20 11:00:00'));
@@ -66,7 +66,7 @@ final class OAuthAccountEntityTest extends TestCase
             'user_id'          => 42,
             'provider'         => 'google',
             'provider_user_id' => 'google_123',
-            'email'            => 'michel@example.com',
+            'email'            => 'michael@example.com',
             'email_verified'   => true,
             'created_at'       => '2026-06-20 10:00:00',
             'updated_at'       => '2026-06-20 11:00:00',
@@ -77,7 +77,7 @@ final class OAuthAccountEntityTest extends TestCase
         $this->assertSame(42, $entity->getUserId());
         $this->assertSame('google', $entity->getProvider());
         $this->assertSame('google_123', $entity->getProviderUserId());
-        $this->assertSame('michel@example.com', $entity->getEmail());
+        $this->assertSame('michael@example.com', $entity->getEmail());
         $this->assertTrue($entity->isEmailVerified());
         $this->assertSame('2026-06-20 10:00:00', $entity->getCreatedAt());
         $this->assertSame('2026-06-20 11:00:00', $entity->getUpdatedAt());

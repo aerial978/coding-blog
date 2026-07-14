@@ -32,8 +32,8 @@ final class Email2faServiceTest extends TestCase
 
         $user = (new UserEntity())
             ->setUserId(42)
-            ->setUsername('Michel')
-            ->setEmail('michel@example.com');
+            ->setUsername('Michael')
+            ->setEmail('michael@example.com');
 
         $challengeModel
             ->expects(self::once())
@@ -66,8 +66,8 @@ final class Email2faServiceTest extends TestCase
 
         $user = (new UserEntity())
             ->setUserId(42)
-            ->setUsername('Michel')
-            ->setEmail('michel@example.com');
+            ->setUsername('Michael')
+            ->setEmail('michael@example.com');
 
         $challengeModel
             ->expects(self::once())
@@ -88,8 +88,8 @@ final class Email2faServiceTest extends TestCase
             ->expects(self::once())
             ->method('sendEmail2faCode')
             ->with(
-                'michel@example.com',
-                'Michel',
+                'michael@example.com',
+                'Michael',
                 self::callback(static fn (string $code): bool => preg_match('/^\d{6}$/', $code) === 1),
                 10
             )
@@ -107,8 +107,8 @@ final class Email2faServiceTest extends TestCase
 
         $user = (new UserEntity())
             ->setUserId(42)
-            ->setUsername('Michel')
-            ->setEmail('michel@example.com');
+            ->setUsername('Michael')
+            ->setEmail('michael@example.com');
 
         $challengeModel
             ->expects(self::once())

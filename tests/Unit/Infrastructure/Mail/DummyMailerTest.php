@@ -81,7 +81,7 @@ final class DummyMailerTest extends TestCase
 
         $result = $mailer->sendEmail2faCode(
             'user@example.com',
-            'Michel',
+            'Michael',
             '123456',
             10
         );
