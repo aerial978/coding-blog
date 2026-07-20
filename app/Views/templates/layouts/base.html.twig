@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+        <meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>{% block title %}{% endblock %}</title>
+        <!-- Bootstrap Icons -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="{{ base_path }}public/css/app.css?v=1">
+		<style>
+			.form-error.is-hidden { display: none;}
+			.form-error { font-size: .875rem; color: #dc3545; margin-top: .25rem; }
+			/* Champ invalide : fond rouge clair + bordure rouge */
+.is-invalid {
+  background-color: #fff5f5;
+  border-color: #dc3545;
+}
+
+/* Champ valide : optionnel (vert léger) */
+.is-valid {
+  background-color: #f0fff4;
+  border-color: #198754;
+}
+
+		</style>
+	</head>
+	<body>
+		{% if show_header ?? false %}
+			{% include 'templates/partials/header.html.twig' %}
+		{% endif %}
+
+		<main>
+			{% block content %}{% endblock %}
+		</main>
+
+		{% include 'templates/partials/footer.html.twig' %}
+		<!-- JustValidate -->
+		<script src="https://cdn.jsdelivr.net/npm/just-validate@4.3.0/dist/just-validate.production.min.js" defer></script>
+	</body>
+</html>

@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Rediriger vers le dossier public/
+RewriteRule ^$ public/ [L]
+RewriteRule (.*) public/$1 [L]
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

@@ -1,0 +1,18 @@
+includes:
+  - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+  level: max
+
+  paths:
+    - app
+
+  excludePaths:
+    - vendor/*
+    - tmp/*
+    - cache/*
+    - tests/*
+
+  inferPrivatePropertyTypeFromConstructor: true
+
+

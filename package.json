@@ -1,0 +1,23 @@
+{
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "eslint": "^9.30.1",
+    "globals": "^16.3.0",
+    "markdownlint-cli2": "^0.18.1",
+    "stylelint": "^16.21.0",
+    "stylelint-config-standard": "^38.0.0",
+    "stylelint-scss": "^6.12.1"
+  },
+  "scripts": {
+    "lint:js": "eslint public/assets/js/**/*.js",
+    "lint:js:fix": "eslint public/assets/js/**/*.js/ --fix",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#vendor\"",
+    "lint:scss": "stylelint \"assets/scss/**/*.scss\"",
+    "scss:build": "sass --load-path=node_modules assets/scss/app.scss public/css/app.css --style=compressed",
+    "scss:watch": "sass --load-path=node_modules assets/scss/app.scss public/css/app.css --watch"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.7",
+    "sass": "^1.90.0"
+  }
+}

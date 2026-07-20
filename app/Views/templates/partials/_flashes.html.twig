@@ -1,0 +1,18 @@
+{% set map = {
+  'success': 'alert alert-success',
+  'error'  : 'alert alert-danger',
+  'warning': 'alert alert-warning',
+  'info'   : 'alert alert-info'
+} %}
+
+{% for type, messages in flashes %}
+  {% if messages is iterable and messages|length > 0 %}
+    <div class="{{ map[type] ?? 'alert alert-secondary' }}" role="alert">
+      <ul class="mb-0">
+        {% for msg in messages %}
+          <li>{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endfor %}

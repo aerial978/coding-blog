@@ -1,0 +1,20 @@
+{% extends 'templates/layouts/base.html.twig' %}
+
+{% block title %}Home page{% endblock %}
+
+{% block content %}
+    {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+    <h2>{{ title }}</h2>
+    <p>{{ message }}</p>
+
+    {% if users is not empty %}
+        <h3>Users</h3>
+        <ul>
+            {% for user in users %}
+                <li>ID : {{ user.userId }}, Username : {{ user.username }}, Email : {{ user.email }}, Created at : {{ user.createdAt|date('d/m/Y') }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No registered users.</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,41 @@
+engines:
+  phpmd:
+    enabled: true
+    config: phpmd.xml
+
+  phpstan:
+    enabled: true
+    config: .phpstan.neon.dist
+
+  phpcs:
+    enabled: true
+    config: phpcs.xml
+
+  php-cs-fixer:
+    enabled: true
+    config: .php-cs-fixer.dist.php
+
+  eslint:
+    enabled: true
+    config: .eslint.config.mjs
+
+  stylelint:
+    enabled: true
+    config: .stylelintrc.json
+
+  markdownlint:
+    enabled: true
+    # Idéalement fournissez un fichier .markdownlint.json ; sinon laissez enabled: true
+    # (les options inline 'rules:' ne sont pas toujours supportées ici)
+
+# Exclure des chemins côté Codacy (y compris les tests)
+exclude_paths:
+  - vendor/**
+  - node_modules/**
+  - tmp/**
+  - cache/**
+  - .github/**
+  - tests/
+  - Tests/
+  - tests/**
+  - Tests/**

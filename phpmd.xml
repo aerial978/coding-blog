@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<ruleset name="CodingBlog PHPMD Quiet"
+         xmlns="http://pmd.sf.net/ruleset/1.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+         xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+
+    <description>
+        Quiet mode : focus sur les problèmes concrets, sans exclusions de fichiers et sans bruit.
+        Aucune annotation @SuppressWarnings nécessaire (pas de conflit PHPStan).
+    </description>
+
+    <exclude-pattern>^tests/</exclude-pattern>
+    <exclude-pattern>^Tests/</exclude-pattern>
+
+    <!-- =======================
+         1) RÈGLES GARDÉES
+         ======================= -->
+
+    <!-- Clean Code: garder sauf StaticAccess (bruyant) -->
+    <rule ref="rulesets/cleancode.xml">
+        <exclude name="StaticAccess"/>
+    </rule>
+
+    <!-- Unused code: garder (vraiment utile) -->
+    <rule ref="rulesets/unusedcode.xml"/>
+
+    <!-- Naming: garder mais customiser ShortVariable pour éviter le bruit -->
+    <rule ref="rulesets/naming.xml">
+        <exclude name="ShortVariable"/>
+    </rule>
+    <rule ref="rulesets/naming.xml/ShortVariable">
+        <properties>
+            <!-- tolérer id, ok, ts, mj, tg, etc. -->
+            <property name="minimum" value="2"/>
+        </properties>
+    </rule>
+
+    <!-- Design: garder SAUF règles bruyantes/incompatibles -->
+    <rule ref="rulesets/design.xml">
+        <exclude name="ExitExpression"/>
+        <exclude name="ElseExpression"/>
+        <exclude name="CouplingBetweenObjects"/>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/CyclomaticComplexity">
+        <properties>
+            <property name="reportLevel" value="8"/>
+        </properties>
+    </rule>
+
+    <!-- =======================
+         2) RÈGLES DÉSACTIVÉES
+         ======================= -->
+
+    <!-- Codesize: désactivé en phase initiale (évite les pavés Cyclomatic/NPath/Long method) -->
+    <!-- Si tu veux les remettre plus tard, réactive avec des seuils progressifs. -->
+    <!-- <rule ref="rulesets/codesize.xml"/> -->
+
+    <!-- Controversial: désactivé (source de bruit) -->
+    <!-- <rule ref="rulesets/controversial.xml"/> -->
+
+</ruleset>

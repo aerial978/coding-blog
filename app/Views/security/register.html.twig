@@ -1,0 +1,72 @@
+{% extends "templates/layouts/base.html.twig" %}
+{% import 'templates/macros/form_fields.html.twig' as fields %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    {% if mode == 'check_email' %}
+        <h2>Vérifiez votre boîte mail</h2>
+        <p>Nous avons envoyé un lien de confirmation à <strong>{{ obfuscated_email }}</strong>.</p>
+        <p>Si vous ne le voyez pas, vérifiez vos spams.</p>
+        <p><a href="/coding-blog/resend-confirmation">Renvoyer le lien</a></p>
+    {% else %}
+        <h1 class="mb-4 text-center">Register</h1>
+        {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+        
+        <form id="registerForm" method="post" action="" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {{ fields.input(
+                'username',            # id
+                'username',            # name
+                'Username',            # label
+                old.username|default(''),
+                'text',                # type
+                true,                  # required
+                'username_error',      # error_id (pour JustValidate)
+                'form-control',        # class
+                { autocomplete: 'username' }  # attrs
+                ) }}
+
+            {{ fields.input(
+                'email',
+                'email',
+                'Email',
+                old.email|default(''),
+                'email',
+                true,
+                'email_error',
+                'form-control',
+                { autocomplete: 'email' }
+            ) }}
+
+            {{ fields.honeypot(honeypot_name) }}
+
+            {% include 'templates/components/password_strength.html.twig' with {
+                id: 'password-field',
+                input_id: 'password',
+                name: 'password',
+                label: 'Password',
+                required: true
+            } %}
+
+            {% include 'templates/components/turnstile_widget.html.twig' with {
+              turnstile_enabled: true,
+              turnstile_site_key: turnstile_site_key
+            } %}
+
+            <button type="submit" class="btn btn-primary w-100" id="register-submit">Register</button>
+        </form>
+    {% endif %}
+</div>
+
+{% block page_scripts %}
+<script src="{{ base_path }}/public/assets/js/security/password-strength.js" defer></script>
+<script type="module" src="{{ base_path }}/public/assets/js/security/validation.registration.js"></script>
+<script src="{{ base_path }}/public/assets/js/security/turnstile.js" defer></script>
+{% endblock %}
+
+{% endblock %}
+
+
+

@@ -1,0 +1,35 @@
+# --- COMPOSER ---
+/vendor/
+/composer.lock
+/composer.phar
+
+# --- PHPUNIT ---
+/coverage/
+/phpunit.result.cache
+/.phpunit.cache
+
+# --- PHP-CS-FIXER ---
+/.php-cs-fixer.cache
+
+# --- PHPSTAN ---
+/.phpstan.cache
+
+# --- PHPMD ---
+/build/phpmd/
+
+# --- NODE.JS / NPM
+/node_modules/
+/package-lock.json
+
+# --- STYLELINT / ESLINT
+/.stylelintcache
+/.eslintcache
+
+.env
+.env.test
+
+# --- LOGS
+/Logs/
+/var/log/
+/storage/logs/
+*.log

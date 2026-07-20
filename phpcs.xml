@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<ruleset name="Coding Blog">
+  <description>PSR-12 + règles spécifiques app/tests</description>
+
+  <rule ref="PSR12" />
+
+  <file>app</file>
+  <file>tests</file>
+
+  <exclude-pattern>vendor/*</exclude-pattern>
+  <exclude-pattern>var/*</exclude-pattern>
+  <exclude-pattern>cache/*</exclude-pattern>
+
+  <rule ref="Generic.Files.LineLength">
+    <properties>
+      <property name="lineLimit" value="120"/>
+      <property name="absoluteLineLimit" value="0"/>
+      <property name="ignoreComments" value="true"/>
+    </properties>
+  </rule>
+
+  <rule ref="Generic.Files.LineLength">
+    <include-pattern>tests/*</include-pattern>
+    <properties>
+      <property name="lineLimit" value="200"/>
+      <property name="absoluteLineLimit" value="0"/>
+      <property name="ignoreComments" value="true"/>
+    </properties>
+  </rule>
+
+  <rule ref="PEAR.NamingConventions.ValidFunctionName.PrivateNoUnderscore">
+    <severity>0</severity>
+  </rule>
+
+  <rule ref="Squiz.Commenting.FileComment">
+    <exclude-pattern>tests/*</exclude-pattern>
+    <severity>0</severity>
+  </rule>
+
+  <rule ref="Squiz.NamingConventions.ValidFunctionName">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+  <rule ref="PSR1.Methods.CamelCapsMethodName">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+  <rule ref="PSR2.Methods.MethodDeclaration.Underscore">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+
+  <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+  <rule ref="Generic.Files.OneClassPerFile">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+
+    <!-- Désactive l'exigence d'underscore sur les méthodes privées (Squiz) -->
+  <rule ref="Squiz.NamingConventions.ValidFunctionName.PrivateNoUnderscore">
+    <severity>0</severity>
+  </rule>
+
+  <!-- Ignore l'ordre du file header PSR-12 dans les tests -->
+  <rule ref="PSR12.Files.FileHeader.IncorrectOrder">
+    <exclude-pattern>tests/*</exclude-pattern>
+    <severity>0</severity>
+  </rule>
+
+  <!-- AJOUTS CRITIQUES POUR VOS ERREURS RESTANTES -->
+  <exclude name="Squiz.NamingConventions.ValidFunctionName.PrivateNoUnderscore"/>
+  <exclude name="PEAR.NamingConventions.ValidFunctionName.PrivateNoUnderscore"/>
+</ruleset>
