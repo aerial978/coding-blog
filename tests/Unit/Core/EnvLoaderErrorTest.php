@@ -67,7 +67,7 @@ final class EnvLoaderErrorTest extends TestCase
         $_ENV['DB_HOST']     = 'localhost';
         $_ENV['DB_USER']     = 'root';
         $_ENV['DB_PASSWORD'] = '';
-        $_ENV['APP_ENV']     = 'prod';
+        $_ENV['APP_ENV']     = 'production';
         $_ENV['APP_URL']     = 'http://localhost';
         $_ENV['DB_NAME']     = 'coding-blog';
 

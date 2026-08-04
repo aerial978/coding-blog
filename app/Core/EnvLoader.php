@@ -36,14 +36,14 @@ class EnvLoader
 
     /**
      * Determine the current application environment.
-     * Falls back to "prod" when not set or invalid.
+     * Falls back to "production" when not set or invalid.
      */
     private static function resolveAppEnv(): string
     {
         $env = $_ENV['APP_ENV'] ?? getenv('APP_ENV'); // string|false|null
 
         if (!is_string($env) || trim($env) === '') {
-            return 'prod';
+            return 'production';
         }
 
         return $env;

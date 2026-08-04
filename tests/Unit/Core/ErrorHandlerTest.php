@@ -23,7 +23,7 @@ final class ErrorHandlerTest extends TestCase
 {
     protected function setUp(): void
     {
-        $_ENV['APP_ENV'] = 'prod';
+        $_ENV['APP_ENV'] = 'production';
     }
 
     public function testRegisterSetsHandlers(): void
@@ -75,7 +75,7 @@ final class ErrorHandlerTest extends TestCase
 
     public function testHandleFatalErrorInProductionCallsErrorController(): void
     {
-        $_ENV['APP_ENV'] = 'prod';
+        $_ENV['APP_ENV'] = 'production';
 
         $mockController = $this->createMock(ErrorController::class);
         $mockController

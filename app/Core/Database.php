@@ -29,8 +29,8 @@ class Database
 
     private function resolveAppEnv(): string
     {
-        $env = $_ENV['APP_ENV'] ?? 'prod';
-        return is_string($env) && $env !== '' ? $env : 'prod';
+        $env = $_ENV['APP_ENV'] ?? 'production';
+        return is_string($env) && $env !== '' ? $env : 'production';
     }
 
     /**
