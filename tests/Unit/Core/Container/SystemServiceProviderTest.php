@@ -42,6 +42,7 @@ use App\Validation\FormValidator;
 use Cocur\Slugify\Slugify;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
 
 final class SystemServiceProviderTest extends TestCase
 {
@@ -353,5 +354,43 @@ final class SystemServiceProviderTest extends TestCase
         $mailer = $definitions[MailerInterface::class]($emptyContainer);
 
         $this->assertInstanceOf(DummyMailer::class, $mailer);
+    }
+
+    public function testSubmissionDelayValidatorRejectsEqualDelays(): void
+    {
+        $_ENV['MIN_FORM_DELAY'] = '30';
+        $_ENV['MAX_FORM_DELAY'] = '30';
+
+        $definitions = SystemServiceProvider::getDefinitions();
+        $session     = $this->createMock(SessionInterface::class);
+        $container   = $this->makeContainer([
+            SessionInterface::class => $session,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'MIN_FORM_DELAY must be lower than MAX_FORM_DELAY.'
+        );
+
+        $definitions[SubmissionDelayValidator::class]($container);
+    }
+
+    public function testSubmissionDelayValidatorRejectsMinimumGreaterThanMaximum(): void
+    {
+        $_ENV['MIN_FORM_DELAY'] = '60';
+        $_ENV['MAX_FORM_DELAY'] = '30';
+
+        $definitions = SystemServiceProvider::getDefinitions();
+        $session     = $this->createMock(SessionInterface::class);
+        $container   = $this->makeContainer([
+            SessionInterface::class => $session,
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'MIN_FORM_DELAY must be lower than MAX_FORM_DELAY.'
+        );
+
+        $definitions[SubmissionDelayValidator::class]($container);
     }
 }

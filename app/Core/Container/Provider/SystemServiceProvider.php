@@ -193,6 +193,12 @@ final class SystemServiceProvider
                     $max = 1800;
                 }
 
+                if ($min >= $max) {
+                    throw new RuntimeException(
+                        'MIN_FORM_DELAY must be lower than MAX_FORM_DELAY.'
+                    );
+                }
+
                 return new SubmissionDelayValidator($session, $min, $max);
             },
         ];
