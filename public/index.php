@@ -19,7 +19,11 @@ date_default_timezone_set('Europe/Paris');
 EnvLoader::load(__DIR__ . '/../');
 
 // 1.1) Session (centralisée et sécurisée)
-session_name('SID');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.use_strict_mode', '1');
+
+session_name('CODINGBLOGSESSID');
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path'     => '/',
