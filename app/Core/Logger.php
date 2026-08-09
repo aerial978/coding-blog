@@ -4,8 +4,10 @@ namespace App\Core;
 
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
+use Monolog\Level;
 use Monolog\Logger as MonoLogger;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Logger factory and manager for the application.
@@ -45,7 +47,9 @@ class Logger
 
             $logFile = $channelLogDir . '/' . $channel . '.log';
 
-            $handler = new RotatingFileHandler($logFile, 14, MonoLogger::DEBUG);
+            $logLevel = self::resolveLogLevel();
+
+            $handler = new RotatingFileHandler($logFile, 14, $logLevel);
 
             // Formatter : supprime %context% et %extra% quand ils sont vides
             $format    = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
@@ -58,6 +62,36 @@ class Logger
         }
 
         return self::$instances[$channel];
+    }
+
+    private static function resolveLogLevel(): Level
+    {
+        $value = $_ENV['LOG_LEVEL'] ?? null;
+
+        if (!is_string($value) || trim($value) === '') {
+            throw new RuntimeException(
+                'LOG_LEVEL must be defined as a non-empty string.'
+            );
+        }
+
+        $level = strtoupper(trim($value));
+
+        return match ($level) {
+            'DEBUG'     => Level::Debug,
+            'INFO'      => Level::Info,
+            'NOTICE'    => Level::Notice,
+            'WARNING'   => Level::Warning,
+            'ERROR'     => Level::Error,
+            'CRITICAL'  => Level::Critical,
+            'ALERT'     => Level::Alert,
+            'EMERGENCY' => Level::Emergency,
+            default     => throw new RuntimeException(
+                sprintf(
+                    'Unsupported LOG_LEVEL value "%s". Allowed values: DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY.',
+                    $level
+                )
+            ),
+        };
     }
 
     public static function reset(): void
