@@ -51,10 +51,11 @@ class ErrorHandler
         $uniqueErrorId = 'ERR-' . bin2hex(random_bytes(8));
 
         self::$logger?->error('Uncaught exception', [
-            'message' => $exception->getMessage(),
-            'file'    => $exception->getFile(),
-            'line'    => $exception->getLine(),
-            'trace'   => $exception->getTraceAsString(),
+            'error_id' => $uniqueErrorId,
+            'message'  => $exception->getMessage(),
+            'file'     => $exception->getFile(),
+            'line'     => $exception->getLine(),
+            'trace'    => $exception->getTraceAsString(),
         ]);
 
         http_response_code(500);
@@ -62,7 +63,6 @@ class ErrorHandler
         $appConfig = new AppConfig();
 
         if (!$appConfig->isLocal()) {
-            // Use the injected controller if available; otherwise render a basic 500 page.
             if (self::$errorController) {
                 self::$errorController->serverError($uniqueErrorId);
                 return;
@@ -98,10 +98,14 @@ class ErrorHandler
     private static function handleFatalError(?array $lastError): void
     {
         if ($lastError && in_array($lastError['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
+
+            $uniqueErrorId = 'ERR-' . bin2hex(random_bytes(8));
+
             self::$logger?->critical('Fatal error detected', [
-                'message' => $lastError['message'],
-                'file'    => $lastError['file'],
-                'line'    => $lastError['line'],
+                'error_id' => $uniqueErrorId,
+                'message'  => $lastError['message'],
+                'file'     => $lastError['file'],
+                'line'     => $lastError['line'],
             ]);
 
             http_response_code(500);
@@ -110,12 +114,11 @@ class ErrorHandler
 
             if (!$appConfig->isLocal()) {
                 if (self::$errorController) {
-                    // serverError can accept null/omitted id if your method signature allows it
-                    self::$errorController->serverError();
+                    self::$errorController->serverError($uniqueErrorId);
                     return;
                 }
 
-                self::renderGeneric500(null);
+                self::renderGeneric500($uniqueErrorId);
                 return;
             }
 
