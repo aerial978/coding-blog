@@ -48,7 +48,7 @@ class ErrorHandler
      */
     public static function handleException(Throwable $exception): void
     {
-        $uniqueErrorId = uniqid('ERR-', true);
+        $uniqueErrorId = 'ERR-' . bin2hex(random_bytes(8));
 
         self::$logger?->error('Uncaught exception', [
             'message' => $exception->getMessage(),
