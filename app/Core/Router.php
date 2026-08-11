@@ -130,6 +130,14 @@ class Router
                 default => $this->errorController->serverError(),
             };
         } catch (\Throwable $e) {
+            Logger::getLogger('error')->error('ErrorController failed', [
+                'http_code' => $code,
+                'message'   => $e->getMessage(),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+
             echo "<h1>$code - An error has occurred</h1>";
         }
     }
