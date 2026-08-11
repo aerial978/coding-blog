@@ -42,7 +42,14 @@ class Logger
             $channelLogDir = $baseLogDir . '/' . $channel;
 
             if (!is_dir($channelLogDir)) {
-                mkdir($channelLogDir, 0755, true);
+                if (!mkdir($channelLogDir, 0755, true) && !is_dir($channelLogDir)) {
+                    throw new RuntimeException(
+                        sprintf(
+                            'Unable to create log directory "%s".',
+                            $channelLogDir
+                        )
+                    );
+                }
             }
 
             $logFile = $channelLogDir . '/' . $channel . '.log';
