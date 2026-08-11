@@ -21,9 +21,25 @@ use ReflectionClass;
  */
 final class ErrorHandlerTest extends TestCase
 {
+    private int $previousErrorReporting;
+
     protected function setUp(): void
     {
+        parent::setUp();
+
         $_ENV['APP_ENV'] = 'production';
+
+        $this->previousErrorReporting = error_reporting();
+        error_reporting(E_ALL);
+    }
+
+    protected function tearDown(): void
+    {
+        error_reporting($this->previousErrorReporting);
+
+        ErrorHandler::setErrorController(null);
+
+        parent::tearDown();
     }
 
     public function testRegisterSetsHandlers(): void
@@ -71,6 +87,20 @@ final class ErrorHandlerTest extends TestCase
     {
         $this->expectException(\ErrorException::class);
         ErrorHandler::handleError(E_USER_WARNING, 'Warning simulated', __FILE__, __LINE__);
+    }
+
+    public function testHandleErrorReturnsFalseWhenSeverityIsNotReported(): void
+    {
+        error_reporting(E_ALL & ~E_USER_WARNING);
+
+        $result = ErrorHandler::handleError(
+            E_USER_WARNING,
+            'Ignored warning',
+            __FILE__,
+            __LINE__
+        );
+
+        $this->assertFalse($result);
     }
 
     public function testHandleFatalErrorInProductionCallsErrorController(): void

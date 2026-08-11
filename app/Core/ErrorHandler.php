@@ -76,18 +76,33 @@ class ErrorHandler
     }
 
     /**
-     * Converts PHP errors into ErrorException instances so they can be caught.
+     * Converts reportable PHP errors into ErrorException instances.
+     *
+     * Errors excluded by the current error_reporting() mask are ignored
+     * by this custom handler.
      *
      * @param int    $severity The error severity.
      * @param string $message  The error message.
      * @param string $file     The file where the error occurred.
      * @param int    $line     The line number where the error occurred.
-     * @return bool Always throws an exception, so never returns.
-     * @throws ErrorException
+     *
+     * @return bool False when the error is excluded from error_reporting().
+     *
+     * @throws ErrorException When the error is reportable.
      */
     public static function handleError(int $severity, string $message, string $file, int $line): bool
     {
-        throw new ErrorException($message, 0, $severity, $file, $line);
+        if (!(error_reporting() & $severity)) {
+            return false;
+        }
+
+        throw new ErrorException(
+            $message,
+            0,
+            $severity,
+            $file,
+            $line
+        );
     }
 
     /**
