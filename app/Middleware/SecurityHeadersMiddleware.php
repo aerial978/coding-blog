@@ -17,10 +17,6 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      */
     public function handle(Request $request, string $uri, string $method): bool
     {
-        // On ajoute (ou renforce) quelques headers de sécurité.
-        // Ici on ne s’embête pas à vérifier s’ils existent déjà, ce n’est pas gênant
-        // dans un petit projet portfolio.
-
         // Empêche l’inclusion dans des iframes externes
         header('X-Frame-Options: SAMEORIGIN');
 
@@ -29,6 +25,9 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 
         // Politique de referrer raisonnable
         header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // Désactive des fonctionnalités navigateur non utilisées
+        header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
         // Tu pourrais en ajouter d’autres plus tard (CSP, etc.)
 
