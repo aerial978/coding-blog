@@ -99,12 +99,17 @@ class Router
 
         [$controllerClass, $action] = $this->routes[$method][$uri];
 
-        if (!class_exists($controllerClass) || !method_exists($controllerClass, $action)) {
+        if (!class_exists($controllerClass)) {
             $this->handleError(500);
             return;
         }
 
         $controller = $this->controllerFactory->create($controllerClass);
+
+        if (!is_callable([$controller, $action])) {
+            $this->handleError(500);
+            return;
+        }
 
         $controller->$action();
     }
