@@ -60,9 +60,7 @@ class ErrorHandler
 
         http_response_code(500);
 
-        $appConfig = new AppConfig();
-
-        if (!$appConfig->isLocal()) {
+        if (!AppConfig::isLocal()) {
             if (self::$errorController) {
                 self::$errorController->serverError($uniqueErrorId);
                 return;
@@ -125,9 +123,7 @@ class ErrorHandler
 
             http_response_code(500);
 
-            $appConfig = new AppConfig();
-
-            if (!$appConfig->isLocal()) {
+            if (!AppConfig::isLocal()) {
                 if (self::$errorController) {
                     self::$errorController->serverError($uniqueErrorId);
                     return;
