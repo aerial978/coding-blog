@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace App\Service\OAuth\Factory;
 
 use League\OAuth2\Client\Provider\Google;
+use RuntimeException;
 
 final class GoogleOAuthProviderFactory
 {
+    private const ALLOWED_URL_SCHEMES = ['http', 'https'];
+
     public function create(): Google
     {
         return new Google([
             'clientId'     => $this->envString('GOOGLE_CLIENT_ID'),
             'clientSecret' => $this->envString('GOOGLE_CLIENT_SECRET'),
-            'redirectUri'  => $this->envString('GOOGLE_REDIRECT_URI'),
+            'redirectUri'  => $this->envHttpUrl('GOOGLE_REDIRECT_URI'),
             'scopes'       => $this->envScopes('GOOGLE_OAUTH_SCOPES'),
         ]);
     }
@@ -23,6 +26,36 @@ final class GoogleOAuthProviderFactory
         $value = $_ENV[$key] ?? null;
 
         return is_string($value) ? trim($value) : '';
+    }
+
+    private function envHttpUrl(string $key): string
+    {
+        $url = $this->envString($key);
+
+        if ($url === '') {
+            throw new RuntimeException(
+                sprintf('%s must be defined as a non-empty URL.', $key)
+            );
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            throw new RuntimeException(
+                sprintf('%s must be a valid URL.', $key)
+            );
+        }
+
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        if (
+            !is_string($scheme)
+            || !in_array(strtolower($scheme), self::ALLOWED_URL_SCHEMES, true)
+        ) {
+            throw new RuntimeException(
+                sprintf('%s must use the http or https scheme.', $key)
+            );
+        }
+
+        return $url;
     }
 
     /**
