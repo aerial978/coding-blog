@@ -44,7 +44,7 @@ class Request
     }
 
     /** @return array<string, mixed> */
-    private function sanitizeInputArray(mixed $in): array
+    private function normalizeInputArray(mixed $in): array
     {
         if (!\is_array($in)) {
             return [];
@@ -57,6 +57,7 @@ class Request
                 $out[$k] = $v;
             }
         }
+
         return $out;
     }
 
@@ -72,7 +73,7 @@ class Request
     public function request(): array
     {
         // éviter le warning si $_POST est unset
-        return $this->sanitizeInputArray($GLOBALS['_POST'] ?? null);
+        return $this->normalizeInputArray($GLOBALS['_POST'] ?? null);
     }
 
     /**
@@ -89,7 +90,7 @@ class Request
      */
     public function query(?string $key = null): mixed
     {
-        $query = $this->sanitizeInputArray($GLOBALS['_GET'] ?? null);
+        $query = $this->normalizeInputArray($GLOBALS['_GET'] ?? null);
 
         if ($key === null) {
             return $query;
