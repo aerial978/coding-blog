@@ -62,7 +62,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 
         if (
             is_string($https)
-            && $https !== ''
+            && $https             !== ''
             && strtolower($https) !== 'off'
         ) {
             return true;

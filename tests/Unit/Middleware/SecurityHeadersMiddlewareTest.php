@@ -53,13 +53,13 @@ namespace Tests\Unit\Middleware {
 
             HeaderSpy::reset();
 
-            $this->httpsWasDefined = array_key_exists('HTTPS', $_SERVER);
+            $this->httpsWasDefined          = array_key_exists('HTTPS', $_SERVER);
             $this->forwardedProtoWasDefined = array_key_exists(
                 'HTTP_X_FORWARDED_PROTO',
                 $_SERVER
             );
 
-            $this->previousHttps = $_SERVER['HTTPS'] ?? null;
+            $this->previousHttps          = $_SERVER['HTTPS']                           ?? null;
             $this->previousForwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null;
 
             unset(
