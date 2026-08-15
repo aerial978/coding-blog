@@ -27,13 +27,12 @@ class RouterTest extends TestCase
         $routes = [
             Router::METHOD_GET => [
                 '/hello' => [DummyController::class, 'hello'],
-            ]
+            ],
         ];
 
         $errorController = $this->createMock(ErrorController::class);
         $request         = new Request();
 
-        // Le contrôleur ciblé par la route : on mocke l'action pour produire le contenu attendu
         $controllerMock = $this->getMockBuilder(DummyController::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['hello'])
@@ -45,7 +44,6 @@ class RouterTest extends TestCase
                 echo 'Hello from dummy controller';
             });
 
-        // La factory doit retourner notre contrôleur mocké
         $factory = $this->createMock(ControllerFactoryInterface::class);
         $factory->method('create')
             ->with(DummyController::class)
@@ -56,6 +54,8 @@ class RouterTest extends TestCase
         ob_start();
         $router->handleRequest();
         $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('Hello from dummy controller', $output);
     }
 
     /**
@@ -69,10 +69,9 @@ class RouterTest extends TestCase
         $routes = [
             Router::METHOD_GET => [
                 '/' => [DummyController::class, 'hello'],
-            ]
+            ],
         ];
 
-        // Le contrôleur d'erreur doit émettre quelque chose contenant "404"
         $errorController = $this->createMock(ErrorController::class);
         $errorController->expects($this->once())
             ->method('notFound')
@@ -82,7 +81,6 @@ class RouterTest extends TestCase
 
         $request = new Request();
 
-        // La factory ne sera pas appelée dans ce scénario
         $factory = $this->createMock(ControllerFactoryInterface::class);
 
         $router = new Router($routes, '', $errorController, $request, $factory);
@@ -108,10 +106,9 @@ class RouterTest extends TestCase
         $routes = [
             Router::METHOD_GET => [
                 '/fail' => [$fakeClass, 'fail'],
-            ]
+            ],
         ];
 
-        // Le contrôleur d'erreur doit émettre quelque chose contenant "500"
         $errorController = $this->createMock(ErrorController::class);
         $errorController->expects($this->once())
             ->method('serverError')
@@ -121,7 +118,6 @@ class RouterTest extends TestCase
 
         $request = new Request();
 
-        // La factory ne sera pas appelée car la classe n'existe pas
         $factory = $this->createMock(ControllerFactoryInterface::class);
 
         $router = new Router($routes, '', $errorController, $request, $factory);
@@ -145,7 +141,7 @@ class RouterTest extends TestCase
         $routes = [
             Router::METHOD_GET => [
                 '/hello' => [DummyController::class, 'hello'],
-            ]
+            ],
         ];
 
         $errorController = $this->createMock(ErrorController::class);
@@ -173,7 +169,6 @@ class RouterTest extends TestCase
      */
     public function testHandleRequestWithNullRequestUriShouldTriggerError500(): void
     {
-        // On mocke Request pour renvoyer null
         $request = $this->createMock(Request::class);
         $request->method('getUri')->willReturn(null);
         $request->method('getMethod')->willReturn('GET');
@@ -181,7 +176,7 @@ class RouterTest extends TestCase
         $routes = [
             Router::METHOD_GET => [
                 '/test' => [DummyController::class, 'index'],
-            ]
+            ],
         ];
 
         $errorController = $this->createMock(ErrorController::class);
@@ -213,7 +208,7 @@ class RouterTest extends TestCase
         $routes = [
             Router::METHOD_GET => [
                 '/test' => [DummyController::class, 'index'],
-            ]
+            ],
         ];
 
         $errorController = $this->createMock(ErrorController::class);
@@ -235,8 +230,13 @@ class RouterTest extends TestCase
             ->with(DummyController::class)
             ->willReturn($controllerMock);
 
-        // Ici, on fixe basePath pour que normalizeUri enlève bien "/coding-blog"
-        $router = new Router($routes, '/coding-blog', $errorController, $request, $factory);
+        $router = new Router(
+            $routes,
+            '/coding-blog',
+            $errorController,
+            $request,
+            $factory
+        );
 
         ob_start();
         $router->handleRequest();
@@ -244,6 +244,104 @@ class RouterTest extends TestCase
 
         $this->assertIsString($output);
         $this->assertStringContainsString('Index method executed', $output);
+    }
+
+    /**
+     * Checks that an URI exactly matching the basePath is normalized to "/".
+     */
+    public function testNormalizeUriReturnsRootWhenUriEqualsBasePath(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = Router::METHOD_GET;
+        $_SERVER['REQUEST_URI']    = '/coding-blog';
+
+        $routes = [
+            Router::METHOD_GET => [
+                '/' => [DummyController::class, 'index'],
+            ],
+        ];
+
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['index'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('index')
+            ->willReturnCallback(static function (): void {
+                echo 'Root route executed';
+            });
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        $router = new Router(
+            $routes,
+            '/coding-blog',
+            $errorController,
+            $request,
+            $factory
+        );
+
+        ob_start();
+        $router->handleRequest();
+        $output = ob_get_clean();
+
+        $this->assertIsString($output);
+        $this->assertStringContainsString('Root route executed', $output);
+    }
+
+    /**
+     * Checks that a partial basePath match is not removed.
+     */
+    public function testNormalizeUriDoesNotRemovePartialBasePathMatch(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = Router::METHOD_GET;
+        $_SERVER['REQUEST_URI']    = '/coding-blogger/test';
+
+        $routes = [
+            Router::METHOD_GET => [
+                '/coding-blogger/test' => [DummyController::class, 'index'],
+            ],
+        ];
+
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['index'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('index')
+            ->willReturnCallback(static function (): void {
+                echo 'Partial basePath preserved';
+            });
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        $router = new Router(
+            $routes,
+            '/coding-blog',
+            $errorController,
+            $request,
+            $factory
+        );
+
+        ob_start();
+        $router->handleRequest();
+        $output = ob_get_clean();
+
+        $this->assertIsString($output);
+        $this->assertStringContainsString('Partial basePath preserved', $output);
     }
 
     /**
@@ -279,7 +377,9 @@ class RouterTest extends TestCase
         $router->handleRequest();
         $output = (string) ob_get_clean();
 
-        // Le fallback de Router::handleError() echo "<h1>404 - An error has occurred</h1>"
-        $this->assertStringContainsString('404 - An error has occurred', $output);
+        $this->assertStringContainsString(
+            '404 - An error has occurred',
+            $output
+        );
     }
 }

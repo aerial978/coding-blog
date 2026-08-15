@@ -71,15 +71,24 @@ class Router
     }
 
     /**
-     * Normalizes the request URI by removing the basePath.
+     * Normalizes the request URI by removing the configured base path.
      *
-     * @param string $uri URI to sanitize.
+     * The base path is removed only when it matches the complete URI
+     * or represents a complete leading path segment.
+     *
+     * @param string $uri URI path to normalize.
      * @return string Normalized URI.
      */
     private function normalizeUri(string $uri): string
     {
-        if (str_starts_with($uri, $this->basePath)) {
-            $uri = substr($uri, strlen($this->basePath));
+        if ($this->basePath !== '') {
+            if ($uri === $this->basePath) {
+                return '/';
+            }
+
+            if (str_starts_with($uri, $this->basePath . '/')) {
+                $uri = substr($uri, strlen($this->basePath));
+            }
         }
 
         return $uri === '' ? '/' : $uri;
