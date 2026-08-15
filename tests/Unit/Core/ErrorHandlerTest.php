@@ -187,4 +187,51 @@ final class ErrorHandlerTest extends TestCase
         $this->assertStringNotContainsString('<h1>Fatal Error</h1>', $output);
         $this->assertStringNotContainsString('Caught Exception', $output);
     }
+
+    public function testHandleFatalErrorHandlesUserError(): void
+    {
+        $_ENV['APP_ENV'] = 'production';
+
+        $mockController = $this->createMock(ErrorController::class);
+        $mockController
+            ->expects($this->once())
+            ->method('serverError');
+
+        ErrorHandler::setErrorController($mockController);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('critical')
+            ->with(
+                $this->stringContains('Fatal error detected'),
+                $this->callback(
+                    static fn (array $context): bool =>
+                        ($context['message'] ?? null) === 'User error simulated'
+                )
+            );
+
+        ErrorHandler::register($logger);
+
+        $reflection = new ReflectionClass(ErrorHandler::class);
+        $method     = $reflection->getMethod('handleFatalError');
+        $method->setAccessible(true);
+
+        $fakeError = [
+            'type'    => E_USER_ERROR,
+            'message' => 'User error simulated',
+            'file'    => 'UserError.php',
+            'line'    => 42,
+        ];
+
+        ob_start();
+
+        try {
+            $method->invoke(null, $fakeError);
+        } finally {
+            ob_end_clean();
+            restore_exception_handler();
+            restore_error_handler();
+        }
+    }
 }

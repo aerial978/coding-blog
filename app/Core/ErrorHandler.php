@@ -112,7 +112,7 @@ class ErrorHandler
      */
     private static function handleFatalError(?array $lastError): void
     {
-        if ($lastError && in_array($lastError['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
+        if ($lastError && in_array($lastError['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE, E_USER_ERROR], true)) {
             $uniqueErrorId = 'ERR-' . bin2hex(random_bytes(8));
 
             self::$logger?->critical('Fatal error detected', [
