@@ -20,6 +20,15 @@ use RuntimeException;
 class Logger
 {
     /**
+     * Pattern allowed for logging channel names.
+     *
+     * A channel must:
+     * - start with a lowercase letter;
+     * - contain only lowercase letters, digits, underscores or hyphens.
+     */
+    private const CHANNEL_PATTERN = '/^[a-z][a-z0-9_-]*$/';
+
+    /**
      * Stores logger instances by channel name.
      *
      * @var array<string, LoggerInterface>
@@ -32,11 +41,15 @@ class Logger
      * If the logger for the given channel doesn't exist yet, it is created
      * with a rotating file handler (keeps logs for 14 days by default).
      *
-     * @param string $channel The logging channel name (e.g., "app", "db", "user").
+     * @param string $channel The logging channel name.
      * @return LoggerInterface A PSR-3 logger instance.
+     *
+     * @throws RuntimeException If the channel name is invalid.
      */
     public static function getLogger(string $channel = 'app'): LoggerInterface
     {
+        $channel = self::validateChannel($channel);
+
         if (!isset(self::$instances[$channel])) {
             $logger = new MonoLogger($channel);
 
@@ -63,7 +76,7 @@ class Logger
             // Formatter : supprime %context% et %extra% quand ils sont vides
             $format    = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
             $date      = 'c'; // ISO8601 (ex : 2025-08-23T14:33:12+02:00)
-            $formatter = new LineFormatter($format, $date, true, true); // ← ignoreEmptyContextAndExtra = true
+            $formatter = new LineFormatter($format, $date, true, true);
             $handler->setFormatter($formatter);
 
             $logger->pushHandler($handler);
@@ -71,6 +84,34 @@ class Logger
         }
 
         return self::$instances[$channel];
+    }
+
+    /**
+     * Validates a logging channel name.
+     *
+     * The channel must start with a lowercase letter and may contain
+     * only lowercase letters, digits, underscores and hyphens.
+     *
+     * @throws RuntimeException If the channel name is invalid.
+     */
+    private static function validateChannel(string $channel): string
+    {
+        if ($channel === '') {
+            throw new RuntimeException(
+                'Log channel must not be empty.'
+            );
+        }
+
+        if (preg_match(self::CHANNEL_PATTERN, $channel) !== 1) {
+            throw new RuntimeException(
+                sprintf(
+                    'Invalid log channel "%s". Only lowercase letters, digits, underscores and hyphens are allowed, and the name must start with a letter.',
+                    $channel
+                )
+            );
+        }
+
+        return $channel;
     }
 
     private static function resolveLogLevel(): Level
@@ -112,7 +153,6 @@ class Logger
      * Logs a message based on an error code,
      * then returns the associated human-readable message.
      *
-     *
      * @phpstan-param array<string, scalar|\Stringable|array<int|string, mixed>|null> $context
      */
     public static function logCodeAndGetMessage(
@@ -131,6 +171,7 @@ class Logger
         }
 
         $logger->info($formatted, $context);
+
         return $message;
     }
 }
