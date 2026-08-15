@@ -43,6 +43,9 @@ $psr = new AppContainer($definitions);
 // 3) Logger d’erreur via le container PSR-11
 ErrorHandler::register($psr->get('logger.error'));
 
+$errorController = $psr->get(ErrorController::class);
+ErrorHandler::setErrorController($errorController);
+
 // 4) Affichage des erreurs selon l’environnement
 if (AppConfig::isLocal()) {
     ini_set('display_errors', '1');
@@ -66,7 +69,7 @@ $basePath = rtrim($cfg['base_path'] ?? '', '/');
 $router = new Router(
     $routes,
     $basePath,
-    $psr->get(ErrorController::class),
+    $errorController,
     $psr->get(Request::class),
     new PsrControllerFactory($psr)
 );
