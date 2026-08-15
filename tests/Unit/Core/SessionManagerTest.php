@@ -96,4 +96,41 @@ final class SessionManagerTest extends TestCase
         self::assertNotSame('', $after);
         self::assertNotSame($before, $after, 'Le session_id devrait changer après regenerateKeepOld().');
     }
+
+    #[Test]
+    #[RunInSeparateProcess]
+    public function destroy_clears_data_and_destroys_active_session(): void
+    {
+        @session_start();
+
+        $sm = new SessionManager();
+
+        $_SESSION = ['foo' => 'bar'];
+
+        self::assertSame(PHP_SESSION_ACTIVE, session_status());
+        self::assertSame(['foo' => 'bar'], $_SESSION);
+
+        $sm->destroy();
+
+        self::assertSame([], $_SESSION);
+        self::assertSame(PHP_SESSION_NONE, session_status());
+    }
+
+    #[Test]
+    #[RunInSeparateProcess]
+    public function destroy_clears_data_when_no_session_is_active(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+        $_SESSION = ['foo' => 'bar'];
+
+        $sm = new SessionManager();
+
+        $sm->destroy();
+
+        self::assertSame([], $_SESSION);
+        self::assertSame(PHP_SESSION_NONE, session_status());
+    }
 }

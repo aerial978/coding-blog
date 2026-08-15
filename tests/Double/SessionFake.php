@@ -53,4 +53,9 @@ final class SessionFake implements SessionInterface
     {
         // Fake volontairement vide pour les tests unitaires.
     }
+
+    public function destroy(): void
+    {
+        $this->data = [];
+    }
 }
