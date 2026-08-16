@@ -47,6 +47,16 @@ The application includes a complete and secure account recovery flow :
 - Neutral user feedback to prevent account discovery
 - Rate-limited password reset requests
 
+## Prerequisites
+
+Before installing the project, make sure the following tools are available:
+
+- **PHP 8.2.13**
+- **Composer 2**
+- **Node.js**
+- **npm**
+- **MySQL**
+
 ## Installation
 
 - **Clone the repository**
@@ -68,8 +78,23 @@ The application includes a complete and secure account recovery flow :
   npm install
 ```
 
-- **Configure your environment (.env file if used)**
-Create your MySQL database and update the configuration if necessary.
+- **Configure the environment**
+
+Copy `.env.example` to `.env`, then replace the placeholder values with your local configuration.
+
+On Linux/macOS:
+
+```bash
+  cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Create the MySQL database configured in `.env`.
 
 - **Generate the autoload**
 
