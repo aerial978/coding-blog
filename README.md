@@ -59,33 +59,37 @@ Before installing the project, make sure the following tools are available:
 
 ## Installation
 
-- **Clone the repository**
+1. **Clone the repository**
 
 ```bash
-  git clone https://github.com/aerial978/coding-blog.git
-  cd coding-blog
+git clone https://github.com/aerial978/coding-blog.git
+cd coding-blog
 ```
 
-- **Install PHP dependencies**
+1. **Install PHP dependencies**
+
+Install the PHP packages defined in `composer.json`:
 
 ```bash
-  composer install
+composer install
 ```
 
-- **Install front-end dependencies (Bootstrap, SCSS, JavaScript)**
+1. **Install front-end dependencies**
+
+Install Bootstrap, Sass, and the development tools defined in `package.json`:
 
 ```bash
-  npm install
+npm install
 ```
 
-- **Configure the environment**
+1. **Configure the environment**
 
-Copy `.env.example` to `.env`, then replace the placeholder values with your local configuration.
+Copy `.env.example` to `.env`.
 
 On Linux/macOS:
 
 ```bash
-  cp .env.example .env
+cp .env.example .env
 ```
 
 On Windows PowerShell:
@@ -94,17 +98,28 @@ On Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-Create the MySQL database configured in `.env`.
+Then edit `.env` and configure the values for your local environment,
+including:
 
-- **Generate the autoload**
+- application environment and base URL
+- MySQL database connection
+- mail transport and credentials
+- Cloudflare Turnstile keys
+- Google OAuth credentials and callback URL
 
-```bash
-  composer dump-autoload
-```
+Do not commit `.env`, as it may contain credentials and other secrets.
+
+1. **Configure the database**
+
+Create the MySQL database specified by `DB_NAME` in `.env` and make sure
+the configured database user has access to it.
+
+The database schema must be created separately, as the project does not
+currently provide an automated migration or schema initialization process.
 
 ## Tech Stack
 
-- **Server language**: PHP 8.x (OOP)
+- **Server language**: PHP 8.2 (OOP)
 - **Database**: MySQL
 - **Templating**: Twig
 - **Front-end**: HTML5, CSS3, JavaScript (Vanilla)
