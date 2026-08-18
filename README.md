@@ -151,6 +151,38 @@ responsibilities clearly separated and the application easy to maintain.
   - Services handle authentication, registration, password recovery, account confirmation,
     remember-me authentication, email 2FA, and OAuth workflows.
 
+### Request Flow
+
+```mermaid
+flowchart TD
+    A[HTTP Request] --> B[Request]
+    B --> C[Router]
+
+    C --> D[SecurityHeadersMiddleware]
+    D --> E[RememberMeMiddleware]
+    E --> F[CsrfMiddleware]
+    F --> G[AuthenticationMiddleware]
+
+    G --> H[PsrControllerFactory]
+    H --> I[PSR-11 Container]
+    I --> J[Controller]
+
+    J --> K[Handler]
+    K --> L[Security Guards]
+    K --> M[Service]
+
+    M --> N[Model]
+    N --> O[SqlHelper]
+    O --> P[(MySQL)]
+
+    M --> Q[Session / Remember Me / 2FA]
+    K --> R[Responder / Flash]
+    J --> S[Twig View]
+
+    R --> T[HTTP Response]
+    S --> T
+```
+
 ## Tech Stack
 
 - **Server language**: PHP 8.2 (OOP)
