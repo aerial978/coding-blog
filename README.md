@@ -117,6 +117,40 @@ the configured database user has access to it.
 The database schema must be created separately, as the project does not
 currently provide an automated migration or schema initialization process.
 
+## Architecture
+
+CodingBlog follows a custom MVC-inspired architecture designed to keep
+responsibilities clearly separated and the application easy to maintain.
+
+- **MVC**
+  - Controllers receive HTTP requests and delegate the business logic.
+  - Models handle database access and entity hydration.
+  - Views are rendered with Twig templates.
+
+- **Router**
+  - Maps HTTP methods and URIs to controller actions.
+  - Normalizes request paths and handles 404 and 500 responses.
+  - Executes the configured middleware chain before dispatching controllers.
+
+- **Container**
+  - A PSR-11 compatible dependency injection container centralizes service creation.
+  - Service providers register controllers, services, models, middleware, loggers,
+    and infrastructure dependencies.
+
+- **Middleware**
+  - Middleware components execute before controllers.
+  - They handle cross-cutting concerns such as authentication, CSRF protection,
+    remember-me restoration, and HTTP security headers.
+
+- **Twig**
+  - Twig is used as the templating engine.
+  - Layouts, partials, components, and form macros are separated from PHP business logic.
+
+- **Services**
+  - Business logic is isolated in dedicated service classes.
+  - Services handle authentication, registration, password recovery, account confirmation,
+    remember-me authentication, email 2FA, and OAuth workflows.
+
 ## Tech Stack
 
 - **Server language**: PHP 8.2 (OOP)
