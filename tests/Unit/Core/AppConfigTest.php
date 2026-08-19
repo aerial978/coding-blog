@@ -52,4 +52,13 @@ final class AppConfigTest extends TestCase
     {
         $this->assertEquals('http://localhost/coding-blog', AppConfig::getAppUrl());
     }
+
+    public function testIsTest(): void
+    {
+        $_ENV['APP_ENV'] = 'test';
+
+        $this->assertTrue(AppConfig::isTest());
+        $this->assertFalse(AppConfig::isLocal());
+        $this->assertFalse(AppConfig::isProd());
+    }
 }
