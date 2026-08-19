@@ -13,7 +13,6 @@ It is intended for learners, junior developers, or anyone who wants to understan
 - Article creation, editing, and deletion
 - Commenting system
 - Administration interface
-- User login and registration
 - Fully customized MVC architecture
 - Clear separation of business code, views, and controllers
 - Environment configuration via `.env` files (Dotenv)
