@@ -9,18 +9,15 @@ It is intended for learners, junior developers, or anyone who wants to understan
 
 ## Features
 
-- User registration and login system (secure authentication)
-- Article creation, editing, and deletion
-- Commenting system
-- Administration interface
-- Fully customized MVC architecture
-- Clear separation of business code, views, and controllers
-- Environment configuration via `.env` files (Dotenv)
-- Secure PDO-based MySQL connection (singleton Database class)
-- Centralized application error handler (ErrorHandler + custom 500 page)
-- Structured logging using Monolog with per-domain log files
-- Bootstrap 5 integration for responsive design
-- SCSS support for maintainable and scalable styling
+- User registration with email account confirmation
+- Secure user authentication and logout
+- Google OAuth authentication
+- Email-based two-factor authentication (2FA)
+- Remember-me authentication
+- Password recovery and secure password reset
+- Account confirmation email resend
+- User account area
+- Protection against automated and abusive authentication attempts
 
 ## Authentication & Security Flow
 
@@ -248,6 +245,18 @@ CodingBlog implements a series of robust, defence-in-depth security mechanisms t
 - Step-up security (Turnstile escalation on suspicious activity)
 - Secure registration flow with layered protections (validation, Turnstile, rate limiting)
 - Controlled confirmation email resend with anti-enumeration and quotas
+
+## Future Improvements
+
+Possible future improvements include:
+
+- Add article creation, editing, and deletion features.
+- Add a commenting system.
+- Add an administration interface.
+- Add automated database migrations and schema initialization.
+- Improve the front-end design and overall user experience.
+- Add end-to-end tests for critical application workflows.
+- Provide production deployment documentation.
 
 ## License
 
