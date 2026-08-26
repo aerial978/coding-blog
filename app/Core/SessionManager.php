@@ -107,4 +107,39 @@ final class SessionManager implements SessionInterface
     {
         session_regenerate_id(false);
     }
+
+    /**
+     * Destroys the current PHP session, clears all session data,
+     * and removes the session cookie from the client.
+     */
+    public function destroy(): void
+    {
+        $_SESSION = [];
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        if (ini_get('session.use_cookies')) {
+            $params      = session_get_cookie_params();
+            $sessionName = session_name();
+
+            if ($sessionName !== false) {
+                setcookie(
+                    $sessionName,
+                    '',
+                    [
+                        'expires'  => time() - 42000,
+                        'path'     => $params['path'],
+                        'domain'   => $params['domain'],
+                        'secure'   => $params['secure'],
+                        'httponly' => $params['httponly'],
+                        'samesite' => $params['samesite'],
+                    ]
+                );
+            }
+        }
+
+        session_destroy();
+    }
 }

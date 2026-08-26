@@ -29,7 +29,7 @@ final class LogoutServiceTest extends TestCase
         );
     }
 
-    public function testLogoutClearsSessionAndRegeneratesIdWhenUserIdIsInt(): void
+    public function testLogoutDestroysSessionWhenUserIdIsInt(): void
     {
         $this->session
             ->expects($this->once())
@@ -42,11 +42,7 @@ final class LogoutServiceTest extends TestCase
 
         $this->session
             ->expects($this->once())
-            ->method('clear');
-
-        $this->session
-            ->expects($this->once())
-            ->method('regenerateAndDeleteOld');
+            ->method('destroy');
 
         $this->rememberMeService
             ->expects($this->once())
@@ -55,8 +51,6 @@ final class LogoutServiceTest extends TestCase
             ->willReturn(true);
 
         $this->service->logout();
-
-        $this->assertTrue(true);
     }
 
     public function testLogoutDoesNotInvalidateRememberMeWhenUserIdIsString(): void
@@ -72,22 +66,16 @@ final class LogoutServiceTest extends TestCase
 
         $this->session
             ->expects($this->once())
-            ->method('clear');
-
-        $this->session
-            ->expects($this->once())
-            ->method('regenerateAndDeleteOld');
+            ->method('destroy');
 
         $this->rememberMeService
             ->expects($this->never())
             ->method('invalidateRememberMeForUser');
 
         $this->service->logout();
-
-        $this->assertTrue(true);
     }
 
-    public function testLogoutClearsSessionAndRegeneratesIdWhenUserIdIsNull(): void
+    public function testLogoutDestroysSessionWhenUserIdIsNull(): void
     {
         $this->session
             ->expects($this->once())
@@ -97,22 +85,16 @@ final class LogoutServiceTest extends TestCase
 
         $this->session
             ->expects($this->once())
-            ->method('clear');
-
-        $this->session
-            ->expects($this->once())
-            ->method('regenerateAndDeleteOld');
+            ->method('destroy');
 
         $this->rememberMeService
             ->expects($this->never())
             ->method('invalidateRememberMeForUser');
 
         $this->service->logout();
-
-        $this->assertTrue(true);
     }
 
-    public function testLogoutClearsSessionAndRegeneratesIdWhenUserIdIsUnexpectedType(): void
+    public function testLogoutDestroysSessionWhenUserIdIsUnexpectedType(): void
     {
         $this->session
             ->expects($this->once())
@@ -122,18 +104,12 @@ final class LogoutServiceTest extends TestCase
 
         $this->session
             ->expects($this->once())
-            ->method('clear');
-
-        $this->session
-            ->expects($this->once())
-            ->method('regenerateAndDeleteOld');
+            ->method('destroy');
 
         $this->rememberMeService
             ->expects($this->never())
             ->method('invalidateRememberMeForUser');
 
         $this->service->logout();
-
-        $this->assertTrue(true);
     }
 }

@@ -48,6 +48,7 @@ use App\Validation\Contract\FormValidatorInterface;
 use App\Validation\FormValidator;
 use Cocur\Slugify\Slugify;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
 
 final class SystemServiceProvider
 {
@@ -192,6 +193,12 @@ final class SystemServiceProvider
                     $max = 1800;
                 }
 
+                if ($min >= $max) {
+                    throw new RuntimeException(
+                        'MIN_FORM_DELAY must be lower than MAX_FORM_DELAY.'
+                    );
+                }
+
                 return new SubmissionDelayValidator($session, $min, $max);
             },
         ];
@@ -252,7 +259,7 @@ final class SystemServiceProvider
             },
 
             TurnstileValidator::class => static function (): TurnstileValidator {
-                $secret = self::getEnvString('TURNSTILE_SECRET', '');
+                $secret = self::getRequiredEnvString('TURNSTILE_SECRET');
                 return new TurnstileValidator($secret);
             },
 
@@ -395,28 +402,95 @@ final class SystemServiceProvider
 
     private static function createMailerFromEnv(): MailerInterface
     {
-        $fromEmail = self::getEnvString('MAIL_FROM_EMAIL', 'no-reply@example.test');
-        $fromName  = self::getEnvString('MAIL_FROM_NAME', 'Coding Blog');
-        $transport = strtolower(self::getEnvString('MAILER_TRANSPORT', 'dummy'));
+        $fromEmail = self::getEnvString(
+            'MAIL_FROM_EMAIL',
+            'no-reply@example.test'
+        );
+
+        $fromName = self::getEnvString(
+            'MAIL_FROM_NAME',
+            'Coding Blog'
+        );
+
+        $transport = strtolower(
+            self::getRequiredEnvString('MAILER_TRANSPORT')
+        );
 
         Logger::getLogger('auth')->info('mailer_transport_debug', [
             'transport' => $transport,
             'from'      => $fromEmail,
         ]);
 
-        if ($transport === 'mailjet') {
-            $apiKey    = self::getEnvString('MJ_APIKEY_PUBLIC', '');
-            $apiSecret = self::getEnvString('MJ_APIKEY_PRIVATE', '');
-            return new MailjetMailer($apiKey, $apiSecret, $fromEmail, $fromName);
-        }
+        return match ($transport) {
+            'mailjet' => self::createMailjetMailer(
+                $fromEmail,
+                $fromName
+            ),
+            'dummy' => new DummyMailer(
+                $fromEmail,
+                $fromName
+            ),
+            default => throw new RuntimeException(
+                sprintf(
+                    'Unsupported MAILER_TRANSPORT value "%s". '
+                    . 'Allowed values: mailjet, dummy.',
+                    $transport
+                )
+            ),
+        };
+    }
 
-        return new DummyMailer($fromEmail, $fromName);
+    private static function createMailjetMailer(
+        string $fromEmail,
+        string $fromName
+    ): MailjetMailer {
+        $apiKey = self::getRequiredEnvString(
+            'MJ_APIKEY_PUBLIC'
+        );
+
+        $apiSecret = self::getRequiredEnvString(
+            'MJ_APIKEY_PRIVATE'
+        );
+
+        return new MailjetMailer(
+            $apiKey,
+            $apiSecret,
+            $fromEmail,
+            $fromName
+        );
     }
 
     private static function getEnvString(string $key, string $default = ''): string
     {
         $value = $_ENV[$key] ?? null;
         return is_string($value) ? $value : $default;
+    }
+
+    private static function getRequiredEnvString(string $key): string
+    {
+        $value = $_ENV[$key] ?? null;
+
+        if (!is_string($value)) {
+            throw new RuntimeException(
+                sprintf(
+                    '%s must be defined as a string.',
+                    $key
+                )
+            );
+        }
+
+        $value = trim($value);
+
+        if ($value === '') {
+            throw new RuntimeException(
+                sprintf(
+                    '%s must not be empty.',
+                    $key
+                )
+            );
+        }
+
+        return $value;
     }
 
     private static function getEnvInt(string $key, int $default): int

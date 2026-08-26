@@ -30,8 +30,7 @@ final class LogoutService implements LogoutServiceInterface
             $this->rememberMeService->invalidateRememberMeForUser($userId);
         }
 
-        $this->session->clear();
-        $this->session->regenerateAndDeleteOld();
+        $this->session->destroy();
 
         Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_LOGOUT_SUCCESS, [
             'user_id' => $userId,

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core;
 
 use App\Controller\ErrorController;
@@ -48,21 +50,19 @@ class ErrorHandler
      */
     public static function handleException(Throwable $exception): void
     {
-        $uniqueErrorId = uniqid('ERR-', true);
+        $uniqueErrorId = 'ERR-' . bin2hex(random_bytes(8));
 
         self::$logger?->error('Uncaught exception', [
-            'message' => $exception->getMessage(),
-            'file'    => $exception->getFile(),
-            'line'    => $exception->getLine(),
-            'trace'   => $exception->getTraceAsString(),
+            'error_id' => $uniqueErrorId,
+            'message'  => $exception->getMessage(),
+            'file'     => $exception->getFile(),
+            'line'     => $exception->getLine(),
+            'trace'    => $exception->getTraceAsString(),
         ]);
 
         http_response_code(500);
 
-        $appConfig = new AppConfig();
-
-        if (!$appConfig->isLocal()) {
-            // Use the injected controller if available; otherwise render a basic 500 page.
+        if (!AppConfig::isLocal()) {
             if (self::$errorController) {
                 self::$errorController->serverError($uniqueErrorId);
                 return;
@@ -76,18 +76,33 @@ class ErrorHandler
     }
 
     /**
-     * Converts PHP errors into ErrorException instances so they can be caught.
+     * Converts reportable PHP errors into ErrorException instances.
+     *
+     * Errors excluded by the current error_reporting() mask are ignored
+     * by this custom handler.
      *
      * @param int    $severity The error severity.
      * @param string $message  The error message.
      * @param string $file     The file where the error occurred.
      * @param int    $line     The line number where the error occurred.
-     * @return bool Always throws an exception, so never returns.
-     * @throws ErrorException
+     *
+     * @return bool False when the error is excluded from error_reporting().
+     *
+     * @throws ErrorException When the error is reportable.
      */
     public static function handleError(int $severity, string $message, string $file, int $line): bool
     {
-        throw new ErrorException($message, 0, $severity, $file, $line);
+        if (!(error_reporting() & $severity)) {
+            return false;
+        }
+
+        throw new ErrorException(
+            $message,
+            0,
+            $severity,
+            $file,
+            $line
+        );
     }
 
     /**
@@ -97,25 +112,25 @@ class ErrorHandler
      */
     private static function handleFatalError(?array $lastError): void
     {
-        if ($lastError && in_array($lastError['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
+        if ($lastError && in_array($lastError['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE, E_USER_ERROR], true)) {
+            $uniqueErrorId = 'ERR-' . bin2hex(random_bytes(8));
+
             self::$logger?->critical('Fatal error detected', [
-                'message' => $lastError['message'],
-                'file'    => $lastError['file'],
-                'line'    => $lastError['line'],
+                'error_id' => $uniqueErrorId,
+                'message'  => $lastError['message'],
+                'file'     => $lastError['file'],
+                'line'     => $lastError['line'],
             ]);
 
             http_response_code(500);
 
-            $appConfig = new AppConfig();
-
-            if (!$appConfig->isLocal()) {
+            if (!AppConfig::isLocal()) {
                 if (self::$errorController) {
-                    // serverError can accept null/omitted id if your method signature allows it
-                    self::$errorController->serverError();
+                    self::$errorController->serverError($uniqueErrorId);
                     return;
                 }
 
-                self::renderGeneric500(null);
+                self::renderGeneric500($uniqueErrorId);
                 return;
             }
 

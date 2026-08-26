@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Controller\AccountController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
