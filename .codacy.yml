@@ -27,11 +27,6 @@ engines:
   markdownlint:
     enabled: true
 
-  metric:
-    exclude_paths:
-      - "composer.lock"
-      - "package-lock.json"
-
 # Exclure des chemins côté Codacy (y compris les tests)
 exclude_paths:
   - vendor/**
@@ -43,3 +38,5 @@ exclude_paths:
   - Tests/
   - tests/**
   - Tests/**
+  - composer.lock
+  - package-lock.json
