@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // TODO : Prévoir un système de traduction multi-langues (ex: fr.php, en.php) pour charger les messages dynamiquement selon la langue de l'utilisateur. Support multilingue facile à mettre en place plus tard.
 
 namespace App\Core;

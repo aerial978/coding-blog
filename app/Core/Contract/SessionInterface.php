@@ -22,6 +22,11 @@ interface SessionInterface
     public function clear(): void;
 
     /**
+     * Destroys the current PHP session and clears all session data.
+     */
+    public function destroy(): void;
+
+    /**
      * Régénère l'ID de session et supprime l'ancienne session (recommandé après login).
      */
     public function regenerateAndDeleteOld(): void;

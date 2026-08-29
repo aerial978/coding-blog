@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core;
 
 use App\Controller\ErrorController;
@@ -69,15 +71,24 @@ class Router
     }
 
     /**
-     * Normalizes the request URI by removing the basePath.
+     * Normalizes the request URI by removing the configured base path.
      *
-     * @param string $uri URI to sanitize.
+     * The base path is removed only when it matches the complete URI
+     * or represents a complete leading path segment.
+     *
+     * @param string $uri URI path to normalize.
      * @return string Normalized URI.
      */
     private function normalizeUri(string $uri): string
     {
-        if (str_starts_with($uri, $this->basePath)) {
-            $uri = substr($uri, strlen($this->basePath));
+        if ($this->basePath !== '') {
+            if ($uri === $this->basePath) {
+                return '/';
+            }
+
+            if (str_starts_with($uri, $this->basePath . '/')) {
+                $uri = substr($uri, strlen($this->basePath));
+            }
         }
 
         return $uri === '' ? '/' : $uri;
@@ -99,12 +110,17 @@ class Router
 
         [$controllerClass, $action] = $this->routes[$method][$uri];
 
-        if (!class_exists($controllerClass) || !method_exists($controllerClass, $action)) {
+        if (!class_exists($controllerClass)) {
             $this->handleError(500);
             return;
         }
 
         $controller = $this->controllerFactory->create($controllerClass);
+
+        if (!is_callable([$controller, $action])) {
+            $this->handleError(500);
+            return;
+        }
 
         $controller->$action();
     }
@@ -125,6 +141,14 @@ class Router
                 default => $this->errorController->serverError(),
             };
         } catch (\Throwable $e) {
+            Logger::getLogger('error')->error('ErrorController failed', [
+                'http_code' => $code,
+                'message'   => $e->getMessage(),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+
             echo "<h1>$code - An error has occurred</h1>";
         }
     }

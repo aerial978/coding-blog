@@ -1,6 +1,5 @@
 # --- COMPOSER ---
 /vendor/
-/composer.lock
 /composer.phar
 
 # --- PHPUNIT ---
@@ -19,7 +18,6 @@
 
 # --- NODE.JS / NPM
 /node_modules/
-/package-lock.json
 
 # --- STYLELINT / ESLINT
 /.stylelintcache

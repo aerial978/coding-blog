@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Core;
 
 use App\Controller\ErrorController;
@@ -21,9 +23,25 @@ use ReflectionClass;
  */
 final class ErrorHandlerTest extends TestCase
 {
+    private int $previousErrorReporting;
+
     protected function setUp(): void
     {
-        $_ENV['APP_ENV'] = 'prod';
+        parent::setUp();
+
+        $_ENV['APP_ENV'] = 'production';
+
+        $this->previousErrorReporting = error_reporting();
+        error_reporting(E_ALL);
+    }
+
+    protected function tearDown(): void
+    {
+        error_reporting($this->previousErrorReporting);
+
+        ErrorHandler::setErrorController(null);
+
+        parent::tearDown();
     }
 
     public function testRegisterSetsHandlers(): void
@@ -73,9 +91,23 @@ final class ErrorHandlerTest extends TestCase
         ErrorHandler::handleError(E_USER_WARNING, 'Warning simulated', __FILE__, __LINE__);
     }
 
+    public function testHandleErrorReturnsFalseWhenSeverityIsNotReported(): void
+    {
+        error_reporting(E_ALL & ~E_USER_WARNING);
+
+        $result = ErrorHandler::handleError(
+            E_USER_WARNING,
+            'Ignored warning',
+            __FILE__,
+            __LINE__
+        );
+
+        $this->assertFalse($result);
+    }
+
     public function testHandleFatalErrorInProductionCallsErrorController(): void
     {
-        $_ENV['APP_ENV'] = 'prod';
+        $_ENV['APP_ENV'] = 'production';
 
         $mockController = $this->createMock(ErrorController::class);
         $mockController
@@ -154,5 +186,52 @@ final class ErrorHandlerTest extends TestCase
 
         $this->assertStringNotContainsString('<h1>Fatal Error</h1>', $output);
         $this->assertStringNotContainsString('Caught Exception', $output);
+    }
+
+    public function testHandleFatalErrorHandlesUserError(): void
+    {
+        $_ENV['APP_ENV'] = 'production';
+
+        $mockController = $this->createMock(ErrorController::class);
+        $mockController
+            ->expects($this->once())
+            ->method('serverError');
+
+        ErrorHandler::setErrorController($mockController);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('critical')
+            ->with(
+                $this->stringContains('Fatal error detected'),
+                $this->callback(
+                    static fn (array $context): bool =>
+                        ($context['message'] ?? null) === 'User error simulated'
+                )
+            );
+
+        ErrorHandler::register($logger);
+
+        $reflection = new ReflectionClass(ErrorHandler::class);
+        $method     = $reflection->getMethod('handleFatalError');
+        $method->setAccessible(true);
+
+        $fakeError = [
+            'type'    => E_USER_ERROR,
+            'message' => 'User error simulated',
+            'file'    => 'UserError.php',
+            'line'    => 42,
+        ];
+
+        ob_start();
+
+        try {
+            $method->invoke(null, $fakeError);
+        } finally {
+            ob_end_clean();
+            restore_exception_handler();
+            restore_error_handler();
+        }
     }
 }

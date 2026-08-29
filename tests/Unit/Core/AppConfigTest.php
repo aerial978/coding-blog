@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Core;
 
 use App\Core\AppConfig;
@@ -49,5 +51,14 @@ final class AppConfigTest extends TestCase
     public function testGetAppUrl(): void
     {
         $this->assertEquals('http://localhost/coding-blog', AppConfig::getAppUrl());
+    }
+
+    public function testIsTest(): void
+    {
+        $_ENV['APP_ENV'] = 'test';
+
+        $this->assertTrue(AppConfig::isTest());
+        $this->assertFalse(AppConfig::isLocal());
+        $this->assertFalse(AppConfig::isProd());
     }
 }

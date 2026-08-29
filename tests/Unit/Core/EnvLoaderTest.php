@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Core;
 
 use App\Core\EnvLoader;
@@ -13,7 +15,7 @@ use RuntimeException;
  *
  * This test suite ensures that EnvLoader:
  * - Loads environment variables correctly.
- * - Falls back to 'prod' when APP_ENV is missing or invalid.
+ * - Falls back to 'production' when APP_ENV is missing or invalid.
  * - Validates required environment variables properly.
  * - Throws exceptions when variables are missing, empty, or have invalid types.
  */
@@ -29,27 +31,27 @@ final class EnvLoaderTest extends TestCase
     {
         $env = $_ENV['APP_ENV'] ?? null;
         $this->assertNotNull($env);
-        $this->assertContains($env, ['prod', 'test']);
+        $this->assertContains($env, ['production', 'test']);
         $this->assertArrayHasKey('DB_HOST', $_ENV);
         $this->assertArrayHasKey('DB_USER', $_ENV);
         $this->assertArrayHasKey('DB_PASSWORD', $_ENV);
     }
 
     /**
-     * Test that resolveAppEnv() falls back to 'prod' when APP_ENV is missing, empty, or null.
+     * Test that resolveAppEnv() falls back to 'production' when APP_ENV is missing, empty, or null.
      */
     public function testResolveAppEnvFallbacksToProdIfMissingOrInvalid(): void
     {
         $backup = $_ENV['APP_ENV'] ?? null;
 
         unset($_ENV['APP_ENV']);
-        $this->assertSame('prod', $this->invokeResolveAppEnv());
+        $this->assertSame('production', $this->invokeResolveAppEnv());
 
         $_ENV['APP_ENV'] = '';
-        $this->assertSame('prod', $this->invokeResolveAppEnv());
+        $this->assertSame('production', $this->invokeResolveAppEnv());
 
         $_ENV['APP_ENV'] = null;
-        $this->assertSame('prod', $this->invokeResolveAppEnv());
+        $this->assertSame('production', $this->invokeResolveAppEnv());
 
         if ($backup !== null) {
             $_ENV['APP_ENV'] = $backup;
@@ -118,7 +120,7 @@ final class EnvLoaderTest extends TestCase
     }
 
     /**
-     * Test that resolveAppEnv() returns 'prod' when both $_ENV and getenv() are missing.
+     * Test that resolveAppEnv() returns 'production' when both $_ENV and getenv() are missing.
      */
     public function testResolveAppEnvReturnsProdWhenEnvAndGetenvMissing(): void
     {
@@ -130,7 +132,7 @@ final class EnvLoaderTest extends TestCase
 
         $result = $this->invokeResolveAppEnv();
 
-        $this->assertSame('prod', $result);
+        $this->assertSame('production', $result);
 
         if ($backupEnv !== null) {
             $_ENV['APP_ENV'] = $backupEnv;

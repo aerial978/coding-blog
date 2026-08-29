@@ -1,3 +1,4 @@
+---
 engines:
   phpmd:
     enabled: true
@@ -25,8 +26,6 @@ engines:
 
   markdownlint:
     enabled: true
-    # Idéalement fournissez un fichier .markdownlint.json ; sinon laissez enabled: true
-    # (les options inline 'rules:' ne sont pas toujours supportées ici)
 
 # Exclure des chemins côté Codacy (y compris les tests)
 exclude_paths:
@@ -39,3 +38,5 @@ exclude_paths:
   - Tests/
   - tests/**
   - Tests/**
+  - composer.lock
+  - package-lock.json

@@ -19,7 +19,11 @@ date_default_timezone_set('Europe/Paris');
 EnvLoader::load(__DIR__ . '/../');
 
 // 1.1) Session (centralisée et sécurisée)
-session_name('SID');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.use_strict_mode', '1');
+
+session_name('CODINGBLOGSESSID');
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path'     => '/',
@@ -38,6 +42,9 @@ $psr = new AppContainer($definitions);
 
 // 3) Logger d’erreur via le container PSR-11
 ErrorHandler::register($psr->get('logger.error'));
+
+$errorController = $psr->get(ErrorController::class);
+ErrorHandler::setErrorController($errorController);
 
 // 4) Affichage des erreurs selon l’environnement
 if (AppConfig::isLocal()) {
@@ -62,7 +69,7 @@ $basePath = rtrim($cfg['base_path'] ?? '', '/');
 $router = new Router(
     $routes,
     $basePath,
-    $psr->get(ErrorController::class),
+    $errorController,
     $psr->get(Request::class),
     new PsrControllerFactory($psr)
 );
