@@ -238,7 +238,7 @@ final class AccountPageTest extends TestCase
         ResponderInterface $responder
     ): Router {
         /** @var array<string, array<string, array{0: class-string, 1: string}>> $routes */
-        $routes = require __DIR__ . '/../../app/Config/routes.php';
+        $routes = require __DIR__ . '/../../app/config/routes.php';
 
         $request = new Request();
 
