@@ -62,7 +62,7 @@ $routes = require __DIR__ . '/../app/config/routes.php';
 
 // 6) basePath depuis la config app
 /** @var array{base_path: string} $cfg */
-$cfg      = require __DIR__ . '/../app/Config/app.php';
+$cfg      = require __DIR__ . '/../app/config/app.php';
 $basePath = rtrim($cfg['base_path'] ?? '', '/');
 
 // 7) Router (avec factory PSR)
