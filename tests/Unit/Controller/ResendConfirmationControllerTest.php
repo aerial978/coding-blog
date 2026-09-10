@@ -183,7 +183,7 @@ final class ResendConfirmationControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->controller->resendConfirmation();
     }

@@ -32,7 +32,7 @@ class View
         $loader = new FilesystemLoader(dirname(__DIR__) . '/Views');
 
         /** @var array{base_path: string} $config */
-        $config = require dirname(__DIR__) . '/Config/app.php';
+        $config = require dirname(__DIR__) . '/config/app.php';
 
         $this->twig = new Environment($loader, [
             'cache' => false,

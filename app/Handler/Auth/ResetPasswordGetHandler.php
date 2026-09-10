@@ -77,7 +77,7 @@ final class ResetPasswordGetHandler
         $error = is_string($check['error'] ?? null) ? $check['error'] : '';
 
         $this->flash->add('error', MessageManager::get($error));
-        $this->responder->redirect('/coding-blog/forgot-password');
+        $this->responder->redirect('/forgot-password');
     }
 
     private function renderForm(string $token, bool $turnstileRequired): void

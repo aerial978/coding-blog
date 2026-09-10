@@ -9,7 +9,7 @@
         <h2>Vérifiez votre boîte mail</h2>
         <p>Nous avons envoyé un lien de confirmation à <strong>{{ obfuscated_email }}</strong>.</p>
         <p>Si vous ne le voyez pas, vérifiez vos spams.</p>
-        <p><a href="/coding-blog/resend-confirmation">Renvoyer le lien</a></p>
+        <p><a href="{{ base_path }}resend-confirmation">Renvoyer le lien</a></p>
     {% else %}
         <h1 class="mb-4 text-center">Register</h1>
         {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
@@ -61,9 +61,9 @@
 </div>
 
 {% block page_scripts %}
-<script src="{{ base_path }}/public/assets/js/security/password-strength.js" defer></script>
-<script type="module" src="{{ base_path }}/public/assets/js/security/validation.registration.js"></script>
-<script src="{{ base_path }}/public/assets/js/security/turnstile.js" defer></script>
+<script src="{{ base_path }}assets/js/security/password-strength.js" defer></script>
+<script type="module" src="{{ base_path }}assets/js/security/validation.registration.js"></script>
+<script src="{{ base_path }}assets/js/security/turnstile.js" defer></script>
 {% endblock %}
 
 {% endblock %}

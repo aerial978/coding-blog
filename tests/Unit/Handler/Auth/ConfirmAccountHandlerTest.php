@@ -59,7 +59,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle();
     }
@@ -84,7 +84,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle();
     }
@@ -109,7 +109,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle();
     }
@@ -139,7 +139,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle();
     }
@@ -169,7 +169,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle();
     }
@@ -198,7 +198,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle();
     }
@@ -227,7 +227,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle();
     }
@@ -256,7 +256,7 @@ final class ConfirmAccountHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle();
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Container\Provider;
 
+use App\Core\AppConfig;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\RateLimiterFactoryInterface;
 use App\Core\Contract\SessionInterface;
@@ -270,7 +271,12 @@ final class SystemServiceProvider
                 return new SessionAuthChecker($session);
             },
 
-            RememberMeCookieManager::class => static fn (): RememberMeCookieManager => new RememberMeCookieManager(),
+            RememberMeCookieManager::class => static fn (): RememberMeCookieManager =>
+                new RememberMeCookieManager(
+                    AppConfig::getBasePath() !== ''
+                        ? AppConfig::getBasePath()
+                        : '/'
+                ),
 
             RememberMeService::class => static function (ContainerInterface $container): RememberMeService {
                 /** @var UserTokenModelInterface $userTokenModel */

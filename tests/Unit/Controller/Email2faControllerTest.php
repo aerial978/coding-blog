@@ -119,7 +119,7 @@ final class Email2faControllerTest extends TestCase
         $responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $controller = new Email2faController(
             $request,
@@ -191,7 +191,7 @@ final class Email2faControllerTest extends TestCase
         $responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login/2fa');
+            ->with('/login/2fa');
 
         $controller = new Email2faController(
             $request,

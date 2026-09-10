@@ -19,8 +19,8 @@ use App\Service\Security\Contract\Email2faServiceInterface;
 
 final class Email2faResendPostHandler
 {
-    private const REDIRECT              = '/coding-blog/login/2fa';
-    private const LOGIN_REDIRECT        = '/coding-blog/login';
+    private const REDIRECT              = '/login/2fa';
+    private const LOGIN_REDIRECT        = '/login';
     private const FORM_ID               = 'email_2fa_resend_form';
     private const RATE_LIMIT_KEY_PREFIX = 'login_2fa_resend';
 

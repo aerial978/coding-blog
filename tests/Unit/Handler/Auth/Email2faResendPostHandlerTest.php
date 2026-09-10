@@ -144,7 +144,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->email2faService
             ->expects($this->never())
@@ -177,7 +177,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->email2faService
             ->expects($this->never())
@@ -204,7 +204,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->email2faService
             ->expects($this->never())
@@ -235,7 +235,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login/2fa');
+            ->with('/login/2fa');
 
         $this->handler->handle([
             'csrf_token' => 'invalid-token',
@@ -325,7 +325,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->email2faService
             ->expects($this->never())
@@ -364,7 +364,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->email2faService
             ->expects($this->never())
@@ -401,7 +401,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login/2fa');
+            ->with('/login/2fa');
 
         $this->handler->handle($this->validForm());
     }
@@ -434,7 +434,7 @@ final class Email2faResendPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login/2fa');
+            ->with('/login/2fa');
 
         $this->handler->handle($this->validForm());
     }

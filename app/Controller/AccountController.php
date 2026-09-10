@@ -23,7 +23,7 @@ final class AccountController
         $user = $this->accountService->getCurrentUser();
 
         if ($user === null) {
-            $this->responder->redirect('/coding-blog/login');
+            $this->responder->redirect('/login');
             return;
         }
 

@@ -10,7 +10,11 @@ final class RememberMeCookieManager implements RememberMeCookieManagerInterface
 {
     private const COOKIE_NAME = 'remember_me';
     private const COOKIE_TTL  = 2592000; // 30 days
-    private const COOKIE_PATH = '/coding-blog';
+
+    public function __construct(
+        private readonly string $cookiePath
+    ) {
+    }
 
     public function createCookie(string $rawToken): void
     {
@@ -25,7 +29,7 @@ final class RememberMeCookieManager implements RememberMeCookieManagerInterface
             $rawToken,
             [
                 'expires'  => time() + self::COOKIE_TTL,
-                'path'     => self::COOKIE_PATH,
+                'path'     => $this->cookiePath,
                 'secure'   => $this->isSecureRequest(),
                 'httponly' => true,
                 'samesite' => 'Lax',
@@ -40,7 +44,7 @@ final class RememberMeCookieManager implements RememberMeCookieManagerInterface
             '',
             [
                 'expires'  => time() - 3600,
-                'path'     => self::COOKIE_PATH,
+                'path'     => $this->cookiePath,
                 'secure'   => $this->isSecureRequest(),
                 'httponly' => true,
                 'samesite' => 'Lax',

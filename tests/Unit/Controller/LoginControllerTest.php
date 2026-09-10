@@ -199,7 +199,7 @@ final class LoginControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->controller->login();
     }

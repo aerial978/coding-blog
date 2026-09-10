@@ -126,7 +126,7 @@ final class ForgotPasswordPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->handlerWithTurnstile->handle($form);
     }
@@ -241,7 +241,7 @@ final class ForgotPasswordPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->handlerWithoutTurnstile->handle($form);
     }
@@ -291,7 +291,7 @@ final class ForgotPasswordPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->handlerWithTurnstile->handle($form);
     }
@@ -370,7 +370,7 @@ final class ForgotPasswordPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->handlerWithTurnstile->handle($form);
     }

@@ -14,7 +14,7 @@ use App\Security\Contract\SubmissionDelayValidatorInterface;
 final class Email2faGetHandler
 {
     private const VIEW           = 'security/email-2fa.html.twig';
-    private const LOGIN_REDIRECT = '/coding-blog/login';
+    private const LOGIN_REDIRECT = '/login';
     private const FORM_ID        = 'email_2fa_form';
     private const RESEND_FORM_ID = 'email_2fa_resend_form';
 

@@ -150,7 +150,7 @@ final class UserServiceProvider
     {
         return [
             PasswordBlacklist::class => static function (): PasswordBlacklist {
-                $path = __DIR__ . '/../../../Config/password_blacklist.php';
+                $path = __DIR__ . '/../../../config/password_blacklist.php';
                 $raw  = require $path;
 
                 /** @var array<int, string> $list */
@@ -159,7 +159,7 @@ final class UserServiceProvider
                 return new PasswordBlacklist($list);
             },
             DisposableChecker::class => static function (): DisposableChecker {
-                $raw = require __DIR__ . '/../../../Config/disposable_domains.php';
+                $raw = require __DIR__ . '/../../../config/disposable_domains.php';
 
                 /** @var array<int, string> $domains */
                 $domains = is_array($raw) ? array_values(array_filter($raw, 'is_string')) : [];

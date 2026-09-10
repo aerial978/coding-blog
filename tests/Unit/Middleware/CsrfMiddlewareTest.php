@@ -86,7 +86,8 @@ final class CsrfMiddlewareTest extends TestCase
         $this->flash->expects($this->once())
             ->method('add')
             ->with('error', $this->isType('string'));
-        // pas de referer -> redirection vers '/'
+        // pas de referer -> redirection vers '/coding-blog/'
+        $_ENV['APP_URL']         = 'http://localhost/coding-blog';
         $_SERVER['HTTP_REFERER'] = '';
         $mw                      = $this->makeMiddleware();
         $result                  = $mw->handle($this->request, '/register', 'POST');

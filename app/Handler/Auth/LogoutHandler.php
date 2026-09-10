@@ -13,7 +13,7 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 
 final class LogoutHandler
 {
-    private const LOGIN_REDIRECT = '/coding-blog/login';
+    private const LOGIN_REDIRECT = '/login';
 
     public function __construct(
         private SecurityServiceInterface $securityService,

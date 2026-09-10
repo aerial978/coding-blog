@@ -30,7 +30,7 @@ final class GoogleOAuthStartHandler
                 'reason' => 'missing_authorization_url_or_state',
             ]);
 
-            $this->responder->redirect('/coding-blog/login');
+            $this->responder->redirect('/login');
             return;
         }
 

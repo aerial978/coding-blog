@@ -181,7 +181,7 @@ final class RegisterPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/register');
+            ->with('/register');
 
         $this->handler->handle($form);
     }
@@ -220,7 +220,7 @@ final class RegisterPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/register');
+            ->with('/register');
 
         $this->handler->handle($form);
     }
@@ -255,7 +255,7 @@ final class RegisterPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle($form);
     }
@@ -286,7 +286,7 @@ final class RegisterPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/register');
+            ->with('/register');
 
         $this->handler->handle($form);
     }
@@ -329,7 +329,7 @@ final class RegisterPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/register');
+            ->with('/register');
 
         $this->handler->handle($form);
     }
