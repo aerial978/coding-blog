@@ -79,7 +79,7 @@ final class ResetPasswordGetHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->responder
             ->expects($this->never())
@@ -229,7 +229,7 @@ final class ResetPasswordGetHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->handler->handle($rawToken);
     }

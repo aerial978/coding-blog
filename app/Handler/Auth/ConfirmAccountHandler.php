@@ -27,7 +27,7 @@ final class ConfirmAccountHandler
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, [
                 'reason' => 'missing_or_empty',
             ]));
-            $this->responder->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect('/resend-confirmation');
             return;
         }
 
@@ -37,7 +37,7 @@ final class ConfirmAccountHandler
             $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
                 'exception' => $e->getMessage(),
             ]));
-            $this->responder->redirect('/coding-blog');
+            $this->responder->redirect('/');
             return;
         }
 
@@ -100,27 +100,27 @@ final class ConfirmAccountHandler
         $map = [
             'success' => function (): void {
                 $this->flash->add('success', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_CONFIRMATION_SUCCESS));
-                $this->responder->redirect('/coding-blog');
+                $this->responder->redirect('/');
             },
             'invalid_expired' => function (): void {
                 $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, ['reason' => 'expired']));
-                $this->responder->redirect('/coding-blog/resend-confirmation');
+                $this->responder->redirect('/resend-confirmation');
             },
             'invalid_not_found' => function (): void {
                 $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_INVALID_CONFIRM_TOKEN, ['reason' => 'not_found']));
-                $this->responder->redirect('/coding-blog/resend-confirmation');
+                $this->responder->redirect('/resend-confirmation');
             },
             'used' => function (): void {
                 $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_CONFIRM_TOKEN_USED));
-                $this->responder->redirect('/coding-blog');
+                $this->responder->redirect('/');
             },
             'already' => function (): void {
                 $this->flash->add('info', Logger::logCodeAndGetMessage('auth', 'info', ErrorCode::AUTH_ALREADY_CONFIRMED));
-                $this->responder->redirect('/coding-blog');
+                $this->responder->redirect('/');
             },
             'technical' => function (): void {
                 $this->flash->add('error', Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR));
-                $this->responder->redirect('/coding-blog');
+                $this->responder->redirect('/');
             },
         ];
 

@@ -57,6 +57,41 @@ class AppConfig
     }
 
     /**
+     * Returns the application base path without a trailing slash.
+     *
+     * Examples:
+     * - http://localhost/coding-blog -> /coding-blog
+     * - https://coding-blog.example.com -> ''
+     *
+     * @throws RuntimeException If APP_URL is invalid.
+     */
+    public static function getBasePath(): string
+    {
+        $path = parse_url(self::getAppUrl(), PHP_URL_PATH);
+
+        if (!is_string($path) || $path === '' || $path === '/') {
+            return '';
+        }
+
+        return '/' . trim($path, '/');
+    }
+
+    /**
+     * Returns an application path prefixed with the configured base path.
+     */
+    public static function getPath(string $path = '/'): string
+    {
+        $basePath = self::getBasePath();
+        $path     = '/' . ltrim($path, '/');
+
+        if ($path === '/') {
+            return $basePath === '' ? '/' : $basePath . '/';
+        }
+
+        return $basePath . $path;
+    }
+
+    /**
      * Returns the validated application environment.
      *
      * @return string One of: local, test or production.

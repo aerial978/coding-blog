@@ -50,7 +50,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         $this->flash->add('error', 'Vous devez être connecté pour accéder à cette page.');
         Logger::getLogger('app')->warning('auth_mw_block', ['uri' => $uri]);
 
-        $this->responder->redirect('/coding-blog/login');
+        $this->responder->redirect('/login');
         return false;
     }
 }

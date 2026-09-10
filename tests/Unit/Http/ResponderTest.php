@@ -24,6 +24,8 @@ final class ResponderTest extends TestCase
     {
         parent::setUp();
 
+        $_ENV['APP_URL'] = 'http://localhost/coding-blog/';
+
         $this->view    = $this->createMock(View::class);
         $this->flash   = $this->createMock(FlashInterface::class);
         $this->session = $this->createMock(SessionInterface::class);
@@ -154,10 +156,36 @@ final class ResponderTest extends TestCase
 
     public function testRedirectSendsLocationHeaderAndTerminates(): void
     {
-        $this->responder->redirect('/coding-blog/login');
+        $this->responder->redirect('/login');
 
         $this->assertSame(
             'Location: /coding-blog/login',
+            $this->responder->lastHeader
+        );
+
+        $this->assertTrue($this->responder->terminated);
+    }
+
+    public function testRedirectUsesRootPathInProduction(): void
+    {
+        $_ENV['APP_URL'] = 'https://coding-blog.example.com/';
+
+        $this->responder->redirect('/login');
+
+        $this->assertSame(
+            'Location: /login',
+            $this->responder->lastHeader
+        );
+
+        $this->assertTrue($this->responder->terminated);
+    }
+
+    public function testRedirectKeepsAbsoluteUrlUnchanged(): void
+    {
+        $this->responder->redirect('https://accounts.google.com/o/oauth2/auth');
+
+        $this->assertSame(
+            'Location: https://accounts.google.com/o/oauth2/auth',
             $this->responder->lastHeader
         );
 

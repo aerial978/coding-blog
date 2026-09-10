@@ -16,7 +16,7 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 
 final class ForgotPasswordPostHandler
 {
-    private const REDIRECT       = '/coding-blog/forgot-password';
+    private const REDIRECT       = '/forgot-password';
     private const FORM_ID        = 'forgot_password';
     private const TURNSTILE_FLAG = 'turnstile_forgot';
     private const RATE_LIMIT_KEY = 'forgot_password';

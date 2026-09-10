@@ -61,4 +61,46 @@ final class AppConfigTest extends TestCase
         $this->assertFalse(AppConfig::isLocal());
         $this->assertFalse(AppConfig::isProd());
     }
+
+    public function testGetBasePathReturnsLocalSubdirectory(): void
+    {
+        $_ENV['APP_URL'] = 'http://localhost/coding-blog/';
+
+        $this->assertSame('/coding-blog', AppConfig::getBasePath());
+    }
+
+    public function testGetBasePathReturnsEmptyStringForRootUrl(): void
+    {
+        $_ENV['APP_URL'] = 'https://coding-blog.example.com/';
+
+        $this->assertSame('', AppConfig::getBasePath());
+    }
+
+    public function testGetBasePathSupportsNestedPath(): void
+    {
+        $_ENV['APP_URL'] = 'https://example.com/apps/coding-blog/';
+
+        $this->assertSame('/apps/coding-blog', AppConfig::getBasePath());
+    }
+
+    public function testGetPathPrefixesLocalBasePath(): void
+    {
+        $_ENV['APP_URL'] = 'http://localhost/coding-blog/';
+
+        $this->assertSame('/coding-blog/login', AppConfig::getPath('/login'));
+    }
+
+    public function testGetPathReturnsRootPathInProduction(): void
+    {
+        $_ENV['APP_URL'] = 'https://coding-blog.example.com/';
+
+        $this->assertSame('/login', AppConfig::getPath('/login'));
+    }
+
+    public function testGetPathReturnsApplicationRoot(): void
+    {
+        $_ENV['APP_URL'] = 'http://localhost/coding-blog/';
+
+        $this->assertSame('/coding-blog/', AppConfig::getPath('/'));
+    }
 }

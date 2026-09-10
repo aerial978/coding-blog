@@ -63,7 +63,7 @@ final class ConfirmAccountControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->controller->confirmAccount();
     }
@@ -82,7 +82,7 @@ final class ConfirmAccountControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->controller->confirmAccount();
     }

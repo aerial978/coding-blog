@@ -21,9 +21,9 @@ use App\Service\Security\Email2faService;
 
 final class Email2faPostHandler
 {
-    private const REDIRECT              = '/coding-blog/login/2fa';
-    private const LOGIN_REDIRECT        = '/coding-blog/login';
-    private const SUCCESS_REDIRECT      = '/coding-blog';
+    private const REDIRECT              = '/login/2fa';
+    private const LOGIN_REDIRECT        = '/login';
+    private const SUCCESS_REDIRECT      = '/';
     private const FORM_ID               = 'email_2fa_form';
     private const RATE_LIMIT_KEY_PREFIX = 'login_2fa_verify';
 

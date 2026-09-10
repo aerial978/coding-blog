@@ -15,8 +15,8 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 
 final class ResendConfirmationPostHandler
 {
-    private const REDIRECT       = '/coding-blog/resend-confirmation';
-    private const HOME_REDIRECT  = '/coding-blog';
+    private const REDIRECT       = '/resend-confirmation';
+    private const HOME_REDIRECT  = '/';
     private const FORM_ID        = 'resend_confirm';
     private const TURNSTILE_FLAG = 'turnstile_resend';
     private const RATE_LIMIT_KEY = 'resend_confirm';

@@ -179,7 +179,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->rememberMeCookieManager
             ->expects($this->never())
@@ -221,7 +221,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle($form);
     }
@@ -256,7 +256,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle($form);
     }
@@ -297,7 +297,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle($form);
     }
@@ -339,7 +339,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle($form);
     }
@@ -378,7 +378,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
         ->expects($this->once())
         ->method('redirect')
-        ->with('/coding-blog/login');
+        ->with('/login');
 
         $this->handler->handle($form);
     }
@@ -415,7 +415,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
         ->expects($this->once())
         ->method('redirect')
-        ->with('/coding-blog');
+        ->with('/');
 
         $this->handler->handle($form);
     }
@@ -455,7 +455,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login/2fa');
+            ->with('/login/2fa');
 
         $this->handler->handle($form);
     }

@@ -103,7 +103,7 @@ final class AccountControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->controller->index();
     }

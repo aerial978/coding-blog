@@ -50,7 +50,7 @@ final class RememberMeCookieManagerTest extends TestCase
             $_SERVER['HTTP_X_FORWARDED_PROTO']
         );
 
-        $this->manager = new RememberMeCookieManager();
+        $this->manager = new RememberMeCookieManager('/coding-blog');
     }
 
     public function testCreateCookieSendsRememberMeCookie(): void

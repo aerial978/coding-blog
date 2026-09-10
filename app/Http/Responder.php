@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Core\AppConfig;
 use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 
@@ -31,7 +32,11 @@ class Responder implements ResponderInterface
 
     public function redirect(string $path): void
     {
-        $this->sendHeader('Location: ' . $path);
+        $location = preg_match('#^https?://#i', $path) === 1
+            ? $path
+            : AppConfig::getPath($path);
+
+        $this->sendHeader('Location: ' . $location);
         $this->terminate();
     }
 

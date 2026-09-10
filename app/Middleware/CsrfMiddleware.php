@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Core\AppConfig;
 use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\FormId;
@@ -83,7 +84,7 @@ final class CsrfMiddleware implements MiddlewareInterface
         $this->logCsrfBlocked($uri, $formId, $submittedToken);
         $this->flashCsrfInvalid($uri, $formId);
 
-        $target = $this->resolveRedirectTarget('/');
+        $target = $this->resolveRedirectTarget();
         $this->redirect($target);
     }
 
@@ -108,10 +109,15 @@ final class CsrfMiddleware implements MiddlewareInterface
         $this->flash->add('error', $msg);
     }
 
-    private function resolveRedirectTarget(string $default): string
+    private function resolveRedirectTarget(): string
     {
         $referer = $this->serverString('HTTP_REFERER', '');
-        return $referer !== '' ? $referer : $default;
+
+        if ($referer !== '') {
+            return $referer;
+        }
+
+        return AppConfig::getPath('/');
     }
 
     private function redirect(string $target): void

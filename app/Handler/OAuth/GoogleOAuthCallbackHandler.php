@@ -22,8 +22,8 @@ final class GoogleOAuthCallbackHandler
 {
     private const PROVIDER          = 'google';
     private const STATE_SESSION_KEY = 'google_oauth_state';
-    private const LOGIN_REDIRECT    = '/coding-blog/login';
-    private const SUCCESS_REDIRECT  = '/coding-blog';
+    private const LOGIN_REDIRECT    = '/login';
+    private const SUCCESS_REDIRECT  = '/';
 
     public function __construct(
         private GoogleOAuthServiceInterface $googleOAuthService,
