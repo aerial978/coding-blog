@@ -169,7 +169,7 @@ final class ResendConfirmationPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle($form);
     }
@@ -200,7 +200,7 @@ final class ResendConfirmationPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle($form);
     }
@@ -231,7 +231,7 @@ final class ResendConfirmationPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle($form);
     }
@@ -260,7 +260,7 @@ final class ResendConfirmationPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle($form);
     }
@@ -289,7 +289,7 @@ final class ResendConfirmationPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/resend-confirmation');
+            ->with('/resend-confirmation');
 
         $this->handler->handle($form);
     }

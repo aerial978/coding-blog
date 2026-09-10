@@ -68,7 +68,7 @@ final class Email2faGetHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->responder
             ->expects($this->never())
@@ -104,7 +104,7 @@ final class Email2faGetHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->responder
             ->expects($this->never())

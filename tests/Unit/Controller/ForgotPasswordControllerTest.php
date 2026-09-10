@@ -189,7 +189,7 @@ final class ForgotPasswordControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/forgot-password');
+            ->with('/forgot-password');
 
         $this->controller->ForgotPassword();
     }

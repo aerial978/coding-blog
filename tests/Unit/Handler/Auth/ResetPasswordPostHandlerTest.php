@@ -73,7 +73,7 @@ final class ResetPasswordPostHandlerTest extends TestCase
 
     private function redirectWithToken(): string
     {
-        return '/coding-blog/reset-password?token=valid-token';
+        return '/reset-password?token=valid-token';
     }
 
     public function testStopsWhenHoneypotFails(): void
@@ -246,7 +246,7 @@ final class ResetPasswordPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle($this->validForm());
     }

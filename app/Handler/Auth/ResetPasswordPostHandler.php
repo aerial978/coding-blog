@@ -17,8 +17,8 @@ use App\Support\ErrorListNormalizer;
 
 final class ResetPasswordPostHandler
 {
-    private const BASE_REDIRECT  = '/coding-blog/reset-password';
-    private const LOGIN_REDIRECT = '/coding-blog/login';
+    private const BASE_REDIRECT  = '/reset-password';
+    private const LOGIN_REDIRECT = '/login';
     private const FORM_ID        = 'reset_password';
     private const TURNSTILE_FLAG = 'turnstile_reset';
     private const RATE_LIMIT_KEY = 'reset_password';

@@ -49,7 +49,7 @@ final class AccountPageTest extends TestCase
 
     public function testGuestCannotAccessAccountPage(): void
     {
-        $_SERVER['REQUEST_URI']    = '/coding-blog/account';
+        $_SERVER['REQUEST_URI']    = '/account';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
         $authChecker = $this->createMock(AuthCheckerInterface::class);
@@ -73,7 +73,7 @@ final class AccountPageTest extends TestCase
         $responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $responder
             ->expects($this->never())
@@ -95,7 +95,7 @@ final class AccountPageTest extends TestCase
 
     public function testAuthenticatedUserCanAccessAccountPage(): void
     {
-        $_SERVER['REQUEST_URI']    = '/coding-blog/account';
+        $_SERVER['REQUEST_URI']    = '/account';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
         $authChecker    = $this->createMock(AuthCheckerInterface::class);
@@ -174,7 +174,7 @@ final class AccountPageTest extends TestCase
 
     public function testAuthenticatedUserIsRedirectedWhenAccountNoLongerExists(): void
     {
-        $_SERVER['REQUEST_URI']    = '/coding-blog/account';
+        $_SERVER['REQUEST_URI']    = '/account';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
         $authChecker    = $this->createMock(AuthCheckerInterface::class);
@@ -208,7 +208,7 @@ final class AccountPageTest extends TestCase
         $responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $controller = new AccountController(
             $csrf,
@@ -246,7 +246,7 @@ final class AccountPageTest extends TestCase
 
         $router = new Router(
             $routes,
-            '/coding-blog',
+            '/',
             $errorController,
             $request,
             $factory

@@ -18,7 +18,7 @@ use App\Support\ErrorListNormalizer;
 
 final class RegisterPostHandler
 {
-    private const REDIRECT        = '/coding-blog/register';
+    private const REDIRECT        = '/register';
     private const FORM_ID         = 'register';
     private const TURNSTILE_FIELD = 'cf-turnstile-response';
 
@@ -212,7 +212,7 @@ final class RegisterPostHandler
                 'username'  => $username,
             ]));
             $this->flash->put('old', ['email' => $email]);
-            $this->responder->redirect('/coding-blog/resend-confirmation');
+            $this->responder->redirect('/resend-confirmation');
             return true;
         }
 

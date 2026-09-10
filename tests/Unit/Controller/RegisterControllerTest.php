@@ -203,7 +203,7 @@ final class RegisterControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/register');
+            ->with('/register');
 
         $this->controller->register();
     }

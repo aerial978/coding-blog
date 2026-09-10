@@ -105,7 +105,7 @@ final class AuthenticationMiddlewareTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $ok = $mw->handle($this->request, '/change-password', 'GET');
 
@@ -129,7 +129,7 @@ final class AuthenticationMiddlewareTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $ok = $mw->handle($this->request, '/account', 'GET');
 

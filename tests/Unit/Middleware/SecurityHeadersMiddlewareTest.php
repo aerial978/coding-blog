@@ -60,7 +60,7 @@ namespace Tests\Unit\Middleware {
             );
 
             $this->previousHttps          = $_SERVER['HTTPS']                           ?? null;
-            $this->previousForwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null;
+            $this->previousForwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO']          ?? null;
 
             unset(
                 $_SERVER['HTTPS'],

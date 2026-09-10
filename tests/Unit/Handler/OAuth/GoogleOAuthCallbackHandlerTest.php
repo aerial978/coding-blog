@@ -63,7 +63,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->googleOAuthService
             ->expects($this->never())
@@ -90,7 +90,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->googleOAuthService
             ->expects($this->never())
@@ -131,7 +131,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -172,7 +172,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -220,7 +220,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -278,7 +278,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -318,7 +318,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -357,7 +357,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -407,7 +407,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog');
+            ->with('/');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -555,7 +555,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -576,7 +576,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'state' => 'valid_state',
@@ -596,7 +596,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code' => 'valid_code',
@@ -638,7 +638,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -683,7 +683,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -728,7 +728,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/coding-blog/login');
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -777,7 +777,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
         ->expects($this->once())
         ->method('redirect')
-        ->with('/coding-blog/login');
+        ->with('/login');
 
         $this->handler->handle([
         'code'  => 'valid_code',
