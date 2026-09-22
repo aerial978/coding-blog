@@ -322,7 +322,9 @@ final class GoogleOAuthCallbackHandler
             return;
         }
 
-        $this->openAuthenticatedSession($userId);
+        if (!$this->openAuthenticatedSession($user)) {
+            return;
+        }
 
         Logger::getLogger('auth')->info('google_oauth_login_success', [
             'user_id' => $userId,
@@ -368,7 +370,24 @@ final class GoogleOAuthCallbackHandler
     {
         $userId = (int) ($user->getUserId() ?? 0);
 
-        $this->openAuthenticatedSession($userId);
+        if ($userId <= 0) {
+            throw new RuntimeException(ErrorCode::AUTH_GOOGLE_USER_INVALID);
+        }
+
+        $authenticatedUser = $this->userModel->findOneById($userId);
+
+        if ($authenticatedUser === null) {
+            Logger::getLogger('auth')->error('google_oauth_user_not_found_before_session', [
+                'user_id' => $userId,
+            ]);
+
+            $this->replyFailure(ErrorCode::AUTH_GOOGLE_TECHNICAL_ERROR);
+            return;
+        }
+
+        if (!$this->openAuthenticatedSession($authenticatedUser)) {
+            return;
+        }
 
         Logger::getLogger('auth')->info('google_oauth_login_success', [
             'user_id' => $userId,
@@ -378,16 +397,31 @@ final class GoogleOAuthCallbackHandler
         $this->responder->redirect(self::SUCCESS_REDIRECT);
     }
 
-    private function openAuthenticatedSession(int $userId): void
+    private function openAuthenticatedSession(UserEntity $user): bool
     {
+        $userId = (int) ($user->getUserId() ?? 0);
+        $role   = $user->getRole();
+
+        if ($userId <= 0 || $role === null || $role === '') {
+            Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
+                'reason'  => 'missing_user_role_after_google_oauth',
+                'user_id' => $userId,
+            ]);
+
+            $this->replyFailure(ErrorCode::AUTH_GOOGLE_TECHNICAL_ERROR);
+            return false;
+        }
+
         $this->session->regenerateAndDeleteOld();
 
         $this->session->set('user', [
             'id'    => $userId,
-            'roles' => ['USER'],
+            'roles' => [$role],
         ]);
 
         $this->flash->add('success', 'connexion réussie');
+
+        return true;
     }
 
     private function isActiveUser(UserEntity $user): bool

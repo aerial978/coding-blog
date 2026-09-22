@@ -19,6 +19,9 @@ class UserEntity extends AbstractEntity
     /** @var int|null Unique identifier for the user */
     private ?int $userId = null;
 
+    /** @var string|null User's role */
+    private ?string $role = null;
+
     /** @var string|null User's username */
     private ?string $username = null;
 
@@ -56,6 +59,29 @@ class UserEntity extends AbstractEntity
     public function setUserId(int $userId): self
     {
         $this->userId = $userId;
+        return $this;
+    }
+
+    /**
+     * Gets the user's role.
+     *
+     * @return string|null The user's role, or null if not set.
+     */
+    public function getRole(): ?string
+    {
+        return $this->role;
+    }
+
+    /**
+     * Sets the user's role.
+     *
+     * @param string $role The user's role.
+     * @return self
+     */
+    public function setRole(string $role): self
+    {
+        $this->role = $role;
+
         return $this;
     }
 

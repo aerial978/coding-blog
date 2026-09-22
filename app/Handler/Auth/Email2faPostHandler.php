@@ -9,6 +9,7 @@ use App\Core\Contract\SessionInterface;
 use App\Core\ErrorCode;
 use App\Core\Logger;
 use App\Http\Contract\ResponderInterface;
+use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\RememberMeCookieManagerInterface;
@@ -30,6 +31,7 @@ final class Email2faPostHandler
     public function __construct(
         private readonly Email2faServiceInterface $email2faService,
         private readonly Email2faPendingSessionInterface $email2faSession,
+        private readonly UserModelInterface $userModel,
         private readonly SessionInterface $session,
         private readonly FlashInterface $flash,
         private readonly ResponderInterface $responder,
@@ -150,11 +152,32 @@ final class Email2faPostHandler
     {
         $rememberMeRequested = $this->email2faSession->wasRememberMeRequested();
 
+        $user = $this->userModel->findOneById($userId);
+        $role = $user?->getRole();
+
+        if ($role === null || $role === '') {
+            Logger::logCodeAndGetMessage('auth', 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
+                'reason'  => 'missing_user_role_after_2fa',
+                'user_id' => $userId,
+            ]);
+
+            $this->email2faSession->clear();
+
+            $this->flash->add(
+                'error',
+                'Une erreur est survenue. Veuillez vous reconnecter.'
+            );
+
+            $this->responder->redirect(self::LOGIN_REDIRECT);
+
+            return;
+        }
+
         $this->session->regenerateAndDeleteOld();
 
         $this->session->set('user', [
             'id'    => $userId,
-            'roles' => ['USER'],
+            'roles' => [$role],
         ]);
 
         if ($rememberMeRequested) {

@@ -135,4 +135,73 @@ final class AuthenticationMiddlewareTest extends TestCase
 
         $this->assertFalse($ok);
     }
+
+    public function testAdminRouteIsProtected(): void
+    {
+        $mw = $this->make();
+
+        $this->authChecker
+            ->expects($this->once())
+            ->method('isAuthenticated')
+            ->willReturn(false);
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('error', 'Vous devez être connecté pour accéder à cette page.');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/login');
+
+        $ok = $mw->handle($this->request, '/admin', 'GET');
+
+        $this->assertFalse($ok);
+    }
+
+    public function testAdminSubRouteIsProtected(): void
+    {
+        $mw = $this->make();
+
+        $this->authChecker
+            ->expects($this->once())
+            ->method('isAuthenticated')
+            ->willReturn(false);
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('error', 'Vous devez être connecté pour accéder à cette page.');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/login');
+
+        $ok = $mw->handle($this->request, '/admin/users', 'GET');
+
+        $this->assertFalse($ok);
+    }
+
+    public function testSimilarAdminPrefixIsNotProtected(): void
+    {
+        $mw = $this->make();
+
+        $this->authChecker
+            ->expects($this->never())
+            ->method('isAuthenticated');
+
+        $this->flash
+            ->expects($this->never())
+            ->method('add');
+
+        $this->responder
+            ->expects($this->never())
+            ->method('redirect');
+
+        $ok = $mw->handle($this->request, '/administrator', 'GET');
+
+        $this->assertTrue($ok);
+    }
 }

@@ -216,7 +216,11 @@ final class UserModelTest extends TestCase
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('INSERT INTO user'),
+                $this->logicalAnd(
+                    $this->stringContains('INSERT INTO user'),
+                    $this->stringContains('role_id'),
+                    $this->stringContains("name = 'MEMBER'")
+                ),
                 [
                     ':username' => 'alice',
                     ':slug'     => 'alice',
@@ -279,13 +283,14 @@ final class UserModelTest extends TestCase
             'password'          => 'hashed-password',
             'status'            => 'active',
             'email_2fa_enabled' => 1,
+            'role'              => 'ADMIN',
         ];
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('WHERE email = :email'),
+                $this->stringContains('WHERE u.email = :email'),
                 [':email' => $email]
             )
             ->willReturn($this->statement);
@@ -305,6 +310,7 @@ final class UserModelTest extends TestCase
         $this->assertSame('hashed-password', $result->getPassword());
         $this->assertSame('active', $result->getStatus());
         $this->assertTrue($result->isEmail2faEnabled());
+        $this->assertSame('ADMIN', $result->getRole());
     }
 
     public function testFindAuthByEmailReturnsNullWhenNotFound(): void
@@ -313,7 +319,7 @@ final class UserModelTest extends TestCase
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('WHERE email = :email'),
+                $this->stringContains('WHERE u.email = :email'),
                 [':email' => 'unknown@example.com']
             )
             ->willReturn($this->statement);
@@ -340,13 +346,14 @@ final class UserModelTest extends TestCase
             'password'          => 'hashed-password',
             'status'            => 'active',
             'email_2fa_enabled' => 1,
+            'role'              => 'ADMIN',
         ];
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('WHERE username = :username'),
+                $this->stringContains('WHERE u.username = :username'),
                 [':username' => $username]
             )
             ->willReturn($this->statement);
@@ -366,6 +373,7 @@ final class UserModelTest extends TestCase
         $this->assertSame('hashed-password', $result->getPassword());
         $this->assertSame('active', $result->getStatus());
         $this->assertTrue($result->isEmail2faEnabled());
+        $this->assertSame('ADMIN', $result->getRole());
     }
 
     public function testFindAuthByUsernameReturnsNullWhenNotFound(): void
@@ -374,7 +382,7 @@ final class UserModelTest extends TestCase
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('WHERE username = :username'),
+                $this->stringContains('WHERE u.username = :username'),
                 [':username' => 'unknown']
             )
             ->willReturn($this->statement);
@@ -404,13 +412,14 @@ final class UserModelTest extends TestCase
             'email_2fa_enabled' => 1,
             'created_at'        => '2026-01-01 10:00:00',
             'updated_at'        => '2026-01-01 10:00:00',
+            'role'              => 'ADMIN',
         ];
 
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('WHERE id = :user_id'),
+                $this->stringContains('WHERE u.id = :user_id'),
                 [':user_id' => $userId]
             )
             ->willReturn($this->statement);
@@ -431,6 +440,7 @@ final class UserModelTest extends TestCase
         $this->assertSame('hashed-password', $result->getPassword());
         $this->assertSame('active', $result->getStatus());
         $this->assertTrue($result->isEmail2faEnabled());
+        $this->assertSame('ADMIN', $result->getRole());
     }
 
     public function testFindOneByIdReturnsNullWhenNotFound(): void
@@ -439,7 +449,7 @@ final class UserModelTest extends TestCase
             ->expects($this->once())
             ->method('request')
             ->with(
-                $this->stringContains('WHERE id = :user_id'),
+                $this->stringContains('WHERE u.id = :user_id'),
                 [':user_id' => 999]
             )
             ->willReturn($this->statement);
@@ -534,6 +544,8 @@ final class UserModelTest extends TestCase
             ->with(
                 $this->logicalAnd(
                     $this->stringContains('INSERT INTO user'),
+                    $this->stringContains('role_id'),
+                    $this->stringContains("name = 'MEMBER'"),
                     $this->stringContains("'active'"),
                     $this->stringContains('email_2fa_enabled')
                 ),

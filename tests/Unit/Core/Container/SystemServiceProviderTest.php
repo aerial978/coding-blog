@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Core\Container;
 
+use App\Controller\ErrorController;
 use App\Core\Container\Provider\SystemServiceProvider;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\RateLimiterFactoryInterface;
@@ -20,6 +21,7 @@ use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Infrastructure\Mail\DummyMailer;
 use App\Log\LogContextNormalizer;
+use App\Middleware\AdminAuthorizationMiddleware;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
@@ -54,6 +56,7 @@ final class SystemServiceProviderTest extends TestCase
         parent::setUp();
 
         $this->envBackup = [
+            'APP_URL'          => $_ENV['APP_URL']          ?? null,
             'MAILER_TRANSPORT' => $_ENV['MAILER_TRANSPORT'] ?? null,
             'MAIL_FROM_EMAIL'  => $_ENV['MAIL_FROM_EMAIL']  ?? null,
             'MAIL_FROM_NAME'   => $_ENV['MAIL_FROM_NAME']   ?? null,
@@ -145,6 +148,7 @@ final class SystemServiceProviderTest extends TestCase
         $this->assertArrayHasKey(AuthenticationMiddleware::class, $definitions);
         $this->assertArrayHasKey(CsrfMiddleware::class, $definitions);
         $this->assertArrayHasKey(SecurityHeadersMiddleware::class, $definitions);
+        $this->assertArrayHasKey(AdminAuthorizationMiddleware::class, $definitions);
 
         $this->assertArrayHasKey(LogContextNormalizer::class, $definitions);
         $this->assertArrayHasKey(ErrorListNormalizer::class, $definitions);
@@ -157,6 +161,8 @@ final class SystemServiceProviderTest extends TestCase
 
     public function testHttpDefinitionsAreBuildable(): void
     {
+        $_ENV['APP_URL'] = 'http://localhost/coding-blog';
+
         $definitions = SystemServiceProvider::getDefinitions();
 
         $container = $this->makeContainer([]);
@@ -316,10 +322,11 @@ final class SystemServiceProviderTest extends TestCase
     {
         $definitions = SystemServiceProvider::getDefinitions();
 
-        $authChecker = $this->createMock(AuthCheckerInterface::class);
-        $flash       = $this->createMock(FlashInterface::class);
-        $responder   = $this->createMock(ResponderInterface::class);
-        $csrf        = $this->createMock(CsrfTokenInterface::class);
+        $authChecker     = $this->createMock(AuthCheckerInterface::class);
+        $flash           = $this->createMock(FlashInterface::class);
+        $responder       = $this->createMock(ResponderInterface::class);
+        $csrf            = $this->createMock(CsrfTokenInterface::class);
+        $errorController = $this->createMock(ErrorController::class);
 
         $authContainer = $this->makeContainer([
             AuthCheckerInterface::class => $authChecker,
@@ -327,18 +334,51 @@ final class SystemServiceProviderTest extends TestCase
             ResponderInterface::class   => $responder,
         ]);
 
+        $adminAuthorizationContainer = $this->makeContainer([
+            AuthCheckerInterface::class => $authChecker,
+            ErrorController::class      => $errorController,
+        ]);
+
         $csrfContainer = $this->makeContainer([
             CsrfTokenInterface::class => $csrf,
             FlashInterface::class     => $flash,
         ]);
 
-        $authenticationMiddleware  = $definitions[AuthenticationMiddleware::class]($authContainer);
-        $csrfMiddleware            = $definitions[CsrfMiddleware::class]($csrfContainer);
-        $securityHeadersMiddleware = $definitions[SecurityHeadersMiddleware::class]($this->makeContainer([]));
+        $authenticationMiddleware = $definitions[AuthenticationMiddleware::class](
+            $authContainer
+        );
 
-        $this->assertInstanceOf(AuthenticationMiddleware::class, $authenticationMiddleware);
-        $this->assertInstanceOf(CsrfMiddleware::class, $csrfMiddleware);
-        $this->assertInstanceOf(SecurityHeadersMiddleware::class, $securityHeadersMiddleware);
+        $adminAuthorizationMiddleware = $definitions[AdminAuthorizationMiddleware::class](
+            $adminAuthorizationContainer
+        );
+
+        $csrfMiddleware = $definitions[CsrfMiddleware::class](
+            $csrfContainer
+        );
+
+        $securityHeadersMiddleware = $definitions[SecurityHeadersMiddleware::class](
+            $this->makeContainer([])
+        );
+
+        $this->assertInstanceOf(
+            AuthenticationMiddleware::class,
+            $authenticationMiddleware
+        );
+
+        $this->assertInstanceOf(
+            AdminAuthorizationMiddleware::class,
+            $adminAuthorizationMiddleware
+        );
+
+        $this->assertInstanceOf(
+            CsrfMiddleware::class,
+            $csrfMiddleware
+        );
+
+        $this->assertInstanceOf(
+            SecurityHeadersMiddleware::class,
+            $securityHeadersMiddleware
+        );
     }
 
     public function testMailerDefinitionReturnsDummyMailerWhenTransportIsDummy(): void

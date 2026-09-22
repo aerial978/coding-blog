@@ -45,6 +45,18 @@ final class ErrorControllerTest extends TestCase
         $this->assertSame(404, http_response_code());
     }
 
+    public function testForbiddenSets403AndRenders403Template(): void
+    {
+        $this->responder
+            ->expects($this->once())
+            ->method('render')
+            ->with('errors/403.html.twig');
+
+        $this->controller->forbidden();
+
+        $this->assertSame(403, http_response_code());
+    }
+
     public function testServerErrorSets500AndRenders500TemplateWithId(): void
     {
         $this->responder

@@ -259,7 +259,32 @@ class UserTokenModel implements UserTokenModelInterface
      */
     public function findRememberMeContextByHash(string $hashBinary32): ?array
     {
-        return $this->findContextByHashAndPurpose($hashBinary32, 'remember_me');
+        $sql = "
+            SELECT
+                u.id         AS user_id,
+                u.status     AS user_status,
+                r.name       AS user_role,
+                t.used       AS used,
+                t.used_at    AS used_at,
+                t.expires_at AS expires_at,
+                (t.expires_at < NOW()) AS is_expired
+            FROM {$this->table} t
+            JOIN user u ON u.id = t.user_id
+            JOIN role r ON r.id = u.role_id
+            WHERE t.token_hash = :hash
+            AND t.purpose = :purpose
+            LIMIT 1
+        ";
+
+        $st = $this->sqlHelper->request($sql, [
+            ':hash'    => $hashBinary32,
+            ':purpose' => 'remember_me',
+        ]);
+
+        /** @var array<string,mixed>|false $row */
+        $row = $st->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     public function invalidateRememberMeToken(int $userId): bool

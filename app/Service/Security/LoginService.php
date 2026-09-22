@@ -93,13 +93,8 @@ final class LoginService implements LoginServiceInterface
             return $failure;
         }
 
-        $failure = $this->failIfUserInactive($user, $client['ip'], $old, $channel);
-        if ($failure !== null) {
-            return $failure;
-        }
-
         $userId  = $this->extractUserId($user);
-        $failure = $this->failIfUserIdInvalid($userId, $client['ip'], $old, $channel);
+        $failure = $this->validateAuthenticatedUser($user, $userId, $client['ip'], $old, $channel);
         if ($failure !== null) {
             return $failure;
         }
@@ -108,7 +103,7 @@ final class LoginService implements LoginServiceInterface
             return $this->startEmail2faFlow($user, $userId, $rememberMe, $client['ip'], $channel, $old);
         }
 
-        $this->openAuthenticatedSession($userId, $client['ip'], $channel);
+        $this->openAuthenticatedSession($user, $userId, $client['ip'], $channel);
 
         return $this->buildSuccessResult($rememberMe, $userId, $client['ip'], $channel);
     }
@@ -156,6 +151,30 @@ final class LoginService implements LoginServiceInterface
      * @param array{identifier:string, remember_me?: string} $old
      * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
      */
+    private function validateAuthenticatedUser(
+        UserEntity $user,
+        int $userId,
+        string $ip,
+        array $old,
+        string $channel
+    ): ?array {
+        $failure = $this->failIfUserInactive($user, $ip, $old, $channel);
+        if ($failure !== null) {
+            return $failure;
+        }
+
+        $failure = $this->failIfUserIdInvalid($userId, $ip, $old, $channel);
+        if ($failure !== null) {
+            return $failure;
+        }
+
+        return $this->failIfUserRoleMissing($user, $ip, $old, $channel);
+    }
+
+    /**
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
+     */
     private function failIfUserInactive(UserEntity $user, string $ip, array $old, string $channel): ?array
     {
         $status = $this->extractUserStatus($user);
@@ -192,7 +211,35 @@ final class LoginService implements LoginServiceInterface
         return ['errors' => [ErrorCode::AUTH_TECHNICAL_ERROR], 'old' => $old];
     }
 
-    private function openAuthenticatedSession(int $userId, string $ip, string $channel): void
+    /**
+     * @param array{identifier:string, remember_me?: string} $old
+     * @return array{errors:list<string|int>, old:array{identifier:string, remember_me?: string}}|null
+     */
+    private function failIfUserRoleMissing(
+        UserEntity $user,
+        string $ip,
+        array $old,
+        string $channel
+    ): ?array {
+        $role = $user->getRole();
+
+        if ($role !== null && $role !== '') {
+            return null;
+        }
+
+        Logger::logCodeAndGetMessage($channel, 'error', ErrorCode::AUTH_TECHNICAL_ERROR, [
+            'reason'  => 'missing_user_role',
+            'ip'      => $ip,
+            'user_id' => $this->extractUserId($user) ?: null,
+        ]);
+
+        return [
+            'errors' => [ErrorCode::AUTH_TECHNICAL_ERROR],
+            'old'    => $old,
+        ];
+    }
+
+    private function openAuthenticatedSession(UserEntity $user, int $userId, string $ip, string $channel): void
     {
         Logger::getLogger('app')->info('session_before_regenerate', [
             'session_id' => session_id(),
@@ -206,7 +253,7 @@ final class LoginService implements LoginServiceInterface
 
         $this->session->set('user', [
             'id'    => $userId,
-            'roles' => ['USER'],
+            'roles' => [$user->getRole()],
         ]);
 
         Logger::logCodeAndGetMessage($channel, 'info', 'login_success', [

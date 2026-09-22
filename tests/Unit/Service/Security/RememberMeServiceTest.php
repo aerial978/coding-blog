@@ -164,6 +164,7 @@ final class RememberMeServiceTest extends TestCase
             ->willReturn([
                 'user_id'     => 42,
                 'user_status' => 'active',
+                'user_role'   => 'MEMBER',
                 'used'        => 1,
                 'is_expired'  => 0,
             ]);
@@ -186,6 +187,7 @@ final class RememberMeServiceTest extends TestCase
             ->willReturn([
                 'user_id'     => 42,
                 'user_status' => 'active',
+                'user_role'   => 'MEMBER',
                 'used'        => 0,
                 'is_expired'  => 1,
             ]);
@@ -214,6 +216,7 @@ final class RememberMeServiceTest extends TestCase
             ->willReturn([
                 'user_id'     => 42,
                 'user_status' => 'inactive',
+                'user_role'   => 'MEMBER',
                 'used'        => 0,
                 'is_expired'  => 0,
             ]);
@@ -246,6 +249,7 @@ final class RememberMeServiceTest extends TestCase
             ->willReturn([
                 'user_id'     => 42,
                 'user_status' => 'active',
+                'user_role'   => 'ADMIN',
                 'used'        => 0,
                 'is_expired'  => 0,
             ]);
@@ -259,10 +263,42 @@ final class RememberMeServiceTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => 42,
-                'roles' => ['USER'],
+                'roles' => ['ADMIN'],
             ]);
 
         $this->assertTrue($this->service->restoreSessionFromToken('raw-token'));
+    }
+
+    public function testRestoreSessionFromTokenReturnsFalseWhenUserRoleIsMissing(): void
+    {
+        $this->tokenGenerator
+            ->expects($this->once())
+            ->method('hashToken')
+            ->with('raw-token')
+            ->willReturn(str_repeat('i', 32));
+
+        $this->userTokenModel
+            ->expects($this->once())
+            ->method('findRememberMeContextByHash')
+            ->with(str_repeat('i', 32))
+            ->willReturn([
+                'user_id'     => 42,
+                'user_status' => 'active',
+                'used'        => 0,
+                'is_expired'  => 0,
+            ]);
+
+        $this->session
+            ->expects($this->never())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->never())
+            ->method('set');
+
+        $this->assertFalse(
+            $this->service->restoreSessionFromToken('raw-token')
+        );
     }
 
     public function testRestoreSessionFromTokenReturnsFalseOnThrowable(): void

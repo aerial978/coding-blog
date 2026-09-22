@@ -115,6 +115,17 @@ final class Email2faControllerTest extends TestCase
             ->with(42, '123456')
             ->willReturn(Email2faService::VERIFY_SUCCESS);
 
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setRole('MEMBER');
+
+        $userModel = $this->createMock(UserModelInterface::class);
+        $userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($user);
+
         $responder = $this->createMock(ResponderInterface::class);
         $responder
             ->expects($this->once())
@@ -127,6 +138,7 @@ final class Email2faControllerTest extends TestCase
             new Email2faPostHandler(
                 $email2faService,
                 $pendingSession,
+                $userModel,
                 $this->createMock(SessionInterface::class),
                 $this->createMock(FlashInterface::class),
                 $responder,
@@ -230,6 +242,7 @@ final class Email2faControllerTest extends TestCase
         return new Email2faPostHandler(
             $this->createMock(Email2faServiceInterface::class),
             $this->createMock(Email2faPendingSessionInterface::class),
+            $this->createMock(UserModelInterface::class),
             $this->createMock(SessionInterface::class),
             $this->createMock(FlashInterface::class),
             $this->createMock(ResponderInterface::class),

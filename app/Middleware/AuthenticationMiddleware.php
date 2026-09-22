@@ -24,6 +24,10 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         '/account',
     ];
 
+    private const PROTECTED_PREFIXES = [
+        '/admin',
+    ];
+
     public function __construct(
         private AuthCheckerInterface $authChecker,
         private FlashInterface $flash,
@@ -38,7 +42,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
             'method' => $method,
         ]);
 
-        if (!in_array($uri, self::PROTECTED_ROUTES, true)) {
+        if (!$this->isProtectedRoute($uri)) {
             return true; // Route publique → OK
         }
 
@@ -51,6 +55,21 @@ final class AuthenticationMiddleware implements MiddlewareInterface
         Logger::getLogger('app')->warning('auth_mw_block', ['uri' => $uri]);
 
         $this->responder->redirect('/login');
+        return false;
+    }
+
+    private function isProtectedRoute(string $uri): bool
+    {
+        if (in_array($uri, self::PROTECTED_ROUTES, true)) {
+            return true;
+        }
+
+        foreach (self::PROTECTED_PREFIXES as $prefix) {
+            if ($uri === $prefix || str_starts_with($uri, $prefix . '/')) {
+                return true;
+            }
+        }
+
         return false;
     }
 }

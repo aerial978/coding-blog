@@ -87,16 +87,17 @@ final class RememberMeService implements RememberMeServiceInterface
                 return false;
             }
 
-            $userId = $this->extractUserId($context);
+            $userId   = $this->extractUserId($context);
+            $userRole = $this->extractUserRole($context);
 
-            if (!$this->isRestorableContext($context, $userId)) {
+            if (!$this->isRestorableContext($context, $userId, $userRole)) {
                 return false;
             }
 
             $this->session->regenerateAndDeleteOld();
             $this->session->set('user', [
                 'id'    => $userId,
-                'roles' => ['USER'],
+                'roles' => [$userRole],
             ]);
 
             Logger::getLogger('auth')->info('remember_me_restore_success', [
@@ -143,13 +144,21 @@ final class RememberMeService implements RememberMeServiceInterface
     /**
      * @param array<string, mixed> $context
      */
-    private function isRestorableContext(array $context, int $userId): bool
+    private function isRestorableContext(array $context, int $userId, string $userRole): bool
     {
         if ($userId <= 0) {
             Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, [
                 'reason' => 'remember_me_missing_user_id',
             ]);
 
+            return false;
+        }
+
+        if ($userRole === '') {
+            Logger::logCodeAndGetMessage('auth', 'warning', ErrorCode::AUTH_TECHNICAL_ERROR, [
+                'reason'  => 'remember_me_missing_user_role',
+                'user_id' => $userId,
+            ]);
             return false;
         }
 
@@ -196,6 +205,16 @@ final class RememberMeService implements RememberMeServiceInterface
         $userId = $context['user_id'] ?? null;
 
         return is_numeric($userId) ? (int) $userId : 0;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function extractUserRole(array $context): string
+    {
+        $userRole = $context['user_role'] ?? null;
+
+        return is_string($userRole) ? trim($userRole) : '';
     }
 
     /**
