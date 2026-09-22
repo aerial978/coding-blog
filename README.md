@@ -18,6 +18,7 @@ It is intended for learners, junior developers, or anyone who wants to understan
 - Account confirmation email resend
 - User account area
 - Protection against automated and abusive authentication attempts
+- Role-based authorization for protected administration routes
 
 ## Authentication & Security Flow
 
@@ -31,6 +32,7 @@ The authentication system follows a layered security approach :
 - Secure registration flow with anti-bot and validation layers
 - Controlled email confirmation resend mechanism with anti-enumeration
 - Usernames are treated case-insensitively for authentication and uniqueness
+- Role-based access control for administration routes
 
 ## Account Recovery
 
@@ -135,7 +137,7 @@ responsibilities clearly separated and the application easy to maintain.
 
 - **Middleware**
   - Middleware components execute before controllers.
-  - They handle cross-cutting concerns such as authentication, CSRF protection,
+  - They handle cross-cutting concerns such as authentication, authorization, CSRF protection,
     remember-me restoration, and HTTP security headers.
 
 - **Twig**
@@ -152,31 +154,46 @@ responsibilities clearly separated and the application easy to maintain.
 ```mermaid
 flowchart TD
     A[HTTP Request] --> B[Request]
+
     B --> C[Router]
 
     C --> D[SecurityHeadersMiddleware]
+
     D --> E[RememberMeMiddleware]
+
     E --> F[CsrfMiddleware]
+
     F --> G[AuthenticationMiddleware]
 
-    G --> H[PsrControllerFactory]
-    H --> I[PSR-11 Container]
-    I --> J[Controller]
+    G --> H[AdminAuthorizationMiddleware]
 
-    J --> K[Handler]
-    K --> L[Security Guards]
-    K --> M[Service]
+    H --> I[PsrControllerFactory]
 
-    M --> N[Model]
-    N --> O[SqlHelper]
-    O --> P[(MySQL)]
+    I --> J[PSR-11 Container]
 
-    M --> Q[Session / Remember Me / 2FA]
-    K --> R[Responder / Flash]
-    J --> S[Twig View]
+    J --> K[Controller]
 
-    R --> T[HTTP Response]
-    S --> T
+    K --> L[Handler]
+
+    L --> M[Security Guards]
+
+    L --> N[Service]
+
+    N --> O[Model]
+
+    O --> P[SqlHelper]
+
+    P --> Q[(MySQL)]
+
+    N --> R[Session / Remember Me / 2FA]
+
+    L --> S[Responder / Flash]
+
+    K --> T[Twig View]
+
+    S --> U[HTTP Response]
+
+    T --> U
 ```
 
 ## Tech Stack
