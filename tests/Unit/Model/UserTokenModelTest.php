@@ -448,6 +448,7 @@ final class UserTokenModelTest extends TestCase
         $row  = [
         'user_id'     => 42,
         'user_status' => 'active',
+        'user_role'   => 'ADMIN',
         'used'        => 0,
         'used_at'     => null,
         'expires_at'  => '2026-03-28 17:00:00',
@@ -458,7 +459,11 @@ final class UserTokenModelTest extends TestCase
         ->expects($this->once())
         ->method('request')
         ->with(
-            $this->stringContains('WHERE t.token_hash = :hash'),
+            $this->logicalAnd(
+                $this->stringContains('JOIN role r ON r.id = u.role_id'),
+                $this->stringContains('r.name       AS user_role'),
+                $this->stringContains('WHERE t.token_hash = :hash')
+            ),
             [
                 ':hash'    => $hash,
                 ':purpose' => 'remember_me',

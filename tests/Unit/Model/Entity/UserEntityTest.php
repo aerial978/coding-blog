@@ -29,12 +29,14 @@ final class UserEntityTest extends TestCase
         // Hydrate the entity with test data
         $user->hydrate([
             'user_id'    => 1,
+            'role'       => 'MEMBER',
             'email'      => 'test@example.com',
             'created_at' => '2024-01-01'
         ]);
 
         // Validate that each property has been set correctly
         $this->assertEquals(1, $user->getUserId());
+        $this->assertEquals('MEMBER', $user->getRole());
         $this->assertEquals('test@example.com', $user->getEmail());
         $this->assertEquals('2024-01-01', $user->getCreatedAt());
     }

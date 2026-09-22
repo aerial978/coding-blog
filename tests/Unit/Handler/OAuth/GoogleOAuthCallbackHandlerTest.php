@@ -152,6 +152,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->setEmailVerified(true);
 
         $user = $this->activeUser(42, 'michael@example.com');
+        $user->setRole('ADMIN');
 
         $this->mockValidGoogleProfile($profile);
 
@@ -167,12 +168,67 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->with(42)
             ->willReturn($user);
 
-        $this->expectAuthenticatedSession(42);
+        $this->expectAuthenticatedSession(42, 'ADMIN');
 
         $this->responder
             ->expects($this->once())
             ->method('redirect')
             ->with('/');
+
+        $this->handler->handle([
+            'code'  => 'valid_code',
+            'state' => 'valid_state',
+        ]);
+    }
+
+    public function testHandleDoesNotCreateSessionWhenUserRoleIsMissing(): void
+    {
+        $profile = $this->validProfile();
+
+        $oauthAccount = (new OAuthAccountEntity())
+            ->setId(1)
+            ->setUserId(42)
+            ->setProvider('google')
+            ->setProviderUserId('google_123')
+            ->setEmail('michael@example.com')
+            ->setEmailVerified(true);
+
+        $user = $this->activeUser(42, 'michael@example.com');
+
+        $this->mockValidGoogleProfile($profile);
+
+        $this->oauthAccountModel
+            ->expects($this->once())
+            ->method('findByProviderAndProviderUserId')
+            ->with('google', 'google_123')
+            ->willReturn($oauthAccount);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($user);
+
+        $this->session
+            ->expects($this->never())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->never())
+            ->method('set');
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with(
+                'error',
+                MessageManager::get(ErrorCode::AUTH_GOOGLE_TECHNICAL_ERROR)
+            );
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/login');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -233,6 +289,9 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $profile = $this->validProfile();
         $user    = $this->activeUser(77, 'michael@example.com');
 
+        $authenticatedUser = $this->activeUser(77, 'michael@example.com');
+        $authenticatedUser->setRole('MEMBER');
+
         $this->mockValidGoogleProfile($profile);
 
         $this->oauthAccountModel
@@ -252,6 +311,12 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->method('provisionFromGoogleProfile')
             ->with($profile)
             ->willReturn($user);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(77)
+            ->willReturn($authenticatedUser);
 
         $this->oauthAccountModel
             ->expects($this->once())
@@ -370,6 +435,9 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $profile = $this->validProfile();
         $user    = $this->activeUser(42, 'michael@example.com');
 
+        $authenticatedUser = $this->activeUser(42, 'michael@example.com');
+        $authenticatedUser->setRole('MEMBER');
+
         $existingLink = (new OAuthAccountEntity())
             ->setId(2)
             ->setUserId(42)
@@ -379,6 +447,12 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->setEmailVerified(true);
 
         $this->mockValidGoogleProfile($profile);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($authenticatedUser);
 
         $this->oauthAccountModel
             ->expects($this->once())
@@ -454,7 +528,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->willReturn($profile);
     }
 
-    private function expectAuthenticatedSession(int $userId): void
+    private function expectAuthenticatedSession(int $userId, string $role = 'MEMBER'): void
     {
         $this->session
             ->expects($this->once())
@@ -465,7 +539,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => $userId,
-                'roles' => ['USER'],
+                'roles' => [$role],
             ]);
 
         $this->flash

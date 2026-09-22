@@ -158,6 +158,35 @@ final class LoginServiceTest extends TestCase
         $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $result['errors']);
     }
 
+    public function testLoginReturnsTechnicalErrorWhenUserRoleIsMissing(): void
+    {
+        $form = $this->validForm();
+
+        $user = new UserEntity();
+        $user->setUserId(42);
+        $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
+        $user->setStatus('active');
+        // role volontairement absent
+
+        $this->validator->method('validateLogin')->willReturn([]);
+
+        $this->userModel
+            ->method('findAuthByEmail')
+            ->willReturn($user);
+
+        $this->session
+            ->expects($this->never())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->never())
+            ->method('set');
+
+        $result = $this->service->login($form);
+
+        $this->assertSame([ErrorCode::AUTH_TECHNICAL_ERROR], $result['errors']);
+    }
+
     public function testLoginSuccessCreatesSession(): void
     {
         $form = $this->validForm();
@@ -166,6 +195,7 @@ final class LoginServiceTest extends TestCase
         $user->setUserId(42);
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
+        $user->setRole('ADMIN');
 
         $this->validator->method('validateLogin')->willReturn([]);
 
@@ -184,7 +214,7 @@ final class LoginServiceTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => 42,
-                'roles' => ['USER'],
+                'roles' => ['ADMIN'],
             ]);
 
         $this->rememberMeService
@@ -207,6 +237,7 @@ final class LoginServiceTest extends TestCase
         $user->setUserId(1);
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
+        $user->setRole('MEMBER');
 
         $this->validator->method('validateLogin')->willReturn([]);
 
@@ -255,6 +286,7 @@ final class LoginServiceTest extends TestCase
         $user->setUserId(42);
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
+        $user->setRole('MEMBER');
 
         $this->validator->method('validateLogin')->willReturn([]);
 
@@ -273,7 +305,7 @@ final class LoginServiceTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => 42,
-                'roles' => ['USER'],
+                'roles' => ['MEMBER'],
             ]);
 
         $this->rememberMeService
@@ -302,6 +334,7 @@ final class LoginServiceTest extends TestCase
         $user->setUserId(42);
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
+        $user->setRole('MEMBER');
 
         $this->validator->method('validateLogin')->willReturn([]);
 
@@ -320,7 +353,7 @@ final class LoginServiceTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => 42,
-                'roles' => ['USER'],
+                'roles' => ['MEMBER'],
             ]);
 
         $this->rememberMeService
@@ -349,6 +382,7 @@ final class LoginServiceTest extends TestCase
         $user->setUserId(42);
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
+        $user->setRole('MEMBER');
 
         $this->validator->method('validateLogin')->willReturn([]);
 
@@ -367,7 +401,7 @@ final class LoginServiceTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => 42,
-                'roles' => ['USER'],
+                'roles' => ['MEMBER'],
             ]);
 
         $this->rememberMeService
@@ -396,6 +430,7 @@ final class LoginServiceTest extends TestCase
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
         $user->setEmail2faEnabled(true);
+        $user->setRole('MEMBER');
 
         $this->validator->method('validateLogin')->willReturn([]);
 
@@ -447,6 +482,7 @@ final class LoginServiceTest extends TestCase
         $user->setPassword(password_hash('Password123!', PASSWORD_ARGON2I));
         $user->setStatus('active');
         $user->setEmail2faEnabled(true);
+        $user->setRole('MEMBER');
 
         $this->validator->method('validateLogin')->willReturn([]);
 

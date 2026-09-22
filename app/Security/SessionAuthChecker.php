@@ -13,7 +13,7 @@ use App\Security\Contract\AuthCheckerInterface;
  * Stockage attendu dans la session :
  * $_SESSION['user'] = [
  *     'id' => int,
- *     'roles' => ['USER', 'ADMIN'],
+ *     'roles' => ['MEMBER', 'ADMIN'],
  * ];
  */
 final class SessionAuthChecker implements AuthCheckerInterface

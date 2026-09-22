@@ -79,6 +79,7 @@ $router->addMiddleware($psr->get(\App\Middleware\SecurityHeadersMiddleware::clas
 $router->addMiddleware($psr->get(\App\Middleware\RememberMeMiddleware::class));
 $router->addMiddleware($psr->get(\App\Middleware\CsrfMiddleware::class));
 $router->addMiddleware($psr->get(\App\Middleware\AuthenticationMiddleware::class));
+$router->addMiddleware($psr->get(\App\Middleware\AdminAuthorizationMiddleware::class));
 
 // 8) Démarrage
 $router->handleRequest();

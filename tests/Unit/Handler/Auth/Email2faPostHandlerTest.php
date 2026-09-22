@@ -8,6 +8,8 @@ use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
 use App\Handler\Auth\Email2faPostHandler;
 use App\Http\Contract\ResponderInterface;
+use App\Model\Contract\UserModelInterface;
+use App\Model\Entity\UserEntity;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\RememberMeCookieManagerInterface;
@@ -33,6 +35,7 @@ final class Email2faPostHandlerTest extends TestCase
     private RateLimitGuardInterface&MockObject $rateLimitGuard;
     private RememberMeServiceInterface&MockObject $rememberMeService;
     private RememberMeCookieManagerInterface&MockObject $rememberMeManager;
+    private UserModelInterface&MockObject $userModel;
 
     private Email2faPostHandler $handler;
 
@@ -42,6 +45,7 @@ final class Email2faPostHandlerTest extends TestCase
 
         $this->email2faService      = $this->createMock(Email2faServiceInterface::class);
         $this->pendingSession       = $this->createMock(Email2faPendingSessionInterface::class);
+        $this->userModel            = $this->createMock(UserModelInterface::class);
         $this->session              = $this->createMock(SessionInterface::class);
         $this->flash                = $this->createMock(FlashInterface::class);
         $this->responder            = $this->createMock(ResponderInterface::class);
@@ -55,6 +59,7 @@ final class Email2faPostHandlerTest extends TestCase
         $this->handler = new Email2faPostHandler(
             $this->email2faService,
             $this->pendingSession,
+            $this->userModel,
             $this->session,
             $this->flash,
             $this->responder,
@@ -360,6 +365,16 @@ final class Email2faPostHandlerTest extends TestCase
             ->with(42, '123456')
             ->willReturn(Email2faService::VERIFY_SUCCESS);
 
+        $user = (new UserEntity())
+            ->setUserId(42)
+            ->setRole('ADMIN');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($user);
+
         $this->pendingSession
             ->expects($this->once())
             ->method('wasRememberMeRequested')
@@ -374,7 +389,7 @@ final class Email2faPostHandlerTest extends TestCase
             ->method('set')
             ->with('user', [
                 'id'    => 42,
-                'roles' => ['USER'],
+                'roles' => ['ADMIN'],
             ]);
 
         $this->rememberMeService
@@ -398,6 +413,57 @@ final class Email2faPostHandlerTest extends TestCase
         $this->handler->handle($this->validForm());
     }
 
+    public function testSuccessfulVerificationDoesNotCreateSessionWhenUserRoleIsMissing(): void
+    {
+        $this->mockValidPendingSession();
+        $this->mockValidCsrf();
+        $this->mockPassingGuards();
+
+        $this->email2faService
+            ->expects($this->once())
+            ->method('verifyCode')
+            ->with(42, '123456')
+            ->willReturn(Email2faService::VERIFY_SUCCESS);
+
+        $user = (new UserEntity())
+            ->setUserId(42);
+        // role volontairement absent
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($user);
+
+        $this->session
+            ->expects($this->never())
+            ->method('regenerateAndDeleteOld');
+
+        $this->session
+            ->expects($this->never())
+            ->method('set');
+
+        $this->rememberMeService
+            ->expects($this->never())
+            ->method('createRememberMeToken');
+
+        $this->pendingSession
+            ->expects($this->once())
+            ->method('clear');
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('error', 'Une erreur est survenue. Veuillez vous reconnecter.');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/login');
+
+        $this->handler->handle($this->validForm());
+    }
+
     public function testSuccessfulVerificationCreatesRememberMeCookieWhenRequested(): void
     {
         $this->mockValidPendingSession();
@@ -407,6 +473,16 @@ final class Email2faPostHandlerTest extends TestCase
         $this->email2faService
             ->method('verifyCode')
             ->willReturn(Email2faService::VERIFY_SUCCESS);
+
+        $user = (new UserEntity())
+            ->setUserId(42)
+            ->setRole('MEMBER');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($user);
 
         $this->pendingSession
             ->expects($this->once())
@@ -445,6 +521,16 @@ final class Email2faPostHandlerTest extends TestCase
         $this->email2faService
             ->method('verifyCode')
             ->willReturn(Email2faService::VERIFY_SUCCESS);
+
+        $user = (new UserEntity())
+            ->setUserId(42)
+            ->setRole('MEMBER');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(42)
+            ->willReturn($user);
 
         $this->pendingSession
             ->expects($this->once())

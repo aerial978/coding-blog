@@ -27,6 +27,16 @@ class ErrorController
     }
 
     /**
+     * Displays a 403 page.
+     */
+    public function forbidden(): void
+    {
+        http_response_code(403);
+
+        $this->responder->render('errors/403.html.twig');
+    }
+
+    /**
      * Displays a 500 page.
      */
     public function serverError(?string $errorId = null): void

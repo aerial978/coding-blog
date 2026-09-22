@@ -163,18 +163,20 @@ class UserModel implements UserModelInterface
     public function findOneById(int $userId): ?UserEntity
     {
         $sql = "SELECT
-                    id AS user_id,
-                    username,
-                    slug,
-                    email,
-                    password,
-                    status,
-                    email_2fa_enabled,
-                    created_at,
-                    updated_at
-                FROM {$this->table}
-                WHERE id = :user_id
-                LIMIT 1";
+                u.id AS user_id,
+                u.username,
+                u.slug,
+                u.email,
+                u.password,
+                u.status,
+                u.email_2fa_enabled,
+                u.created_at,
+                u.updated_at,
+                r.name AS role
+            FROM {$this->table} u
+            INNER JOIN role r ON r.id = u.role_id
+            WHERE u.id = :user_id
+            LIMIT 1";
 
         $stmt = $this->sqlHelper->request($sql, [
             ':user_id' => $userId,
@@ -203,6 +205,7 @@ class UserModel implements UserModelInterface
     public function createUser(UserEntity $user): int
     {
         $sql = "INSERT INTO {$this->table} (
+                    role_id,
                     username,
                     slug,
                     email,
@@ -211,6 +214,7 @@ class UserModel implements UserModelInterface
                     updated_at,
                     status
                 ) VALUES (
+                    (SELECT id FROM role WHERE name = 'MEMBER'),
                     :username,
                     :slug,
                     :email,
@@ -255,6 +259,7 @@ class UserModel implements UserModelInterface
     public function createOAuthUser(UserEntity $user): int
     {
         $sql = "INSERT INTO {$this->table} (
+                    role_id,
                     username,
                     slug,
                     email,
@@ -264,6 +269,7 @@ class UserModel implements UserModelInterface
                     status,
                     email_2fa_enabled
                 ) VALUES (
+                    (SELECT id FROM role WHERE name = 'MEMBER'),
                     :username,
                     :slug,
                     :email,
@@ -296,14 +302,16 @@ class UserModel implements UserModelInterface
     public function findAuthByEmail(string $email): ?UserEntity
     {
         $sql = "SELECT
-                    id AS user_id,
-                    username,
-                    email,
-                    password,
-                    status,
-                    email_2fa_enabled
-                FROM {$this->table}
-                WHERE email = :email
+                    u.id AS user_id,
+                    u.username,
+                    u.email,
+                    u.password,
+                    u.status,
+                    u.email_2fa_enabled,
+                    r.name AS role
+                FROM {$this->table} u
+                INNER JOIN role r ON r.id = u.role_id
+                WHERE u.email = :email
                 LIMIT 1";
 
         $stmt = $this->sqlHelper->request($sql, [':email' => $email]);
@@ -320,15 +328,17 @@ class UserModel implements UserModelInterface
     public function findAuthByUsername(string $username): ?UserEntity
     {
         $sql = "SELECT
-                    id AS user_id,
-                    username,
-                    email,
-                    password,
-                    status,
-                    email_2fa_enabled
-                FROM {$this->table}
-                WHERE username = :username
-                LIMIT 1";
+                u.id AS user_id,
+                u.username,
+                u.email,
+                u.password,
+                u.status,
+                u.email_2fa_enabled,
+                r.name AS role
+            FROM {$this->table} u
+            INNER JOIN role r ON r.id = u.role_id
+            WHERE u.username = :username
+            LIMIT 1";
 
         $stmt = $this->sqlHelper->request($sql, [':username' => $username]);
 

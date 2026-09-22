@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Container\Provider;
 
+use App\Controller\ErrorController;
 use App\Core\AppConfig;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\RateLimiterFactoryInterface;
@@ -23,6 +24,7 @@ use App\Http\Request;
 use App\Infrastructure\Mail\DummyMailer;
 use App\Infrastructure\Mail\MailjetMailer;
 use App\Log\LogContextNormalizer;
+use App\Middleware\AdminAuthorizationMiddleware;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\RememberMeMiddleware;
@@ -381,6 +383,15 @@ final class SystemServiceProvider
                 $responder = $container->get(ResponderInterface::class);
 
                 return new AuthenticationMiddleware($auth, $flash, $responder);
+            },
+
+            AdminAuthorizationMiddleware::class => static function (ContainerInterface $container): AdminAuthorizationMiddleware {
+                /** @var AuthCheckerInterface $auth */
+                $auth = $container->get(AuthCheckerInterface::class);
+                /** @var ErrorController $errorController */
+                $errorController = $container->get(ErrorController::class);
+
+                return new AdminAuthorizationMiddleware($auth, $errorController);
             },
 
             CsrfMiddleware::class => static function (ContainerInterface $container): CsrfMiddleware {

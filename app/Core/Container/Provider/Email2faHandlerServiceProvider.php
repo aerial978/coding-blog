@@ -99,6 +99,9 @@ final class Email2faHandlerServiceProvider
                     Email2faPendingSessionInterface::class
                 );
 
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
 
@@ -135,6 +138,7 @@ final class Email2faHandlerServiceProvider
                 return new Email2faPostHandler(
                     $email2faService,
                     $pendingSession,
+                    $userModel,
                     $session,
                     $flash,
                     $responder,
