@@ -6,7 +6,9 @@ namespace Tests\Unit\Http;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
+use App\Core\FormId;
 use App\Http\ViewContextProvider;
+use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -17,16 +19,20 @@ final class ViewContextProviderTest extends TestCase
 
     private ViewContextProvider $provider;
 
+    private CsrfTokenInterface&MockObject $csrf;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->flash   = $this->createMock(FlashInterface::class);
         $this->session = $this->createMock(SessionInterface::class);
+        $this->csrf    = $this->createMock(CsrfTokenInterface::class);
 
         $this->provider = new ViewContextProvider(
             $this->flash,
             $this->session,
+            $this->csrf,
         );
     }
 
@@ -36,7 +42,7 @@ final class ViewContextProviderTest extends TestCase
 
         $user = [
             'id'    => 42,
-            'roles' => ['USER'],
+            'roles' => ['MEMBER'],
         ];
 
         $flashes = [
@@ -45,6 +51,12 @@ final class ViewContextProviderTest extends TestCase
             'warning' => [],
             'info'    => [],
         ];
+
+        $this->csrf
+            ->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::LOGOUT)
+            ->willReturn('logout-csrf-token');
 
         $this->session
             ->expects($this->once())
@@ -67,6 +79,7 @@ final class ViewContextProviderTest extends TestCase
         $result = $this->provider->getContext();
 
         $this->assertSame($flashes, $result['flashes']);
+        $this->assertSame('logout-csrf-token', $result['logout_csrf_token']);
         $this->assertSame($user, $result['auth_user']);
         $this->assertTrue($result['is_authenticated']);
         $this->assertTrue($result['email_2fa_pending']);
@@ -84,6 +97,10 @@ final class ViewContextProviderTest extends TestCase
             'warning' => [],
             'info'    => [],
         ];
+
+        $this->csrf
+            ->expects($this->never())
+            ->method('generateToken');
 
         $this->session
             ->expects($this->once())
@@ -106,6 +123,7 @@ final class ViewContextProviderTest extends TestCase
         $result = $this->provider->getContext();
 
         $this->assertSame($flashes, $result['flashes']);
+        $this->assertSame('', $result['logout_csrf_token']);
         $this->assertNull($result['auth_user']);
         $this->assertFalse($result['is_authenticated']);
         $this->assertFalse($result['email_2fa_pending']);
@@ -123,6 +141,10 @@ final class ViewContextProviderTest extends TestCase
             'warning' => [],
             'info'    => [],
         ];
+
+        $this->csrf
+            ->expects($this->never())
+            ->method('generateToken');
 
         $this->session
             ->expects($this->once())
@@ -143,6 +165,7 @@ final class ViewContextProviderTest extends TestCase
 
         $result = $this->provider->getContext();
 
+        $this->assertSame('', $result['logout_csrf_token']);
         $this->assertNull($result['auth_user']);
         $this->assertFalse($result['is_authenticated']);
         $this->assertFalse($result['show_header']);

@@ -8,14 +8,12 @@ use App\Controller\AccountController;
 use App\Controller\ErrorController;
 use App\Core\Contract\FlashInterface;
 use App\Core\ControllerFactoryInterface;
-use App\Core\FormId;
 use App\Core\Router;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Middleware\AuthenticationMiddleware;
 use App\Model\Entity\UserEntity;
 use App\Security\Contract\AuthCheckerInterface;
-use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -101,7 +99,6 @@ final class AccountPageTest extends TestCase
         $authChecker    = $this->createMock(AuthCheckerInterface::class);
         $flash          = $this->createMock(FlashInterface::class);
         $responder      = $this->createMock(ResponderInterface::class);
-        $csrf           = $this->createMock(CsrfTokenInterface::class);
         $accountService = $this->createMock(AccountServiceInterface::class);
 
         $user = (new UserEntity())->hydrate([
@@ -125,12 +122,6 @@ final class AccountPageTest extends TestCase
             ->method('getCurrentUser')
             ->willReturn($user);
 
-        $csrf
-            ->expects($this->once())
-            ->method('generateToken')
-            ->with(FormId::LOGOUT)
-            ->willReturn('logout-csrf-token');
-
         $responder
             ->expects($this->once())
             ->method('render')
@@ -143,7 +134,6 @@ final class AccountPageTest extends TestCase
                         'email'             => 'michael@example.com',
                         'email_2fa_enabled' => true,
                     ],
-                    'logout_csrf_token' => 'logout-csrf-token',
                 ]
             );
 
@@ -152,7 +142,6 @@ final class AccountPageTest extends TestCase
             ->method('redirect');
 
         $controller = new AccountController(
-            $csrf,
             $responder,
             $accountService
         );
@@ -180,7 +169,6 @@ final class AccountPageTest extends TestCase
         $authChecker    = $this->createMock(AuthCheckerInterface::class);
         $flash          = $this->createMock(FlashInterface::class);
         $responder      = $this->createMock(ResponderInterface::class);
-        $csrf           = $this->createMock(CsrfTokenInterface::class);
         $accountService = $this->createMock(AccountServiceInterface::class);
 
         $authChecker
@@ -197,10 +185,6 @@ final class AccountPageTest extends TestCase
             ->method('getCurrentUser')
             ->willReturn(null);
 
-        $csrf
-            ->expects($this->never())
-            ->method('generateToken');
-
         $responder
             ->expects($this->never())
             ->method('render');
@@ -211,7 +195,6 @@ final class AccountPageTest extends TestCase
             ->with('/login');
 
         $controller = new AccountController(
-            $csrf,
             $responder,
             $accountService
         );

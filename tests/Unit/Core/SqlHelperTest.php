@@ -32,6 +32,8 @@ final class SqlHelperTest extends UnitTestCase
      */
     private string $dummyUsername;
 
+    private int $memberRoleId;
+
     /**
      * Set up the test environment.
      *
@@ -41,9 +43,22 @@ final class SqlHelperTest extends UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
         $pdo             = (new Database())->getConnection();
         $this->sqlHelper = new SqlHelper($pdo);
 
+        $stmt = $pdo->prepare(
+            'SELECT id FROM role WHERE name = :name'
+        );
+        $stmt->execute(['name' => 'MEMBER']);
+
+        $roleId = $stmt->fetchColumn();
+
+        if ($roleId === false) {
+            $this->fail('The MEMBER role does not exist in the test database.');
+        }
+
+        $this->memberRoleId  = (int) $roleId;
         $this->dummyUsername = 'test_user_' . uniqid();
     }
 
@@ -70,7 +85,8 @@ final class SqlHelperTest extends UnitTestCase
     public function testRequestWithoutParameters(): void
     {
         $email = $this->dummyUsername . '@example.com';
-        $sql   = "INSERT INTO user (username, email) VALUES ('{$this->dummyUsername}', '$email')";
+        $sql   = "INSERT INTO user (username, email, role_id)
+        VALUES ('{$this->dummyUsername}', '$email', {$this->memberRoleId})";
         $stmt  = $this->sqlHelper->request($sql);
 
         $inserted = $stmt->rowCount() > 0;
@@ -92,12 +108,14 @@ final class SqlHelperTest extends UnitTestCase
      */
     public function testRequestWithParameters(): void
     {
-        $sql    = 'INSERT INTO user (username, email) VALUES (:username, :email)';
+        $sql = 'INSERT INTO user (username, email, role_id)
+        VALUES (:username, :email, :role_id)';
+
         $params = [
             'username' => $this->dummyUsername,
-            'email'    => $this->dummyUsername . '@example.com'
+            'email'    => $this->dummyUsername . '@example.com',
+            'role_id'  => $this->memberRoleId,
         ];
-
         $stmt = $this->sqlHelper->request($sql, $params);
         $this->assertTrue($stmt->rowCount() > 0, 'User insertion failed.');
 

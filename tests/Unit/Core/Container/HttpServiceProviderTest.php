@@ -11,6 +11,7 @@ use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Responder;
 use App\Http\ViewContextProvider;
+use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -58,8 +59,9 @@ final class HttpServiceProviderTest extends TestCase
         $definitions = HttpServiceProvider::getDefinitions();
 
         $container = $this->makeContainer([
-            FlashInterface::class   => $this->createMock(FlashInterface::class),
-            SessionInterface::class => $this->createMock(SessionInterface::class),
+            FlashInterface::class     => $this->createMock(FlashInterface::class),
+            SessionInterface::class   => $this->createMock(SessionInterface::class),
+            CsrfTokenInterface::class => $this->createMock(CsrfTokenInterface::class),
         ]);
 
         $provider = $definitions[ViewContextProvider::class]($container);
@@ -73,7 +75,8 @@ final class HttpServiceProviderTest extends TestCase
 
         $contextProvider = new ViewContextProvider(
             $this->createMock(FlashInterface::class),
-            $this->createMock(SessionInterface::class)
+            $this->createMock(SessionInterface::class),
+            $this->createMock(CsrfTokenInterface::class)
         );
 
         $container = $this->makeContainer([

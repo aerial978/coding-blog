@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\AccountController;
+use App\Controller\Admin\UserController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
 use App\Controller\Email2faController;
@@ -30,6 +31,7 @@ return [
         '/reset-password'       => [ResetPasswordController::class, 'resetPassword'],
         '/debug/whoami'         => [DebugController::class, 'whoami'],
         '/account'              => [AccountController::class, 'index'],
+        '/admin/users'          => [UserController::class, 'index'],
     ],
     Router::METHOD_POST => [
         '/register'            => [RegisterController::class, 'register'],

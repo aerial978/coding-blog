@@ -1,0 +1,44 @@
+{% extends "templates/layouts/base.html.twig" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+{% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
+
+<section>
+    <h2>Gestion des utilisateurs</h2>
+
+    {% if users is empty %}
+        <p>Aucun utilisateur enregistré.</p>
+    {% else %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Nom d’utilisateur</th>
+                        <th scope="col">Adresse e-mail</th>
+                        <th scope="col">Rôle</th>
+                        <th scope="col">Statut</th>
+                        <th scope="col">Date de création</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.user_id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>{{ user.status }}</td>
+                            <td>{{ user.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</section>
+
+{% endblock %}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Container\Provider;
 
 use App\Controller\AccountController;
+use App\Controller\Admin\UserController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
 use App\Controller\Email2faController;
@@ -38,8 +39,6 @@ use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
-use App\Security\Contract\AuthCheckerInterface;
-use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
 use Psr\Container\ContainerInterface;
 
@@ -65,6 +64,7 @@ final class ControllerServiceProvider
         return array_merge(
             self::getCoreControllerDefinitions(),
             self::getAuthControllerDefinitions(),
+            self::getAdminControllerDefinitions(),
             self::getUtilityControllerDefinitions(),
         );
     }
@@ -76,19 +76,10 @@ final class ControllerServiceProvider
     {
         return [
             HomeController::class => static function (ContainerInterface $container): HomeController {
-                /** @var UserModelInterface $userModel */
-                $userModel = $container->get(UserModelInterface::class);
-
-                /** @var AuthCheckerInterface $authChecker */
-                $authChecker = $container->get(AuthCheckerInterface::class);
-
-                /** @var CsrfTokenInterface $csrf */
-                $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
 
-                return new HomeController($userModel, $authChecker, $csrf, $responder);
+                return new HomeController($responder);
             },
 
             ErrorController::class => static function (ContainerInterface $container): ErrorController {
@@ -99,9 +90,6 @@ final class ControllerServiceProvider
             },
 
             AccountController::class => static function (ContainerInterface $container): AccountController {
-                /** @var CsrfTokenInterface $csrf */
-                $csrf = $container->get(CsrfTokenInterface::class);
-
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
 
@@ -109,7 +97,6 @@ final class ControllerServiceProvider
                 $accountService = $container->get(AccountServiceInterface::class);
 
                 return new AccountController(
-                    $csrf,
                     $responder,
                     $accountService,
                 );
@@ -130,6 +117,27 @@ final class ControllerServiceProvider
             self::getEmail2faControllerDefinitions(),
             self::getLogoutControllerDefinitions(),
         );
+    }
+
+    /**
+     * @return array<class-string, \Closure(ContainerInterface):object>
+     */
+    private static function getAdminControllerDefinitions(): array
+    {
+        return [
+            UserController::class => static function (ContainerInterface $container): UserController {
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new UserController(
+                    $userModel,
+                    $responder,
+                );
+            },
+        ];
     }
 
     /**

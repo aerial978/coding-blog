@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Core\Container;
 
 use App\Controller\AccountController;
+use App\Controller\Admin\UserController;
 use App\Controller\ConfirmAccountController;
 use App\Controller\DebugController;
 use App\Controller\Email2faController;
@@ -121,6 +122,7 @@ final class ControllerServiceProviderTest extends TestCase
         $this->assertArrayHasKey(HomeController::class, $definitions);
         $this->assertArrayHasKey(ErrorController::class, $definitions);
         $this->assertArrayHasKey(AccountController::class, $definitions);
+        $this->assertArrayHasKey(UserController::class, $definitions);
 
         $this->assertArrayHasKey(RegisterController::class, $definitions);
         $this->assertArrayHasKey(ConfirmAccountController::class, $definitions);
@@ -153,6 +155,16 @@ final class ControllerServiceProviderTest extends TestCase
         $googleOAuth = $definitions[GoogleOAuthController::class]($container);
 
         $this->assertInstanceOf(GoogleOAuthController::class, $googleOAuth);
+    }
+
+    public function testAdminControllerDefinitionsAreBuildable(): void
+    {
+        $definitions = ControllerServiceProvider::getDefinitions();
+        $container   = $this->makeContainer($this->baseServices());
+
+        $user = $definitions[UserController::class]($container);
+
+        $this->assertInstanceOf(UserController::class, $user);
     }
 
     public function testAuthControllerDefinitionsAreBuildable(): void

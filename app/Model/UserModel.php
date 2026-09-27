@@ -44,7 +44,19 @@ class UserModel implements UserModelInterface
      */
     public function findAll(): array
     {
-        $stmt = $this->sqlHelper->request("SELECT id AS user_id, username, email, created_at FROM {$this->table}");
+        $sql = <<<SQL
+        SELECT
+            u.id AS user_id,
+            u.username,
+            u.email,
+            r.name AS role,
+            u.status,
+            u.created_at
+        FROM {$this->table} u
+        INNER JOIN role r ON r.id = u.role_id
+        SQL;
+
+        $stmt = $this->sqlHelper->request($sql);
 
         /** @var list<array<string,mixed>> $results */
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -55,6 +67,7 @@ class UserModel implements UserModelInterface
         foreach ($results as $row) {
             $users[] = (new UserEntity())->hydrate($row);
         }
+
         return $users;
     }
 

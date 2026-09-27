@@ -39,6 +39,6 @@ abstract class BaseTestCase extends TestCase
         $_ENV['DB_CHARSET']   = 'utf8mb4';
 
         // Load environment configuration for the test environment
-        EnvLoader::load(dirname(__DIR__, 2) . '/');
+        EnvLoader::load(dirname(__DIR__) . '/');
     }
 }
