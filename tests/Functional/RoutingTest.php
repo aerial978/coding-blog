@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Functional;
 
+use App\Controller\Admin\UserController;
 use App\Controller\ErrorController;
 use App\Core\ControllerFactoryInterface;
 use App\Core\Router;
@@ -82,5 +83,19 @@ class RoutingTest extends TestCase
         $this->assertIsString($output);
         $this->assertStringContainsString('Home page', $output);
         $this->assertStringContainsString('<!DOCTYPE html>', $output);
+    }
+
+    public function testAdminUserListRouteIsConfigured(): void
+    {
+        /** @var array<string, array<string, array{0: class-string, 1: string}>> $routes */
+        $routes = require __DIR__ . '/../../app/config/routes.php';
+
+        $this->assertArrayHasKey('GET', $routes);
+        $this->assertArrayHasKey('/admin/users', $routes['GET']);
+
+        $this->assertSame(
+            [UserController::class, 'index'],
+            $routes['GET']['/admin/users']
+        );
     }
 }

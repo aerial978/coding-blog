@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Responder;
 use App\Http\ViewContextProvider;
+use App\Security\Contract\CsrfTokenInterface;
 use Psr\Container\ContainerInterface;
 
 final class HttpServiceProvider
@@ -27,7 +28,10 @@ final class HttpServiceProvider
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
 
-                return new ViewContextProvider($flash, $session);
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+
+                return new ViewContextProvider($flash, $session, $csrf);
             },
 
             Responder::class => static function (ContainerInterface $container): Responder {

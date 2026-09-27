@@ -8,22 +8,40 @@ use App\Core\Database;
 use App\Core\SqlHelper;
 use App\Model\Entity\UserEntity;
 use App\Model\UserModel;
-use PHPUnit\Framework\TestCase;
+use Tests\BaseTestCase;
 
-final class UserModelIntegrationTest extends TestCase
+final class UserModelIntegrationTest extends BaseTestCase
 {
     private string $dummyUsername;
 
     protected function setUp(): void
     {
         parent::setUp();
+
         $this->dummyUsername = 'test_user_' . uniqid();
 
-        $pdo  = (new Database())->getConnection();
-        $stmt = $pdo->prepare('INSERT INTO user (username, email) VALUES (:username, :email)');
+        $pdo = (new Database())->getConnection();
+
+        $stmt = $pdo->prepare(
+            'SELECT id FROM role WHERE name = :name'
+        );
+        $stmt->execute(['name' => 'MEMBER']);
+
+        $roleId = $stmt->fetchColumn();
+
+        if ($roleId === false) {
+            $this->fail('The MEMBER role does not exist in the test database.');
+        }
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO user (username, email, role_id)
+            VALUES (:username, :email, :role_id)'
+        );
+
         $stmt->execute([
             'username' => $this->dummyUsername,
             'email'    => $this->dummyUsername . '@example.com',
+            'role_id'  => $roleId,
         ]);
     }
 

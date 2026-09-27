@@ -6,9 +6,11 @@ namespace Tests\Unit\Http;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
+use App\Core\FormId;
 use App\Core\View;
 use App\Http\Responder;
 use App\Http\ViewContextProvider;
+use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -17,6 +19,7 @@ final class ResponderTest extends TestCase
     private View&MockObject $view;
     private FlashInterface&MockObject $flash;
     private SessionInterface&MockObject $session;
+    private CsrfTokenInterface&MockObject $csrf;
 
     private TestableResponder $responder;
 
@@ -29,10 +32,12 @@ final class ResponderTest extends TestCase
         $this->view    = $this->createMock(View::class);
         $this->flash   = $this->createMock(FlashInterface::class);
         $this->session = $this->createMock(SessionInterface::class);
+        $this->csrf    = $this->createMock(CsrfTokenInterface::class);
 
         $contextProvider = new ViewContextProvider(
             $this->flash,
             $this->session,
+            $this->csrf,
         );
 
         $this->responder = new TestableResponder(
@@ -76,6 +81,10 @@ final class ResponderTest extends TestCase
             'errors' => [],
         ];
 
+        $this->csrf
+            ->expects($this->never())
+            ->method('generateToken');
+
         $this->view
             ->expects($this->once())
             ->method('render')
@@ -87,6 +96,7 @@ final class ResponderTest extends TestCase
                     $this->assertFalse($mergedData['is_authenticated']);
                     $this->assertFalse($mergedData['email_2fa_pending']);
                     $this->assertFalse($mergedData['show_header']);
+                    $this->assertSame('', $mergedData['logout_csrf_token']);
                     $this->assertSame('site-key', $mergedData['turnstile_site_key']);
 
                     $this->assertSame($data['title'], $mergedData['title']);
@@ -132,6 +142,12 @@ final class ResponderTest extends TestCase
             ->with('auth_2fa_pending')
             ->willReturn(false);
 
+        $this->csrf
+            ->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::LOGOUT)
+            ->willReturn('logout-csrf-token');
+
         $this->view
             ->expects($this->once())
             ->method('render')
@@ -139,6 +155,10 @@ final class ResponderTest extends TestCase
                 $template,
                 $this->callback(function (array $mergedData): bool {
                     $this->assertFalse($mergedData['show_header']);
+                    $this->assertSame(
+                        'logout-csrf-token',
+                        $mergedData['logout_csrf_token']
+                    );
 
                     return true;
                 })

@@ -5,50 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit\Controller;
 
 use App\Controller\HomeController;
-use App\Core\FormId;
 use App\Http\Contract\ResponderInterface;
-use App\Model\Entity\UserEntity;
-use App\Model\UserModel;
-use App\Security\Contract\AuthCheckerInterface;
-use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class HomeControllerTest extends TestCase
 {
-    /**
-     * @return UserModel&MockObject
-     */
-    private function mockUserModel(): UserModel
-    {
-        /** @var UserModel&MockObject $mock */
-        $mock = $this->createMock(UserModel::class);
-
-        return $mock;
-    }
-
-    /**
-     * @return AuthCheckerInterface&MockObject
-     */
-    private function mockAuthChecker(): AuthCheckerInterface
-    {
-        /** @var AuthCheckerInterface&MockObject $mock */
-        $mock = $this->createMock(AuthCheckerInterface::class);
-
-        return $mock;
-    }
-
-    /**
-     * @return CsrfTokenInterface&MockObject
-     */
-    private function mockCsrf(): CsrfTokenInterface
-    {
-        /** @var CsrfTokenInterface&MockObject $mock */
-        $mock = $this->createMock(CsrfTokenInterface::class);
-
-        return $mock;
-    }
-
     /**
      * @return ResponderInterface&MockObject
      */
@@ -60,85 +22,9 @@ final class HomeControllerTest extends TestCase
         return $mock;
     }
 
-    public function testIndexRendersHomeTemplateWithUsersAndStaticData(): void
+    public function testIndexRendersHomeTemplateWithStaticData(): void
     {
-        $authChecker = $this->mockAuthChecker();
-        $csrf        = $this->mockCsrf();
-        $responder   = $this->mockResponder();
-
-        $users = [
-            (new UserEntity())->setUserId(1)->setUsername('Alice')->setEmail('a@example.test'),
-            (new UserEntity())->setUserId(2)->setUsername('Bob')->setEmail('b@example.test'),
-        ];
-
-        $userModel = $this->mockUserModel();
-
-        $userModel
-            ->expects($this->once())
-            ->method('findAll')
-            ->willReturn($users);
-
-        $authChecker
-            ->expects($this->once())
-            ->method('isAuthenticated')
-            ->willReturn(false);
-
-        $csrf
-            ->expects($this->never())
-            ->method('generateToken');
-
-        $responder
-            ->expects($this->once())
-            ->method('render')
-            ->with(
-                'home/index.html.twig',
-                $this->callback(function (array $data) use ($users): bool {
-                    $this->assertSame('Home', $data['title']);
-                    $this->assertSame('This is the home page.', $data['message']);
-                    $this->assertSame($users, $data['users']);
-                    $this->assertTrue($data['show_header']);
-                    $this->assertSame('', $data['logout_csrf_token']);
-
-                    $this->assertArrayNotHasKey('flashes', $data);
-                    $this->assertArrayNotHasKey('is_authenticated', $data);
-
-                    return true;
-                })
-            );
-
-        $controller = new HomeController(
-            $userModel,
-            $authChecker,
-            $csrf,
-            $responder,
-        );
-
-        $controller->index();
-    }
-
-    public function testIndexAddsLogoutTokenWhenUserIsAuthenticated(): void
-    {
-        $authChecker = $this->mockAuthChecker();
-        $csrf        = $this->mockCsrf();
-        $responder   = $this->mockResponder();
-
-        $userModel = $this->mockUserModel();
-
-        $userModel
-            ->expects($this->once())
-            ->method('findAll')
-            ->willReturn([]);
-
-        $authChecker
-            ->expects($this->once())
-            ->method('isAuthenticated')
-            ->willReturn(true);
-
-        $csrf
-            ->expects($this->once())
-            ->method('generateToken')
-            ->with(FormId::LOGOUT)
-            ->willReturn('logout-token-123');
+        $responder = $this->mockResponder();
 
         $responder
             ->expects($this->once())
@@ -146,9 +32,12 @@ final class HomeControllerTest extends TestCase
             ->with(
                 'home/index.html.twig',
                 $this->callback(function (array $data): bool {
+                    $this->assertSame('Home', $data['title']);
+                    $this->assertSame('This is the home page.', $data['message']);
                     $this->assertTrue($data['show_header']);
-                    $this->assertSame('logout-token-123', $data['logout_csrf_token']);
 
+                    $this->assertArrayNotHasKey('users', $data);
+                    $this->assertArrayNotHasKey('logout_csrf_token', $data);
                     $this->assertArrayNotHasKey('flashes', $data);
                     $this->assertArrayNotHasKey('is_authenticated', $data);
 
@@ -156,12 +45,7 @@ final class HomeControllerTest extends TestCase
                 })
             );
 
-        $controller = new HomeController(
-            $userModel,
-            $authChecker,
-            $csrf,
-            $responder,
-        );
+        $controller = new HomeController($responder);
 
         $controller->index();
     }

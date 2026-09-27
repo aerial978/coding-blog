@@ -6,6 +6,8 @@ namespace App\Http;
 
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
+use App\Core\FormId;
+use App\Security\Contract\CsrfTokenInterface;
 
 final class ViewContextProvider
 {
@@ -15,6 +17,7 @@ final class ViewContextProvider
     public function __construct(
         private readonly FlashInterface $flash,
         private readonly SessionInterface $session,
+        private readonly CsrfTokenInterface $csrf,
     ) {
     }
 
@@ -31,6 +34,9 @@ final class ViewContextProvider
             'is_authenticated'    => $user !== null,
             'email_2fa_pending'   => $this->session->has(self::EMAIL_2FA_PENDING_KEY),
             'show_header'         => $user !== null,
+            'logout_csrf_token'   => $user !== null
+                ? $this->csrf->generateToken(FormId::LOGOUT)
+                : '',
             'turnstile_site_key'  => $_ENV['TURNSTILE_SITE_KEY'] ?? '',
         ];
     }

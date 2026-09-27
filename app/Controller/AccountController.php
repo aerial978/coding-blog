@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Core\FormId;
 use App\Http\Contract\ResponderInterface;
-use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
 
 final class AccountController
 {
     public function __construct(
-        private CsrfTokenInterface $csrf,
         private ResponderInterface $responder,
         private AccountServiceInterface $accountService,
     ) {
@@ -34,7 +31,6 @@ final class AccountController
                 'email'             => $user->getEmail(),
                 'email_2fa_enabled' => $user->isEmail2faEnabled(),
             ],
-            'logout_csrf_token' => $this->csrf->generateToken(FormId::LOGOUT),
         ]);
     }
 }

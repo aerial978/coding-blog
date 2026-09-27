@@ -34,21 +34,32 @@ final class UserModelTest extends TestCase
                 'user_id'    => 1,
                 'username'   => 'alice',
                 'email'      => 'alice@example.com',
+                'role'       => 'ADMIN',
+                'status'     => 'active',
                 'created_at' => '2026-01-01 10:00:00',
             ],
             [
                 'user_id'    => 2,
                 'username'   => 'bob',
                 'email'      => 'bob@example.com',
+                'role'       => 'MEMBER',
+                'status'     => 'inactive',
                 'created_at' => '2026-01-02 11:00:00',
             ],
         ];
 
         $this->sqlHelper
-            ->expects($this->once())
-            ->method('request')
-            ->with('SELECT id AS user_id, username, email, created_at FROM user')
-            ->willReturn($this->statement);
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->logicalAnd(
+                $this->stringContains('FROM user u'),
+                $this->stringContains('INNER JOIN role r ON r.id = u.role_id'),
+                $this->stringContains('r.name AS role'),
+                $this->stringContains('u.status')
+            )
+        )
+        ->willReturn($this->statement);
 
         $this->statement
             ->expects($this->once())
@@ -64,10 +75,16 @@ final class UserModelTest extends TestCase
         $this->assertSame(1, $result[0]->getUserId());
         $this->assertSame('alice', $result[0]->getUsername());
         $this->assertSame('alice@example.com', $result[0]->getEmail());
+        $this->assertSame('ADMIN', $result[0]->getRole());
+        $this->assertSame('active', $result[0]->getStatus());
+        $this->assertSame('2026-01-01 10:00:00', $result[0]->getCreatedAt());
 
         $this->assertSame(2, $result[1]->getUserId());
         $this->assertSame('bob', $result[1]->getUsername());
         $this->assertSame('bob@example.com', $result[1]->getEmail());
+        $this->assertSame('MEMBER', $result[1]->getRole());
+        $this->assertSame('inactive', $result[1]->getStatus());
+        $this->assertSame('2026-01-02 11:00:00', $result[1]->getCreatedAt());
     }
 
     public function testFindAllReturnsEmptyArrayWhenNoUsersFound(): void
@@ -75,7 +92,14 @@ final class UserModelTest extends TestCase
         $this->sqlHelper
             ->expects($this->once())
             ->method('request')
-            ->with('SELECT id AS user_id, username, email, created_at FROM user')
+            ->with(
+                $this->logicalAnd(
+                    $this->stringContains('FROM user u'),
+                    $this->stringContains('INNER JOIN role r ON r.id = u.role_id'),
+                    $this->stringContains('r.name AS role'),
+                    $this->stringContains('u.status')
+                )
+            )
             ->willReturn($this->statement);
 
         $this->statement
