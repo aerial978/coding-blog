@@ -53,26 +53,16 @@ final class AdminUserService implements AdminUserServiceInterface
             ];
         }
 
-        $currentUsername = $user->getUsername();
-
-        if ($editable['username'] !== $currentUsername) {
-            $existingUser = $this->userModel->findOneByUsername($editable['username']);
-
-            if ($existingUser !== null) {
-                return [
-                    'errors' => [
-                        'username' => ErrorCode::ADMIN_USER_USERNAME_EXISTS,
-                    ],
-                    'old' => $editable,
-                ];
-            }
+        if (!$this->isUsernameAvailable($editable['username'], $user)) {
+            return [
+                'errors' => [
+                    'username' => ErrorCode::ADMIN_USER_USERNAME_EXISTS,
+                ],
+                'old' => $editable,
+            ];
         }
 
-        $slug = $user->getSlug() ?? '';
-
-        if ($editable['username'] !== $currentUsername) {
-            $slug = $this->slugify->slugify($editable['username']);
-        }
+        $slug = $this->resolveSlug($editable['username'], $user);
 
         $updated = $this->userModel->updateAdminEditableFields(
             $userId,
@@ -94,6 +84,26 @@ final class AdminUserService implements AdminUserServiceInterface
         return [
             'ok' => true,
         ];
+    }
+
+    private function isUsernameAvailable(string $username, UserEntity $user): bool
+    {
+        if ($username === $user->getUsername()) {
+            return true;
+        }
+
+        return $this->userModel->findOneByUsername($username) === null;
+    }
+
+    private function resolveSlug(
+        string $username,
+        UserEntity $user
+    ): string {
+        if ($username === $user->getUsername()) {
+            return $user->getSlug() ?? '';
+        }
+
+        return $this->slugify->slugify($username);
     }
 
     /**
