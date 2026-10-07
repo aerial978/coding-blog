@@ -8,6 +8,16 @@ final class ErrorCode
 {
     public const AUTH_FIELD_REQUIRED          = 'auth.field.required';
 
+    // ==== Admin - User management ====
+    public const ADMIN_USER_USERNAME_REQUIRED = 'admin.user.username.required';
+    public const ADMIN_USER_USERNAME_INVALID  = 'admin.user.username.invalid';
+    public const ADMIN_USER_USERNAME_EXISTS   = 'admin.user.username.exists';
+    public const ADMIN_USER_ROLE_INVALID      = 'admin.user.role.invalid';
+    public const ADMIN_USER_STATUS_INVALID    = 'admin.user.status.invalid';
+    public const ADMIN_USER_NOT_FOUND         = 'admin.user.not_found';
+    public const ADMIN_USER_UPDATE_FAILED     = 'admin.user.update_failed';
+    public const ADMIN_USER_UPDATE_SUCCESS    = 'admin.user.update.success';
+
     // ==== Auth - Registration ====
     public const AUTH_USERNAME_EXISTS               = 'auth.registration.username_exists';
     public const AUTH_EMAIL_EXISTS                  = 'auth.registration.email_exists';

@@ -22,6 +22,7 @@
                         <th scope="col">Rôle</th>
                         <th scope="col">Statut</th>
                         <th scope="col">Date de création</th>
+                        <th scope="col">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -33,6 +34,11 @@
                             <td>{{ user.role }}</td>
                             <td>{{ user.status }}</td>
                             <td>{{ user.created_at }}</td>
+                            <td>
+                                <a href="{{ base_path }}admin/users/{{ user.user_id }}/edit">
+                                    Modifier
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

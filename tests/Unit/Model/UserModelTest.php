@@ -296,6 +296,70 @@ final class UserModelTest extends TestCase
         $this->assertSame(0, $result);
     }
 
+    public function testUpdateAdminEditableFieldsReturnsTrueWhenUpdateSucceeds(): void
+    {
+        $this->sqlHelper
+        ->expects($this->once())
+        ->method('request')
+        ->with(
+            $this->logicalAnd(
+                $this->stringContains('UPDATE user'),
+                $this->stringContains('username = :username'),
+                $this->stringContains('slug = :slug'),
+                $this->stringContains('role_id = (SELECT id FROM role WHERE name = :role)'),
+                $this->stringContains('status = :status'),
+                $this->stringContains('updated_at = NOW()'),
+                $this->stringContains('WHERE id = :user_id')
+            ),
+            [
+                ':user_id'  => 228,
+                ':username' => 'alice_updated',
+                ':slug'     => 'alice-updated',
+                ':role'     => 'MEMBER',
+                ':status'   => 'active',
+            ]
+        )
+        ->willReturn($this->statement);
+
+        $this->statement
+        ->expects($this->once())
+        ->method('rowCount')
+        ->willReturn(1);
+
+        $result = $this->model->updateAdminEditableFields(
+            228,
+            'alice_updated',
+            'alice-updated',
+            'MEMBER',
+            'active'
+        );
+
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateAdminEditableFieldsReturnsFalseWhenUpdateFails(): void
+    {
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('request')
+            ->willReturn($this->statement);
+
+        $this->statement
+            ->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(0);
+
+        $result = $this->model->updateAdminEditableFields(
+            228,
+            'alice_updated',
+            'alice-updated',
+            'MEMBER',
+            'active'
+        );
+
+        $this->assertFalse($result);
+    }
+
     public function testFindAuthByEmailReturnsHydratedUserWhenFound(): void
     {
         $email = 'alice@example.com';

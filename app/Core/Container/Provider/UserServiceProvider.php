@@ -17,12 +17,15 @@ use App\Model\OAuthAccountModel;
 use App\Model\RegistrationEventModel;
 use App\Model\UserModel;
 use App\Model\UserTokenModel;
+use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
 use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
+use App\Service\Admin\AdminUserService;
+use App\Service\Admin\Contract\AdminUserServiceInterface;
 use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\Email2faServiceInterface;
@@ -180,6 +183,7 @@ final class UserServiceProvider
             self::getRegistrationFlowDefinitions(),
             self::getAuthenticationFlowDefinitions(),
             self::getRecoveryFlowDefinitions(),
+            self::getAdminUserDefinitions(),
             self::getSecurityFacadeDefinitions(),
         );
     }
@@ -394,6 +398,37 @@ final class UserServiceProvider
     /**
      * @phpstan-return array<class-string, \Closure(ContainerInterface): object>
      */
+    private static function getAdminUserDefinitions(): array
+    {
+        return [
+            AdminUserService::class => static function (
+                ContainerInterface $container
+            ): AdminUserService {
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                /** @var FormValidatorInterface $validator */
+                $validator = $container->get(FormValidatorInterface::class);
+
+                /** @var AuthCheckerInterface $authChecker */
+                $authChecker = $container->get(AuthCheckerInterface::class);
+
+                /** @var Slugify $slugify */
+                $slugify = $container->get(Slugify::class);
+
+                return new AdminUserService(
+                    $userModel,
+                    $validator,
+                    $authChecker,
+                    $slugify,
+                );
+            },
+        ];
+    }
+
+    /**
+     * @phpstan-return array<class-string, \Closure(ContainerInterface): object>
+     */
     private static function getSecurityFacadeDefinitions(): array
     {
         return [
@@ -459,6 +494,13 @@ final class UserServiceProvider
             LogoutServiceInterface::class => static function (ContainerInterface $container): LogoutServiceInterface {
                 /** @var LogoutService $service */
                 $service = $container->get(LogoutService::class);
+                return $service;
+            },
+
+            AdminUserServiceInterface::class => static function (ContainerInterface $container): AdminUserServiceInterface {
+                /** @var AdminUserService $service */
+                $service = $container->get(AdminUserService::class);
+
                 return $service;
             },
         ];

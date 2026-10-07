@@ -29,4 +29,12 @@ interface FormValidatorInterface
      * @return string|null Code d’erreur ou null si OK
      */
     public function validatePasswordField(string $password): ?string;
+
+    /**
+     * Validates fields editable from the admin user management interface.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, string>
+     */
+    public function validateAdminUserEdit(array $data): array;
 }

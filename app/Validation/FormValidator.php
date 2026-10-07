@@ -132,6 +132,39 @@ final class FormValidator implements FormValidatorInterface
     }
 
     /**
+     * Validates fields editable from the admin user management interface.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, string>
+     */
+    public function validateAdminUserEdit(array $data): array
+    {
+        $schema = [
+            'username' => [
+                $this->required(ErrorCode::ADMIN_USER_USERNAME_REQUIRED),
+                $this->username(ErrorCode::ADMIN_USER_USERNAME_INVALID),
+            ],
+            'role' => [
+                $this->inArray(
+                    ['MEMBER', 'ADMIN'],
+                    ErrorCode::ADMIN_USER_ROLE_INVALID
+                ),
+            ],
+        ];
+
+        if (array_key_exists('status', $data)) {
+            $schema['status'] = [
+                $this->inArray(
+                    ['active', 'disabled'],
+                    ErrorCode::ADMIN_USER_STATUS_INVALID
+                ),
+            ];
+        }
+
+        return $this->validate($data, $schema);
+    }
+
+    /**
      * Validation e-mail réutilisable (resend, login, forgot…)
      */
     public function validateEmailField(string $email): ?string

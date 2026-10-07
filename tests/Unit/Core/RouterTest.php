@@ -59,6 +59,171 @@ class RouterTest extends TestCase
     }
 
     /**
+     * Checks that a dynamic route passes the matched parameter to the controller action.
+     */
+    public function testDynamicRoutePassesParameterToController(): void
+    {
+        $_SERVER['REQUEST_URI']    = '/users/228';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        $routes = [
+            Router::METHOD_GET => [
+                '/users/{id}' => [DummyController::class, 'show'],
+            ],
+        ];
+
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->onlyMethods(['show'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('show')
+            ->with('228')
+            ->willReturnCallback(static function (string $id): void {
+                echo 'User ID: ' . $id;
+            });
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
+        ob_start();
+        $router->handleRequest();
+        $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('User ID: 228', $output);
+    }
+
+    /**
+     * Checks that a dynamic POST route passes the matched parameter to the controller action.
+     */
+    public function testDynamicPostRoutePassesParameterToController(): void
+    {
+        $_SERVER['REQUEST_URI']    = '/users/228/edit';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+
+        $routes = [
+            Router::METHOD_POST => [
+                '/users/{id}/edit' => [DummyController::class, 'show'],
+            ],
+        ];
+
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->onlyMethods(['show'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('show')
+            ->with('228')
+            ->willReturnCallback(static function (string $id): void {
+                echo 'User ID: ' . $id;
+            });
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
+        ob_start();
+        $router->handleRequest();
+        $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('User ID: 228', $output);
+    }
+
+    /**
+     * Checks that an exact route takes priority over a matching dynamic route.
+     */
+    public function testExactRouteTakesPriorityOverDynamicRoute(): void
+    {
+        $_SERVER['REQUEST_URI']    = '/users/create';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        $routes = [
+            Router::METHOD_GET => [
+                '/users/{id}'   => [DummyController::class, 'show'],
+                '/users/create' => [DummyController::class, 'index'],
+            ],
+        ];
+
+        $errorController = $this->createMock(ErrorController::class);
+        $request         = new Request();
+
+        $controllerMock = $this->getMockBuilder(DummyController::class)
+            ->onlyMethods(['index', 'show'])
+            ->getMock();
+
+        $controllerMock->expects($this->once())
+            ->method('index')
+            ->willReturnCallback(static function (): void {
+                echo 'Index method executed';
+            });
+
+        $controllerMock->expects($this->never())
+            ->method('show');
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->method('create')
+            ->with(DummyController::class)
+            ->willReturn($controllerMock);
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
+        ob_start();
+        $router->handleRequest();
+        $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('Index method executed', $output);
+    }
+
+    /**
+     * Checks that an URI not matching the dynamic route triggers a 404 error.
+     */
+    public function testNonMatchingDynamicRouteTriggers404(): void
+    {
+        $_SERVER['REQUEST_URI']    = '/users/228/edit';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        $routes = [
+            Router::METHOD_GET => [
+                '/users/{id}' => [DummyController::class, 'show'],
+            ],
+        ];
+
+        $errorController = $this->createMock(ErrorController::class);
+        $errorController->expects($this->once())
+            ->method('notFound')
+            ->willReturnCallback(static function (): void {
+                echo '404 - Not found';
+            });
+
+        $request = new Request();
+
+        $factory = $this->createMock(ControllerFactoryInterface::class);
+        $factory->expects($this->never())
+            ->method('create');
+
+        $router = new Router($routes, '', $errorController, $request, $factory);
+
+        ob_start();
+        $router->handleRequest();
+        $output = (string) ob_get_clean();
+
+        $this->assertStringContainsString('404', $output);
+    }
+
+    /**
      * Checks that a nonexistent route triggers a 404 error.
      */
     public function testUnknownRouteTriggers404(): void

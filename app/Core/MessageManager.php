@@ -13,6 +13,16 @@ class MessageManager
         $messages = [
             ErrorCode::AUTH_FIELD_REQUIRED            => 'Champ(s) requis.',
 
+            // ==== Admin - User management ====
+            ErrorCode::ADMIN_USER_USERNAME_REQUIRED => "Le nom d'utilisateur est requis.",
+            ErrorCode::ADMIN_USER_USERNAME_INVALID  => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",
+            ErrorCode::ADMIN_USER_USERNAME_EXISTS   => "Ce nom d'utilisateur est déjà utilisé.",
+            ErrorCode::ADMIN_USER_ROLE_INVALID      => 'Le rôle sélectionné est invalide.',
+            ErrorCode::ADMIN_USER_STATUS_INVALID    => 'Le statut sélectionné est invalide.',
+            ErrorCode::ADMIN_USER_NOT_FOUND         => 'Utilisateur introuvable.',
+            ErrorCode::ADMIN_USER_UPDATE_FAILED     => 'La mise à jour de l’utilisateur a échoué.',
+            ErrorCode::ADMIN_USER_UPDATE_SUCCESS    => 'L’utilisateur a été mis à jour avec succès.',
+
             // ==== Auth - Registration ====
             ErrorCode::AUTH_USERNAME_INVALID               => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",
             ErrorCode::AUTH_USERNAME_EXISTS                => "Nom d'utilisateur déjà utilisé.",

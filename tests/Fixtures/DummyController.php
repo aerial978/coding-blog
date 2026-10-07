@@ -39,4 +39,12 @@ class DummyController
     {
         return 'dummy';
     }
+
+    /**
+     * Mock method accepting a route parameter.
+     */
+    public function show(string $id): void
+    {
+        echo 'User ID: ' . $id;
+    }
 }

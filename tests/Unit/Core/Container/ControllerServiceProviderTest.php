@@ -22,6 +22,8 @@ use App\Core\Container\Provider\ControllerServiceProvider;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
 use App\Core\View;
+use App\Handler\Admin\AdminUserGetHandler;
+use App\Handler\Admin\AdminUserPostHandler;
 use App\Handler\Auth\ConfirmAccountHandler;
 use App\Handler\Auth\Email2faGetHandler;
 use App\Handler\Auth\Email2faPostHandler;
@@ -94,6 +96,9 @@ final class ControllerServiceProviderTest extends TestCase
             CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
             ResponderInterface::class            => $this->createMock(ResponderInterface::class),
             AccountServiceInterface::class       => $this->createMock(AccountServiceInterface::class),
+
+            AdminUserGetHandler::class  => $this->instantiateWithoutConstructor(AdminUserGetHandler::class),
+            AdminUserPostHandler::class => $this->instantiateWithoutConstructor(AdminUserPostHandler::class),
 
             ConfirmAccountHandler::class         => $this->instantiateWithoutConstructor(ConfirmAccountHandler::class),
             RegisterGetHandler::class            => $this->instantiateWithoutConstructor(RegisterGetHandler::class),
