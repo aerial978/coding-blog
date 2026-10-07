@@ -75,6 +75,57 @@ final class CsrfMiddlewareTest extends TestCase
         $this->assertTrue($result);
     }
 
+    public function test_post_admin_user_edit_route_with_valid_token_is_allowed(): void
+    {
+        $this->request->method('request')->willReturn([
+            'csrf_token' => 'admin-token',
+        ]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ADMIN_USER_EDIT, 'admin-token')
+            ->willReturn(true);
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/admin/users/228/edit',
+            'POST'
+        );
+
+        $this->assertTrue($result);
+    }
+
+    #[RunInSeparateProcess]
+    public function test_post_admin_user_edit_route_with_invalid_token_is_blocked(): void
+    {
+        $this->request->method('request')->willReturn([
+            'csrf_token' => 'bad-token',
+        ]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ADMIN_USER_EDIT, 'bad-token')
+            ->willReturn(false);
+
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+
+        $_SERVER['HTTP_REFERER'] = '/admin/users/228/edit';
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/admin/users/228/edit',
+            'POST'
+        );
+
+        $this->assertFalse($result);
+    }
+
     // --------------------------------------------------------------------
     // 4) Route POST protégée + token invalide → bloquée
     // --------------------------------------------------------------------

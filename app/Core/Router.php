@@ -103,12 +103,22 @@ class Router
     {
         $method = $this->request->getMethod();
 
-        if (!isset($this->routes[$method][$uri])) {
-            $this->handleError(404);
-            return;
+        $route     = $this->routes[$method][$uri] ?? null;
+        $parameter = null;
+
+        if ($route === null) {
+            $match = $this->matchDynamicRoute($method, $uri);
+
+            if ($match === null) {
+                $this->handleError(404);
+                return;
+            }
+
+            $route     = $match['route'];
+            $parameter = $match['parameter'];
         }
 
-        [$controllerClass, $action] = $this->routes[$method][$uri];
+        [$controllerClass, $action] = $route;
 
         if (!class_exists($controllerClass)) {
             $this->handleError(500);
@@ -122,7 +132,58 @@ class Router
             return;
         }
 
+        if ($parameter !== null) {
+            $controller->$action($parameter);
+            return;
+        }
+
         $controller->$action();
+    }
+
+    /**
+     * Finds a dynamic route matching the requested URI.
+     *
+     * Supports one dynamic parameter per route, using the "{parameter}" syntax.
+     *
+     * @return array{
+     *     route: array{0: string, 1: string},
+     *     parameter: string
+     * }|null
+     */
+    private function matchDynamicRoute(string $method, string $uri): ?array
+    {
+        if (!isset($this->routes[$method])) {
+            return null;
+        }
+
+        foreach ($this->routes[$method] as $routePath => $route) {
+            if (!str_contains($routePath, '{')) {
+                continue;
+            }
+
+            $pattern = preg_quote($routePath, '#');
+            $pattern = preg_replace(
+                '#\\\\\{[^/]+\\\\\}#',
+                '([^/]+)',
+                $pattern,
+                1
+            );
+
+            if (!is_string($pattern)) {
+                continue;
+            }
+
+            if (preg_match('#^' . $pattern . '$#', $uri, $matches) !== 1) {
+                continue;
+            }
+
+            return [
+                'route'     => $route,
+                'parameter' => $matches[1],
+            ];
+        }
+
+        return null;
     }
 
     /**

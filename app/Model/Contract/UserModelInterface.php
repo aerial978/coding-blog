@@ -62,4 +62,15 @@ interface UserModelInterface
      * Retourne l'ID créé (>0) ou <=0 en cas d'échec.
      */
     public function createOAuthUser(UserEntity $user): int;
+
+    /**
+     * Updates the fields editable from the admin user management interface.
+     */
+    public function updateAdminEditableFields(
+        int $userId,
+        string $username,
+        string $slug,
+        string $role,
+        string $status
+    ): bool;
 }

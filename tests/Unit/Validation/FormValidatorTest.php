@@ -251,10 +251,45 @@ final class FormValidatorTest extends TestCase
         );
     }
 
+    // ---------------- validateAdminUserEdit() ----------------
+
+    public function test_validateAdminUserEdit_validates_editable_admin_fields(): void
+    {
+        $errors = $this->v->validateAdminUserEdit([
+            'username' => '',
+            'role'     => 'SUPER_ADMIN',
+            'status'   => 'inactive',
+        ]);
+
+        $this->assertSame([
+            'username' => ErrorCode::ADMIN_USER_USERNAME_REQUIRED,
+            'role'     => ErrorCode::ADMIN_USER_ROLE_INVALID,
+            'status'   => ErrorCode::ADMIN_USER_STATUS_INVALID,
+        ], $errors);
+
+        $errors = $this->v->validateAdminUserEdit([
+            'username' => 'alice_123',
+            'role'     => 'MEMBER',
+            'status'   => 'active',
+        ]);
+
+        $this->assertSame([], $errors);
+    }
+
     public function test_validatePasswordField_returns_null_when_password_is_valid(): void
     {
         $this->assertNull(
             $this->v->validatePasswordField('Aa1!Bb2@Cc3#')
         );
+    }
+
+    public function test_validateAdminUserEdit_allows_status_to_be_omitted(): void
+    {
+        $errors = $this->v->validateAdminUserEdit([
+            'username' => 'alice_123',
+            'role'     => 'MEMBER',
+        ]);
+
+        $this->assertSame([], $errors);
     }
 }

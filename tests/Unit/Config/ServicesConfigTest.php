@@ -44,11 +44,16 @@ final class ServicesConfigTest extends TestCase
             \App\Service\Security\Contract\SecurityServiceInterface::class,
             \App\Service\Security\LoginService::class,
             \App\Service\Security\LogoutService::class,
+            \App\Service\Admin\AdminUserService::class,
+            \App\Service\Admin\Contract\AdminUserServiceInterface::class,
+            \App\Handler\Admin\AdminUserGetHandler::class,
+            \App\Handler\Admin\AdminUserPostHandler::class,
 
             // Controllers
             \App\Controller\HomeController::class,
             \App\Controller\ErrorController::class,
             \App\Controller\AccountController::class,
+            \App\Controller\Admin\UserController::class,
             \App\Controller\RegisterController::class,
             \App\Controller\ConfirmAccountController::class,
             \App\Controller\ResendConfirmationController::class,

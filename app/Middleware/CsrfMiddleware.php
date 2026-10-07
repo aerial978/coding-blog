@@ -17,12 +17,13 @@ final class CsrfMiddleware implements MiddlewareInterface
 {
     /** @var array<string,string> route POST => FormId */
     private const PROTECTED_POST_ROUTES = [
-        '/register'            => FormId::REGISTER,
-        '/login'               => FormId::LOGIN,
-        '/logout'              => FormId::LOGOUT,
-        '/resend-confirmation' => FormId::RESEND_CONFIRM,
-        '/forgot-password'     => FormId::FORGOT_PASSWORD,
-        '/reset-password'      => FormId::RESET_PASSWORD,
+        '/register'              => FormId::REGISTER,
+        '/login'                 => FormId::LOGIN,
+        '/logout'                => FormId::LOGOUT,
+        '/resend-confirmation'   => FormId::RESEND_CONFIRM,
+        '/forgot-password'       => FormId::FORGOT_PASSWORD,
+        '/reset-password'        => FormId::RESET_PASSWORD,
+        '/admin/users/{id}/edit' => FormId::ADMIN_USER_EDIT,
     ];
 
     public function __construct(
@@ -60,7 +61,25 @@ final class CsrfMiddleware implements MiddlewareInterface
 
         /** @var ?string $formId */
         $formId = self::PROTECTED_POST_ROUTES[$uri] ?? null;
-        return $formId;
+
+        if ($formId !== null) {
+            return $formId;
+        }
+
+        foreach (self::PROTECTED_POST_ROUTES as $route => $formId) {
+            if (!str_contains($route, '{')) {
+                continue;
+            }
+
+            $pattern = preg_quote($route, '#');
+            $pattern = preg_replace('#\\\\\{[^/]+\\\\\}#', '([^/]+)', $pattern);
+
+            if ($pattern !== null && preg_match('#^' . $pattern . '$#', $uri) === 1) {
+                return $formId;
+            }
+        }
+
+        return null;
     }
 
     private function extractSubmittedToken(Request $request): ?string

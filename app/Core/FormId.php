@@ -21,5 +21,7 @@ final class FormId
     public const LOGOUT          = 'logout_form';
     public const FORGOT_PASSWORD = 'forgot_password_form';
     public const RESET_PASSWORD  = 'reset_password_form';
+
     // Admin
+    public const ADMIN_USER_EDIT = 'admin_user_edit_form';
 }

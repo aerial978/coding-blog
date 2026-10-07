@@ -16,12 +16,15 @@ use App\Model\EmailEventModel;
 use App\Model\RegistrationEventModel;
 use App\Model\UserModel;
 use App\Model\UserTokenModel;
+use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\Email2faPendingSessionInterface;
 use App\Security\Contract\TokenGeneratorInterface;
 use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
 use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
+use App\Service\Admin\AdminUserService;
+use App\Service\Admin\Contract\AdminUserServiceInterface;
 use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
 use App\Service\Security\Contract\Email2faServiceInterface;
@@ -89,6 +92,7 @@ final class UserServiceProviderTest extends TestCase
             RememberMeServiceInterface::class       => $this->createMock(RememberMeServiceInterface::class),
             Email2faServiceInterface::class         => $this->createMock(Email2faServiceInterface::class),
             Email2faPendingSessionInterface::class  => $this->createMock(Email2faPendingSessionInterface::class),
+            AuthCheckerInterface::class             => $this->createMock(AuthCheckerInterface::class),
             Slugify::class                          => new Slugify(),
         ];
     }
@@ -117,11 +121,14 @@ final class UserServiceProviderTest extends TestCase
         $this->assertArrayHasKey(ResetPasswordService::class, $definitions);
         $this->assertArrayHasKey(SecurityService::class, $definitions);
 
+        $this->assertArrayHasKey(AdminUserServiceInterface::class, $definitions);
+
         $this->assertArrayHasKey(SecurityServiceInterface::class, $definitions);
         $this->assertArrayHasKey(LoginServiceInterface::class, $definitions);
         $this->assertArrayHasKey(LogoutServiceInterface::class, $definitions);
         $this->assertArrayHasKey(ForgotPasswordServiceInterface::class, $definitions);
         $this->assertArrayHasKey(ResetPasswordServiceInterface::class, $definitions);
+        $this->assertArrayHasKey(AdminUserServiceInterface::class, $definitions);
     }
 
     public function testModelDefinitionsAreBuildable(): void
@@ -219,6 +226,41 @@ final class UserServiceProviderTest extends TestCase
         $this->assertInstanceOf(LoginService::class, $loginService);
         $this->assertInstanceOf(ForgotPasswordService::class, $forgotPasswordService);
         $this->assertInstanceOf(ResetPasswordService::class, $resetPasswordService);
+    }
+
+    public function testAdminUserServiceAndInterfaceBindingResolveCorrectly(): void
+    {
+        $definitions = UserServiceProvider::getDefinitions();
+
+        $services = $this->baseServices();
+
+        $userModel = new UserModel(
+            $services[SqlHelperInterface::class]
+        );
+
+        $serviceContainer = $this->makeContainer($services + [
+            UserModelInterface::class => $userModel,
+        ]);
+
+        $adminUserService = $definitions[AdminUserService::class](
+            $serviceContainer
+        );
+
+        $this->assertInstanceOf(
+            AdminUserService::class,
+            $adminUserService
+        );
+
+        $aliasContainer = $this->makeContainer([
+            AdminUserService::class => $adminUserService,
+        ]);
+
+        $this->assertSame(
+            $adminUserService,
+            $definitions[AdminUserServiceInterface::class](
+                $aliasContainer
+            )
+        );
     }
 
     public function testSecurityServiceAndInterfaceBindingsResolveCorrectly(): void

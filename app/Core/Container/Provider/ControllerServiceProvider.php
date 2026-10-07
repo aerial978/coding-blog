@@ -19,6 +19,8 @@ use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
 use App\Core\Contract\SessionInterface;
+use App\Handler\Admin\AdminUserGetHandler;
+use App\Handler\Admin\AdminUserPostHandler;
 use App\Handler\Auth\ConfirmAccountHandler;
 use App\Handler\Auth\Email2faGetHandler;
 use App\Handler\Auth\Email2faPostHandler;
@@ -132,9 +134,21 @@ final class ControllerServiceProvider
                 /** @var ResponderInterface $responder */
                 $responder = $container->get(ResponderInterface::class);
 
+                /** @var Request $request */
+                $request = $container->get(Request::class);
+
+                /** @var AdminUserGetHandler $getHandler */
+                $getHandler = $container->get(AdminUserGetHandler::class);
+
+                /** @var AdminUserPostHandler $postHandler */
+                $postHandler = $container->get(AdminUserPostHandler::class);
+
                 return new UserController(
                     $userModel,
                     $responder,
+                    $request,
+                    $getHandler,
+                    $postHandler,
                 );
             },
         ];
