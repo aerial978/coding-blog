@@ -10,3 +10,8 @@
 @use "components/honeypot";
 @use "components/code-digit";
 @use "components/social-auth-buttons";
+
+/* Administration */
+@use "admin/layout";
+@use "admin/header";
+@use "admin/sidebar";

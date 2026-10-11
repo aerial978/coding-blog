@@ -1,0 +1,44 @@
+
+{# Fond assombri affiché lorsque la sidebar mobile est ouverte #}
+<div
+    id="admin-sidebar-backdrop"
+    class="admin-sidebar-backdrop"
+    hidden
+></div>
+
+<aside
+    id="admin-sidebar"
+    class="admin-sidebar"
+    aria-label="Navigation de l'administration"
+>
+    <div class="admin-sidebar-header">
+        <span class="admin-sidebar-title">Navigation</span>
+
+        <button
+            type="button"
+            id="admin-sidebar-close"
+            class="admin-sidebar-close"
+            aria-label="Fermer le menu de navigation"
+        >
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <nav
+        class="admin-sidebar-nav"
+        aria-label="Menu d'administration"
+    >
+        <span class="admin-sidebar-section-title">
+            Gestion
+        </span>
+
+        <a
+            href="{{ base_path }}admin/users"
+            class="admin-sidebar-link admin-sidebar-link-active"
+            aria-current="page"
+        >
+            <i class="bi bi-people" aria-hidden="true"></i>
+            <span>Utilisateurs</span>
+        </a>
+    </nav>
+</aside>

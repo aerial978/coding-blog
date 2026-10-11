@@ -1,4 +1,4 @@
-{% extends "templates/layouts/base.html.twig" %}
+{% extends "templates/layouts/admin.html.twig" %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -13,7 +13,7 @@
         <p>Aucun utilisateur enregistré.</p>
     {% else %}
         <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle">
+            <table class="table table-striped table-hover align-middle text-nowrap">
                 <thead>
                     <tr>
                         <th scope="col">ID</th>

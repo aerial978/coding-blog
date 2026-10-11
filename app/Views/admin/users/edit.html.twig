@@ -1,132 +1,189 @@
-{% extends "templates/layouts/base.html.twig" %}
+
+{% extends "templates/layouts/admin.html.twig" %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
 
 <section>
-    <h2>Modifier un utilisateur</h2>
+    <h2 class="mb-4">Modifier un utilisateur</h2>
 
     {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
-    <form id="adminUserEditForm" method="post" action="{{ base_path }}admin/users/{{ user.user_id }}/edit" novalidate>
+    <div class="card shadow-sm w-100">
+        <div class="card-body p-4">
 
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-        <div>
-            <label for="user_id">ID</label>
-            <input
-                type="text"
-                id="user_id"
-                value="{{ user.user_id }}"
-                readonly
+            <form
+                id="adminUserEditForm"
+                method="post"
+                action="{{ base_path }}admin/users/{{ user.user_id }}/edit"
+                novalidate
             >
-        </div>
-
-        <div>
-            <label for="username">Nom d’utilisateur</label>
-            <input
-                type="text"
-                id="username"
-                name="username"
-                value="{{ user.username }}"
-                required
-            >
-            <div id="username_error"></div>
-        </div>
-
-        <div>
-            <label for="email">Adresse e-mail</label>
-            <input
-                type="email"
-                id="email"
-                value="{{ user.email }}"
-                size="40"
-                readonly
-            >
-        </div>
-
-        <div>
-            <label for="role">Rôle</label>
-
-            {% if is_own_account %}
                 <input
-                    type="text"
-                    id="role"
-                    value="{{ user.role }}"
-                    readonly
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token }}"
                 >
-            {% else %}
-                <select id="role" name="role">
-                    <option
-                        value="MEMBER"
-                        {% if user.role == 'MEMBER' %}selected{% endif %}
+
+                <div class="row g-3">
+
+                    {# Identifiant #}
+                    <div class="col-12 col-md-6">
+                        <label for="user_id" class="form-label">
+                            ID
+                        </label>
+                        <input
+                            type="text"
+                            id="user_id"
+                            class="form-control"
+                            value="{{ user.user_id }}"
+                            readonly
+                        >
+                    </div>
+
+                    {# Nom d'utilisateur #}
+                    <div class="col-12 col-md-6">
+                        <label for="username" class="form-label">
+                            Nom d’utilisateur
+                        </label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="form-control"
+                            value="{{ user.username }}"
+                            required
+                        >
+                        <div id="username_error"></div>
+                    </div>
+
+                    {# Adresse e-mail #}
+                    <div class="col-12">
+                        <label for="email" class="form-label">
+                            Adresse e-mail
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            class="form-control"
+                            value="{{ user.email }}"
+                            readonly
+                        >
+                    </div>
+
+                    {# Rôle #}
+                    <div class="col-12 col-md-6">
+                        <label for="role" class="form-label">
+                            Rôle
+                        </label>
+
+                        {% if is_own_account %}
+                            <input
+                                type="text"
+                                id="role"
+                                class="form-control"
+                                value="{{ user.role }}"
+                                readonly
+                            >
+                        {% else %}
+                            <select
+                                id="role"
+                                name="role"
+                                class="form-select"
+                            >
+                                <option
+                                    value="MEMBER"
+                                    {% if user.role == 'MEMBER' %}selected{% endif %}
+                                >
+                                    MEMBER
+                                </option>
+                                <option
+                                    value="ADMIN"
+                                    {% if user.role == 'ADMIN' %}selected{% endif %}
+                                >
+                                    ADMIN
+                                </option>
+                            </select>
+                        {% endif %}
+                    </div>
+
+                    {# Statut #}
+                    <div class="col-12 col-md-6">
+                        <label for="status" class="form-label">
+                            Statut
+                        </label>
+
+                        {% if is_own_account or user.status == 'inactive' %}
+                            <input
+                                type="text"
+                                id="status"
+                                class="form-control"
+                                value="{{ user.status }}"
+                                readonly
+                            >
+                        {% else %}
+                            <select
+                                id="status"
+                                name="status"
+                                class="form-select"
+                            >
+                                <option
+                                    value="active"
+                                    {% if user.status == 'active' %}selected{% endif %}
+                                >
+                                    active
+                                </option>
+                                <option
+                                    value="disabled"
+                                    {% if user.status == 'disabled' %}selected{% endif %}
+                                >
+                                    disabled
+                                </option>
+                            </select>
+                        {% endif %}
+                    </div>
+
+                    {# Date de création #}
+                    <div class="col-12">
+                        <label for="created_at" class="form-label">
+                            Date de création
+                        </label>
+                        <input
+                            type="text"
+                            id="created_at"
+                            class="form-control"
+                            value="{{ user.created_at }}"
+                            readonly
+                        >
+                    </div>
+
+                </div>
+
+                {# Actions du formulaire #}
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        Enregistrer les modifications
+                    </button>
+
+                    <a
+                        href="{{ base_path }}admin/users"
+                        class="btn btn-outline-secondary"
                     >
-                        MEMBER
-                    </option>
-                    <option
-                        value="ADMIN"
-                        {% if user.role == 'ADMIN' %}selected{% endif %}
-                    >
-                        ADMIN
-                    </option>
-                </select>
-            {% endif %}
+                        Annuler
+                    </a>
+                </div>
+
+            </form>
+
         </div>
-
-        <div>
-            <label for="status">Statut</label>
-
-            {% if is_own_account or user.status == 'inactive' %}
-                <input
-                    type="text"
-                    id="status"
-                    value="{{ user.status }}"
-                    readonly
-                >
-            {% else %}
-                <select id="status" name="status">
-                    <option
-                        value="active"
-                        {% if user.status == 'active' %}selected{% endif %}
-                    >
-                        active
-                    </option>
-                    <option
-                        value="disabled"
-                        {% if user.status == 'disabled' %}selected{% endif %}
-                    >
-                        disabled
-                    </option>
-                </select>
-            {% endif %}
-        </div>
-
-        <div>
-            <label for="created_at">Date de création</label>
-            <input
-                type="text"
-                id="created_at"
-                value="{{ user.created_at }}"
-                readonly
-            >
-        </div>
-
-        <button type="submit">
-            Enregistrer les modifications
-        </button>
-    </form>
-
-    <a href="{{ base_path }}admin/users">
-        Retour à la liste des utilisateurs
-    </a>
+    </div>
 </section>
 
-{% block page_scripts %}
-<script
-    type="module"
-    src="{{ base_path }}assets/js/admin/validation.user-edit.js"
-></script>
 {% endblock %}
 
+{% block page_scripts %}
+    <script
+        type="module"
+        src="{{ base_path }}assets/js/admin/validation.user-edit.js"
+    ></script>
 {% endblock %}

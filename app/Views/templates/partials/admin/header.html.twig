@@ -1,0 +1,75 @@
+
+<header class="admin-header">
+    <div class="admin-header-brand">
+        <button
+            type="button"
+            id="admin-sidebar-toggle"
+            class="admin-header-sidebar-toggle"
+            aria-label="Ouvrir le menu de navigation"
+            aria-controls="admin-sidebar"
+            aria-expanded="false"
+        >
+            <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
+
+        <a href="{{ base_path }}admin/users" class="admin-header-logo">
+            <i class="bi bi-code-slash" aria-hidden="true"></i>
+
+            <span class="admin-header-identity">
+                <span class="admin-header-site-name">Coding Blog</span>
+                <span class="admin-header-subtitle">Administration</span>
+            </span>
+        </a>
+    </div>
+
+    <div class="admin-header-actions">
+        <div class="admin-user-menu">
+            <button
+                type="button"
+                id="admin-user-menu-toggle"
+                class="admin-user-menu-toggle"
+                aria-label="Menu utilisateur"
+                aria-controls="admin-user-menu-dropdown"
+                aria-expanded="false"
+                aria-haspopup="true"
+            >
+                <i class="bi bi-person-circle" aria-hidden="true"></i>
+                <i class="bi bi-chevron-down admin-user-menu-chevron" aria-hidden="true"></i>
+            </button>
+
+            <div
+                id="admin-user-menu-dropdown"
+                class="admin-user-menu-dropdown"
+                hidden
+            >
+                <a
+                    href="{{ base_path }}"
+                    class="admin-user-menu-item"
+                >
+                    <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                    <span>Voir le site</span>
+                </a>
+
+                <form
+                    method="post"
+                    action="{{ base_path }}logout"
+                    class="admin-user-menu-logout"
+                >
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ logout_csrf_token }}"
+                    >
+
+                    <button
+                        type="submit"
+                        class="admin-user-menu-item"
+                    >
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        <span>Déconnexion</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
