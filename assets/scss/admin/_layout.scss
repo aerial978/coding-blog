@@ -1,0 +1,44 @@
+/* Layout général de l'administration */
+
+.admin-page {
+    min-height: 100vh;
+    margin: 0;
+    color: #212529;
+    background-color: #f8f9fa;
+}
+
+.admin-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.admin-layout-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Zone principale de l'administration */
+
+.admin-main {
+    flex: 1;
+    min-width: 0;
+    padding: 2rem;
+}
+
+/* Tablettes et smartphones */
+
+@media (width < 992px) {
+    .admin-main {
+        padding: 1.5rem;
+    }
+}
+
+/* Petits smartphones */
+
+@media (width < 576px) {
+    .admin-main {
+        padding: 1rem;
+    }
+}
