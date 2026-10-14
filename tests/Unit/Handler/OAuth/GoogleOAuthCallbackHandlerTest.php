@@ -173,7 +173,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -343,7 +343,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle([
             'code'  => 'valid_code',
@@ -481,7 +481,7 @@ final class GoogleOAuthCallbackHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle([
             'code'  => 'valid_code',

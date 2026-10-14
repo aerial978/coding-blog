@@ -101,6 +101,7 @@ final class AdminUserGetHandlerTest extends TestCase
                         'status'     => 'active',
                         'created_at' => '2026-01-01 10:00:00',
                     ],
+                    'active_nav'    => 'users',
                 ]
             );
 
@@ -233,6 +234,7 @@ final class AdminUserGetHandlerTest extends TestCase
                         'status'     => 'disabled',
                         'created_at' => '2026-01-01 10:00:00',
                     ],
+                    'active_nav'    => 'users',
                 ]
             );
 
@@ -294,6 +296,7 @@ final class AdminUserGetHandlerTest extends TestCase
                         'status'     => 'active',
                         'created_at' => '2026-01-01 10:00:00',
                     ],
+                    'active_nav'     => 'users',
                 ]
             );
 

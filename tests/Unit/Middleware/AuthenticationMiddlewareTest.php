@@ -204,4 +204,50 @@ final class AuthenticationMiddlewareTest extends TestCase
 
         $this->assertTrue($ok);
     }
+
+    public function testDashboardRouteAllowsWhenAuthenticated(): void
+    {
+        $mw = $this->make();
+
+        $this->authChecker
+            ->expects($this->once())
+            ->method('isAuthenticated')
+            ->willReturn(true);
+
+        $this->flash
+            ->expects($this->never())
+            ->method('add');
+
+        $this->responder
+            ->expects($this->never())
+            ->method('redirect');
+
+        $ok = $mw->handle($this->request, '/dashboard', 'GET');
+
+        $this->assertTrue($ok);
+    }
+
+    public function testDashboardRouteBlocksWhenNotAuthenticated(): void
+    {
+        $mw = $this->make();
+
+        $this->authChecker
+            ->expects($this->once())
+            ->method('isAuthenticated')
+            ->willReturn(false);
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with('error', 'Vous devez être connecté pour accéder à cette page.');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/login');
+
+        $ok = $mw->handle($this->request, '/dashboard', 'GET');
+
+        $this->assertFalse($ok);
+    }
 }

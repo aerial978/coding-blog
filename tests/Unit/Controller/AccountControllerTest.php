@@ -54,8 +54,9 @@ final class AccountControllerTest extends TestCase
             ->with(
                 'account/index.html.twig',
                 [
-                    'title'   => 'Mon compte',
-                    'account' => [
+                    'title'      => 'Mon compte',
+                    'active_nav' => 'account',
+                    'account'    => [
                         'username'          => 'michael',
                         'email'             => 'michael@example.com',
                         'email_2fa_enabled' => true,

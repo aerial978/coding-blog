@@ -47,6 +47,7 @@ final class AdminUserGetHandler
 
         $this->responder->render('admin/users/edit.html.twig', [
             'title'          => 'Modifier un utilisateur',
+            'active_nav'     => 'users',
             'csrf_token'     => $this->csrf->generateToken(FormId::ADMIN_USER_EDIT),
             'is_own_account' => $isOwnAccount,
             'user'           => [

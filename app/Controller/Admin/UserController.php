@@ -37,8 +37,9 @@ final class UserController
         );
 
         $this->responder->render('admin/users/index.html.twig', [
-            'title' => 'Gestion des utilisateurs',
-            'users' => $users,
+            'title'      => 'Gestion des utilisateurs',
+            'active_nav' => 'users',
+            'users'      => $users,
         ]);
     }
 

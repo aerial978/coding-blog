@@ -199,7 +199,7 @@ final class LoginControllerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->controller->login();
     }

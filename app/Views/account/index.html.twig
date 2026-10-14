@@ -1,4 +1,4 @@
-{% extends "templates/layouts/base.html.twig" %}
+{% extends "templates/layouts/admin.html.twig" %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -6,8 +6,8 @@
 
 {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
-<section>
-    <h2>Informations du compte</h2>
+<section class="admin-content">
+    <h1>Informations du compte</h1>
 
     <dl>
         <dt>Nom d’utilisateur</dt>

@@ -17,7 +17,7 @@ use App\Service\Security\Contract\SecurityServiceInterface;
 final class LoginPostHandler
 {
     private const REDIRECT            = '/login';
-    private const SUCCESS_REDIRECT    = '/';
+    private const SUCCESS_REDIRECT    = '/dashboard';
     private const FORM_ID             = 'login';
     private const TURNSTILE_FLAG      = 'turnstile_login';
     private const RATE_LIMIT_KEY      = 'login';

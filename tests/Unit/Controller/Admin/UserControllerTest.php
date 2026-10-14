@@ -105,8 +105,8 @@ final class UserControllerTest extends TestCase
             ->with(
                 'admin/users/index.html.twig',
                 [
-                    'title' => 'Gestion des utilisateurs',
-                    'users' => [
+                    'title'     => 'Gestion des utilisateurs',
+                    'users'     => [
                         [
                             'user_id'    => 1,
                             'username'   => 'alice',
@@ -124,6 +124,7 @@ final class UserControllerTest extends TestCase
                             'created_at' => '2026-01-02 11:00:00',
                         ],
                     ],
+                    'active_nav' => 'users',
                 ]
             );
 
@@ -143,8 +144,9 @@ final class UserControllerTest extends TestCase
             ->with(
                 'admin/users/index.html.twig',
                 [
-                    'title' => 'Gestion des utilisateurs',
-                    'users' => [],
+                    'title'      => 'Gestion des utilisateurs',
+                    'users'      => [],
+                    'active_nav' => 'users',
                 ]
             );
 
@@ -241,6 +243,7 @@ final class UserControllerTest extends TestCase
                         'status'     => 'active',
                         'created_at' => '2026-01-01 10:00:00',
                     ],
+                    'active_nav'     => 'users',
                 ]
             );
 
