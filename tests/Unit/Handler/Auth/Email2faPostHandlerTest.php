@@ -353,7 +353,7 @@ final class Email2faPostHandlerTest extends TestCase
         ]);
     }
 
-    public function testSuccessfulVerificationCreatesSessionAndRedirectsHome(): void
+    public function testSuccessfulVerificationCreatesSessionAndRedirectsDashboard(): void
     {
         $this->mockValidPendingSession();
         $this->mockValidCsrf();
@@ -408,7 +408,7 @@ final class Email2faPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle($this->validForm());
     }
@@ -507,7 +507,7 @@ final class Email2faPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle($this->validForm());
     }
@@ -554,7 +554,7 @@ final class Email2faPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle($this->validForm());
     }

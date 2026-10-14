@@ -7,6 +7,7 @@ namespace App\Core\Container\Provider;
 use App\Controller\AccountController;
 use App\Controller\Admin\UserController;
 use App\Controller\ConfirmAccountController;
+use App\Controller\DashboardController;
 use App\Controller\DebugController;
 use App\Controller\Email2faController;
 use App\Controller\ErrorController;
@@ -102,6 +103,13 @@ final class ControllerServiceProvider
                     $responder,
                     $accountService,
                 );
+            },
+
+            DashboardController::class => static function (ContainerInterface $container): DashboardController {
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                return new DashboardController($responder);
             },
         ];
     }

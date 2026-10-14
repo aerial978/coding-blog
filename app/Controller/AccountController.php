@@ -25,8 +25,9 @@ final class AccountController
         }
 
         $this->responder->render('account/index.html.twig', [
-            'title'   => 'Mon compte',
-            'account' => [
+            'title'      => 'Mon compte',
+            'active_nav' => 'account',
+            'account'    => [
                 'username'          => $user->getUsername(),
                 'email'             => $user->getEmail(),
                 'email_2fa_enabled' => $user->isEmail2faEnabled(),

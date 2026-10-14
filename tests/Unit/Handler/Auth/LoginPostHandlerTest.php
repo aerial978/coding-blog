@@ -151,7 +151,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->handler->handle($form);
     }
 
-    public function testHandleRedirectsToHomeWhenLoginSucceeds(): void
+    public function testHandleRedirectsToDashboardWhenLoginSucceeds(): void
     {
         $form = $this->validForm();
         $this->allowAllGuards();
@@ -179,7 +179,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->rememberMeCookieManager
             ->expects($this->never())
@@ -339,7 +339,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
             ->expects($this->once())
             ->method('redirect')
-            ->with('/');
+            ->with('/dashboard');
 
         $this->handler->handle($form);
     }
@@ -415,7 +415,7 @@ final class LoginPostHandlerTest extends TestCase
         $this->responder
         ->expects($this->once())
         ->method('redirect')
-        ->with('/');
+        ->with('/dashboard');
 
         $this->handler->handle($form);
     }

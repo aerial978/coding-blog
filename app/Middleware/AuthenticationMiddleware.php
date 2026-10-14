@@ -22,6 +22,7 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     private const PROTECTED_ROUTES = [
         '/change-password',
         '/account',
+        '/dashboard',
     ];
 
     private const PROTECTED_PREFIXES = [

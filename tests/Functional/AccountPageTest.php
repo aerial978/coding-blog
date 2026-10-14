@@ -134,6 +134,7 @@ final class AccountPageTest extends TestCase
                         'email'             => 'michael@example.com',
                         'email_2fa_enabled' => true,
                     ],
+                    'active_nav' => 'account',
                 ]
             );
 

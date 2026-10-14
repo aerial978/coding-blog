@@ -23,22 +23,53 @@
             <i class="bi bi-x-lg" aria-hidden="true"></i>
         </button>
     </div>
+    <nav class="admin-sidebar-nav" aria-label="Menu de navigation">
+        <span class="admin-sidebar-section-title">Navigation</span>
 
-    <nav
-        class="admin-sidebar-nav"
-        aria-label="Menu d'administration"
-    >
-        <span class="admin-sidebar-section-title">
-            Gestion
-        </span>
+        {# Tableau de bord #}
+        {% set is_dashboard_active = active_nav|default('') == 'dashboard' %}
+        {% set dashboard_link_class = is_dashboard_active
+            ? 'admin-sidebar-link admin-sidebar-link-active'
+            : 'admin-sidebar-link'
+        %}
 
-        <a
-            href="{{ base_path }}admin/users"
-            class="admin-sidebar-link admin-sidebar-link-active"
-            aria-current="page"
-        >
-            <i class="bi bi-people" aria-hidden="true"></i>
-            <span>Utilisateurs</span>
+        <a href="{{ base_path }}dashboard"
+        class="{{ dashboard_link_class }}"
+        {% if is_dashboard_active %}aria-current="page"{% endif %}>
+            <i class="bi bi-speedometer2" aria-hidden="true"></i>
+            <span>Tableau de bord</span>
         </a>
+
+        {# Mon compte #}
+        {% set is_account_active = active_nav|default('') == 'account' %}
+        {% set account_link_class = is_account_active
+            ? 'admin-sidebar-link admin-sidebar-link-active'
+            : 'admin-sidebar-link'
+        %}
+
+        <a href="{{ base_path }}account"
+        class="{{ account_link_class }}"
+        {% if is_account_active %}aria-current="page"{% endif %}>
+            <i class="bi bi-person" aria-hidden="true"></i>
+            <span>Mon compte</span>
+        </a>
+
+        {# Administration : réservé aux administrateurs #}
+        {% if 'ADMIN' in auth_user.roles|default([]) %}
+            <span class="admin-sidebar-section-title">Administration</span>
+
+            {% set is_users_active = active_nav|default('') == 'users' %}
+            {% set users_link_class = is_users_active
+                ? 'admin-sidebar-link admin-sidebar-link-active'
+                : 'admin-sidebar-link'
+            %}
+
+            <a href="{{ base_path }}admin/users"
+            class="{{ users_link_class }}"
+            {% if is_users_active %}aria-current="page"{% endif %}>
+                <i class="bi bi-people" aria-hidden="true"></i>
+                <span>Utilisateurs</span>
+            </a>
+        {% endif %}
     </nav>
 </aside>
