@@ -6,12 +6,14 @@ namespace App\Core\Container\Provider;
 
 use App\Controller\ErrorController;
 use App\Core\Contract\FlashInterface;
+use App\Handler\Admin\AdminUserDeleteHandler;
 use App\Handler\Admin\AdminUserGetHandler;
 use App\Handler\Admin\AdminUserPostHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Service\Admin\Contract\AdminUserDeletionServiceInterface;
 use App\Service\Admin\Contract\AdminUserServiceInterface;
 use Psr\Container\ContainerInterface;
 
@@ -73,6 +75,27 @@ final class AdminUserHandlerServiceProvider
 
                 return new AdminUserPostHandler(
                     $adminUserService,
+                    $flash,
+                    $responder,
+                    $errorController,
+                );
+            },
+
+            AdminUserDeleteHandler::class => static function (ContainerInterface $container): AdminUserDeleteHandler {
+                /** @var AdminUserDeletionServiceInterface $deletionService */
+                $deletionService = $container->get(AdminUserDeletionServiceInterface::class);
+
+                /** @var FlashInterface $flash */
+                $flash = $container->get(FlashInterface::class);
+
+                /** @var ResponderInterface $responder */
+                $responder = $container->get(ResponderInterface::class);
+
+                /** @var ErrorController $errorController */
+                $errorController = $container->get(ErrorController::class);
+
+                return new AdminUserDeleteHandler(
+                    $deletionService,
                     $flash,
                     $responder,
                     $errorController,

@@ -17,6 +17,10 @@ final class ErrorCode
     public const ADMIN_USER_NOT_FOUND         = 'admin.user.not_found';
     public const ADMIN_USER_UPDATE_FAILED     = 'admin.user.update_failed';
     public const ADMIN_USER_UPDATE_SUCCESS    = 'admin.user.update.success';
+    public const ADMIN_USER_DELETE_SUCCESS    = 'admin.user.delete.success';
+    public const ADMIN_USER_DELETE_FAILED     = 'admin.user.delete.failed';
+    public const ADMIN_USER_DELETE_SELF       = 'admin.user.delete.self';
+    public const ADMIN_USER_DELETE_LAST_ADMIN = 'admin.user.delete.last_admin';
 
     // ==== Auth - Registration ====
     public const AUTH_USERNAME_EXISTS               = 'auth.registration.username_exists';

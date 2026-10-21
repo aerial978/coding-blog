@@ -73,4 +73,31 @@ interface UserModelInterface
         string $role,
         string $status
     ): bool;
+
+    /**
+     * Permanently deletes a user by their ID.
+     */
+    public function deleteById(int $userId): bool;
+
+    /**
+     * Counts users with the ADMIN role and an active status.
+     */
+    public function countActiveAdmins(): int;
+
+    /**
+     * Counts active administrators using a locking read.
+     *
+     * Must be called within an active database transaction.
+     */
+    public function countActiveAdminsForUpdate(): int;
+
+    /**
+     * Locks the ADMIN role row for the duration of the current transaction.
+     */
+    public function lockAdminRole(): void;
+
+    /**
+     * Retrieves and locks a user for the duration of the current transaction.
+     */
+    public function findOneByIdForUpdate(int $userId): ?UserEntity;
 }

@@ -10,6 +10,7 @@ use App\Core\Contract\FlashInterface;
 use App\Core\ErrorCode;
 use App\Core\FormId;
 use App\Core\MessageManager;
+use App\Handler\Admin\AdminUserDeleteHandler;
 use App\Handler\Admin\AdminUserGetHandler;
 use App\Handler\Admin\AdminUserPostHandler;
 use App\Http\Contract\ResponderInterface;
@@ -18,6 +19,7 @@ use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
+use App\Service\Admin\Contract\AdminUserDeletionServiceInterface;
 use App\Service\Admin\Contract\AdminUserServiceInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -39,14 +41,22 @@ final class UserControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->userModel        = $this->createMock(UserModelInterface::class);
-        $this->responder        = $this->createMock(ResponderInterface::class);
-        $this->request          = $this->createMock(Request::class);
-        $this->errorController  = $this->createMock(ErrorController::class);
-        $this->flash            = $this->createMock(FlashInterface::class);
-        $this->csrf             = $this->createMock(CsrfTokenInterface::class);
-        $this->authChecker      = $this->createMock(AuthCheckerInterface::class);
-        $this->adminUserService = $this->createMock(AdminUserServiceInterface::class);
+        $this->userModel          = $this->createMock(UserModelInterface::class);
+        $this->responder          = $this->createMock(ResponderInterface::class);
+        $this->request            = $this->createMock(Request::class);
+        $this->errorController    = $this->createMock(ErrorController::class);
+        $this->flash              = $this->createMock(FlashInterface::class);
+        $this->csrf               = $this->createMock(CsrfTokenInterface::class);
+        $this->authChecker        = $this->createMock(AuthCheckerInterface::class);
+        $this->adminUserService   = $this->createMock(AdminUserServiceInterface::class);
+        $adminUserDeletionService = $this->createMock(AdminUserDeletionServiceInterface::class);
+
+        $deleteHandler = new AdminUserDeleteHandler(
+            $adminUserDeletionService,
+            $this->flash,
+            $this->responder,
+            $this->errorController,
+        );
 
         $getHandler = new AdminUserGetHandler(
             $this->userModel,
@@ -70,6 +80,9 @@ final class UserControllerTest extends TestCase
             $this->request,
             $getHandler,
             $postHandler,
+            $deleteHandler,
+            $this->authChecker,
+            $this->csrf,
         );
     }
 
@@ -105,28 +118,49 @@ final class UserControllerTest extends TestCase
             ->with(
                 'admin/users/index.html.twig',
                 [
-                    'title'     => 'Gestion des utilisateurs',
-                    'users'     => [
+                    'title'                          => 'Gestion des utilisateurs',
+                    'active_nav'                     => 'users',
+                    'users'                          => [
                         [
-                            'user_id'    => 1,
-                            'username'   => 'alice',
-                            'email'      => 'alice@example.com',
-                            'role'       => 'ADMIN',
-                            'status'     => 'active',
-                            'created_at' => '2026-01-01 10:00:00',
+                            'user_id'                => 1,
+                            'username'               => 'alice',
+                            'email'                  => 'alice@example.com',
+                            'role'                   => 'ADMIN',
+                            'status'                 => 'active',
+                            'created_at'             => '2026-01-01 10:00:00',
+                            'can_delete'             => false,
+                            'delete_disabled_reason' => 'Vous ne pouvez pas supprimer votre propre compte.',
                         ],
                         [
-                            'user_id'    => 2,
-                            'username'   => 'bob',
-                            'email'      => 'bob@example.com',
-                            'role'       => 'MEMBER',
-                            'status'     => 'inactive',
-                            'created_at' => '2026-01-02 11:00:00',
+                            'user_id'                => 2,
+                            'username'               => 'bob',
+                            'email'                  => 'bob@example.com',
+                            'role'                   => 'MEMBER',
+                            'status'                 => 'inactive',
+                            'created_at'             => '2026-01-02 11:00:00',
+                            'can_delete'             => true,
+                            'delete_disabled_reason' => null,
                         ],
                     ],
-                    'active_nav' => 'users',
+                    'csrf_token'                     => 'csrf-admin-user-delete-token',
                 ]
             );
+
+        $this->authChecker
+            ->expects($this->once())
+            ->method('getUserId')
+            ->willReturn(1);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('countActiveAdmins')
+            ->willReturn(1);
+
+        $this->csrf
+            ->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::ADMIN_USER_DELETE)
+            ->willReturn('csrf-admin-user-delete-token');
 
         $this->controller->index();
     }
@@ -145,10 +179,27 @@ final class UserControllerTest extends TestCase
                 'admin/users/index.html.twig',
                 [
                     'title'      => 'Gestion des utilisateurs',
-                    'users'      => [],
                     'active_nav' => 'users',
+                    'users'      => [],
+                    'csrf_token' => 'csrf-admin-user-delete-token',
                 ]
             );
+
+        $this->authChecker
+            ->expects($this->once())
+            ->method('getUserId')
+            ->willReturn(1);
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('countActiveAdmins')
+            ->willReturn(1);
+
+        $this->csrf
+            ->expects($this->once())
+            ->method('generateToken')
+            ->with(FormId::ADMIN_USER_DELETE)
+            ->willReturn('csrf-admin-user-delete-token');
 
         $this->controller->index();
     }

@@ -88,4 +88,15 @@ final class RegistrationEventModel implements RegistrationEventModelInterface
 
         return $st->rowCount();
     }
+
+    /**
+     * Detaches historical registration events from a user without deleting them.
+     */
+    public function detachUser(int $userId): void
+    {
+        $this->sqlHelper->request(
+            "UPDATE {$this->table} SET user_id = NULL WHERE user_id = :user_id",
+            [':user_id' => $userId]
+        );
+    }
 }

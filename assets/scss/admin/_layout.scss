@@ -25,6 +25,16 @@
     flex: 1;
     min-width: 0;
     padding: 2rem;
+
+    /* Explication accessible des actions de suppression désactivées */
+    .delete-disabled-reason {
+        display: none;
+    }
+
+    .delete-disabled-wrapper:focus-visible + .delete-disabled-reason {
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
 }
 
 /* Tablettes et smartphones */

@@ -291,4 +291,15 @@ class UserTokenModel implements UserTokenModelInterface
     {
         return $this->invalidateActiveTokenByPurpose($userId, 'remember_me');
     }
+
+    /**
+     * Permanently deletes all tokens associated with a user.
+     */
+    public function deleteAllByUserId(int $userId): void
+    {
+        $this->sqlHelper->request(
+            "DELETE FROM {$this->table} WHERE user_id = :user_id",
+            [':user_id' => $userId]
+        );
+    }
 }

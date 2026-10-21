@@ -40,4 +40,11 @@ interface UserTokenModelInterface
      * en une seule requête (JOIN) pour éviter les incohérences.
      */
     public function consumePasswordResetTokenAndUpdatePassword(string $hashBinary32, string $passwordHash): bool;
+
+    // ==== Token deletion ====
+
+    /**
+     * Permanently deletes all tokens associated with a user.
+     */
+    public function deleteAllByUserId(int $userId): void;
 }

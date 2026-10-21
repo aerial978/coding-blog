@@ -17,4 +17,9 @@ interface EmailEventModelInterface
     ): bool;
 
     public function deleteOlderThan(int $days): int;
+
+    /**
+     * Detaches historical email events from a user without deleting them.
+     */
+    public function detachUser(int $userId): void;
 }

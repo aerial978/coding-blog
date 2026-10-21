@@ -25,6 +25,7 @@ use App\Middleware\AdminAuthorizationMiddleware;
 use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
+use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Security\Contract\HoneypotValidatorInterface;
@@ -226,7 +227,8 @@ final class SystemServiceProviderTest extends TestCase
         );
 
         $flashContainer = $this->makeContainer([
-            SessionInterface::class => $session,
+            SessionInterface::class   => $session,
+            UserModelInterface::class => $this->createMock(UserModelInterface::class),
         ]);
         $flashService = $definitions[FlashService::class]($flashContainer);
 

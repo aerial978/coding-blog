@@ -17,13 +17,14 @@ final class CsrfMiddleware implements MiddlewareInterface
 {
     /** @var array<string,string> route POST => FormId */
     private const PROTECTED_POST_ROUTES = [
-        '/register'              => FormId::REGISTER,
-        '/login'                 => FormId::LOGIN,
-        '/logout'                => FormId::LOGOUT,
-        '/resend-confirmation'   => FormId::RESEND_CONFIRM,
-        '/forgot-password'       => FormId::FORGOT_PASSWORD,
-        '/reset-password'        => FormId::RESET_PASSWORD,
-        '/admin/users/{id}/edit' => FormId::ADMIN_USER_EDIT,
+        '/register'                => FormId::REGISTER,
+        '/login'                   => FormId::LOGIN,
+        '/logout'                  => FormId::LOGOUT,
+        '/resend-confirmation'     => FormId::RESEND_CONFIRM,
+        '/forgot-password'         => FormId::FORGOT_PASSWORD,
+        '/reset-password'          => FormId::RESET_PASSWORD,
+        '/admin/users/{id}/edit'   => FormId::ADMIN_USER_EDIT,
+        '/admin/users/{id}/delete' => FormId::ADMIN_USER_DELETE,
     ];
 
     public function __construct(
@@ -110,11 +111,11 @@ final class CsrfMiddleware implements MiddlewareInterface
     private function logCsrfBlocked(string $uri, string $formId, ?string $submittedToken): void
     {
         Logger::getLogger('app')->warning('csrf_mw_block', [
-            'uri'        => $uri,
-            'form_id'    => $formId,
-            'token'      => $this->tokenOrNone($submittedToken),
-            'client_ip'  => $this->serverString('REMOTE_ADDR', 'unknown'),
-            'user_agent' => $this->serverString('HTTP_USER_AGENT', 'unknown'),
+            'uri'           => $uri,
+            'form_id'       => $formId,
+            'token_present' => $submittedToken !== null,
+            'client_ip'     => $this->serverString('REMOTE_ADDR', 'unknown'),
+            'user_agent'    => $this->serverString('HTTP_USER_AGENT', 'unknown'),
         ]);
     }
 
@@ -130,23 +131,12 @@ final class CsrfMiddleware implements MiddlewareInterface
 
     private function resolveRedirectTarget(): string
     {
-        $referer = $this->serverString('HTTP_REFERER', '');
-
-        if ($referer !== '') {
-            return $referer;
-        }
-
         return AppConfig::getPath('/');
     }
 
     private function redirect(string $target): void
     {
         header('Location: ' . $target, true, 302);
-    }
-
-    private function tokenOrNone(?string $token): string
-    {
-        return ($token !== null && $token !== '') ? $token : '(none)';
     }
 
     private function serverString(string $key, string $default): string

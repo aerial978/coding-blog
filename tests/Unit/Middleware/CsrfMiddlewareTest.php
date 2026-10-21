@@ -29,6 +29,8 @@ final class CsrfMiddlewareTest extends TestCase
     private $request;
     protected function setUp(): void
     {
+        $_ENV['APP_URL'] = 'http://localhost/coding-blog';
+
         $this->csrf    = $this->createMock(CsrfTokenInterface::class);
         $this->flash   = $this->createMock(FlashInterface::class);
         $this->request = $this->createMock(Request::class);
@@ -95,6 +97,84 @@ final class CsrfMiddlewareTest extends TestCase
         );
 
         $this->assertTrue($result);
+    }
+
+    public function test_post_admin_user_delete_route_with_valid_token_is_allowed(): void
+    {
+        $this->request->method('request')->willReturn([
+            'csrf_token' => 'admin-delete-token',
+        ]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ADMIN_USER_DELETE, 'admin-delete-token')
+            ->willReturn(true);
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/admin/users/229/delete',
+            'POST'
+        );
+
+        $this->assertTrue($result);
+    }
+
+    #[RunInSeparateProcess]
+    public function test_post_admin_user_delete_route_with_invalid_token_is_blocked(): void
+    {
+        $this->request->method('request')->willReturn([
+            'csrf_token' => 'bad-token',
+        ]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ADMIN_USER_DELETE, 'bad-token')
+            ->willReturn(false);
+
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+
+        $_SERVER['HTTP_REFERER'] = '/admin/users';
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/admin/users/229/delete',
+            'POST'
+        );
+
+        $this->assertFalse($result);
+    }
+
+    #[RunInSeparateProcess]
+    public function test_post_admin_user_delete_route_without_token_is_blocked(): void
+    {
+        $this->request->method('request')->willReturn([]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ADMIN_USER_DELETE, null)
+            ->willReturn(false);
+
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+
+        $_SERVER['HTTP_REFERER'] = '/admin/users';
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/admin/users/229/delete',
+            'POST'
+        );
+
+        $this->assertFalse($result);
     }
 
     #[RunInSeparateProcess]

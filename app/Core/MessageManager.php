@@ -22,6 +22,10 @@ class MessageManager
             ErrorCode::ADMIN_USER_NOT_FOUND         => 'Utilisateur introuvable.',
             ErrorCode::ADMIN_USER_UPDATE_FAILED     => 'La mise à jour de l’utilisateur a échoué.',
             ErrorCode::ADMIN_USER_UPDATE_SUCCESS    => 'L’utilisateur a été mis à jour avec succès.',
+            ErrorCode::ADMIN_USER_DELETE_SUCCESS    => 'L’utilisateur a été supprimé définitivement.',
+            ErrorCode::ADMIN_USER_DELETE_FAILED     => 'Impossible de supprimer cet utilisateur. Veuillez réessayer.',
+            ErrorCode::ADMIN_USER_DELETE_SELF       => 'Vous ne pouvez pas supprimer votre propre compte.',
+            ErrorCode::ADMIN_USER_DELETE_LAST_ADMIN => 'Le dernier administrateur actif ne peut pas être supprimé.',
 
             // ==== Auth - Registration ====
             ErrorCode::AUTH_USERNAME_INVALID               => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",

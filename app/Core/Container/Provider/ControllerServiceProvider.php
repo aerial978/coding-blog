@@ -20,6 +20,7 @@ use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
 use App\Core\Contract\SessionInterface;
+use App\Handler\Admin\AdminUserDeleteHandler;
 use App\Handler\Admin\AdminUserGetHandler;
 use App\Handler\Admin\AdminUserPostHandler;
 use App\Handler\Auth\ConfirmAccountHandler;
@@ -42,6 +43,8 @@ use App\Handler\OAuth\GoogleOAuthStartHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Model\Contract\UserModelInterface;
+use App\Security\Contract\AuthCheckerInterface;
+use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
 use Psr\Container\ContainerInterface;
 
@@ -151,12 +154,24 @@ final class ControllerServiceProvider
                 /** @var AdminUserPostHandler $postHandler */
                 $postHandler = $container->get(AdminUserPostHandler::class);
 
+                /** @var AdminUserDeleteHandler $deleteHandler */
+                $deleteHandler = $container->get(AdminUserDeleteHandler::class);
+
+                /** @var AuthCheckerInterface $authChecker */
+                $authChecker = $container->get(AuthCheckerInterface::class);
+
+                /** @var CsrfTokenInterface $csrf */
+                $csrf = $container->get(CsrfTokenInterface::class);
+
                 return new UserController(
                     $userModel,
                     $responder,
                     $request,
                     $getHandler,
                     $postHandler,
+                    $deleteHandler,
+                    $authChecker,
+                    $csrf,
                 );
             },
         ];

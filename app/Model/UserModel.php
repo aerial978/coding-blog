@@ -7,6 +7,7 @@ namespace App\Model;
 use App\Core\Contract\SqlHelperInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
+use RuntimeException;
 
 /**
  * Handles database operations related to the User entity.
@@ -391,5 +392,111 @@ class UserModel implements UserModelInterface
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         return $row ? (new UserEntity())->hydrate((array) $row) : null;
+    }
+
+    /**
+     * Permanently deletes a user by their ID.
+     */
+    public function deleteById(int $userId): bool
+    {
+        $statement = $this->sqlHelper->request(
+            "DELETE FROM {$this->table} WHERE id = :user_id",
+            [':user_id' => $userId]
+        );
+
+        return $statement->rowCount() === 1;
+    }
+
+    /**
+     * Counts users with the ADMIN role and an active status.
+     */
+    public function countActiveAdmins(): int
+    {
+        $statement = $this->sqlHelper->request(
+            "SELECT COUNT(*)
+            FROM {$this->table} AS u
+            INNER JOIN role AS r ON r.id = u.role_id
+            WHERE r.name = :role
+            AND u.status = :status",
+            [
+                ':role'   => 'ADMIN',
+                ':status' => 'active',
+            ]
+        );
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * Counts active administrators using a locking read.
+     *
+     * Must be called within an active database transaction.
+     */
+    public function countActiveAdminsForUpdate(): int
+    {
+        $statement = $this->sqlHelper->request(
+            "SELECT u.id
+            FROM {$this->table} AS u
+            INNER JOIN role AS r ON r.id = u.role_id
+            WHERE r.name = :role
+            AND u.status = :status
+            ORDER BY u.id
+            FOR UPDATE",
+            [
+                ':role'   => 'ADMIN',
+                ':status' => 'active',
+            ]
+        );
+
+        return count($statement->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Locks the ADMIN role row for the duration of the current transaction.
+     */
+    public function lockAdminRole(): void
+    {
+        $statement = $this->sqlHelper->request(
+            'SELECT id FROM role WHERE name = :role FOR UPDATE',
+            [':role' => 'ADMIN']
+        );
+
+        if ($statement->fetchColumn() === false) {
+            throw new RuntimeException('ADMIN role not found.');
+        }
+    }
+
+    /**
+     * Retrieves and locks a user for the duration of the current transaction.
+     */
+    public function findOneByIdForUpdate(int $userId): ?UserEntity
+    {
+        $sql = "SELECT
+                u.id AS user_id,
+                u.username,
+                u.slug,
+                u.email,
+                u.password,
+                u.status,
+                u.email_2fa_enabled,
+                u.created_at,
+                u.updated_at,
+                r.name AS role
+            FROM {$this->table} u
+            INNER JOIN role r ON r.id = u.role_id
+            WHERE u.id = :user_id
+            LIMIT 1
+            FOR UPDATE OF u";
+
+        $stmt = $this->sqlHelper->request($sql, [
+            ':user_id' => $userId,
+        ]);
+
+        /** @var array<string,mixed>|false $row */
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row
+            ? (new UserEntity())->hydrate((array) $row)
+            : null;
     }
 }
