@@ -8,7 +8,9 @@ use App\Core\Contract\SessionInterface;
 use App\Core\Contract\SqlHelperInterface;
 use App\Core\Mail\MailerInterface;
 use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Contract\EmailEventModelInterface;
 use App\Model\Contract\OAuthAccountModelInterface;
+use App\Model\Contract\RegistrationEventModelInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
 use App\Model\Email2faChallengeModel;
@@ -24,7 +26,9 @@ use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
 use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
+use App\Service\Admin\AdminUserDeletionService;
 use App\Service\Admin\AdminUserService;
+use App\Service\Admin\Contract\AdminUserDeletionServiceInterface;
 use App\Service\Admin\Contract\AdminUserServiceInterface;
 use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
@@ -106,6 +110,20 @@ final class UserServiceProvider
                 /** @var SqlHelperInterface $sql */
                 $sql = $container->get(SqlHelperInterface::class);
                 return new EmailEventModel($sql);
+            },
+
+            EmailEventModelInterface::class => static function (ContainerInterface $container): EmailEventModelInterface {
+                /** @var EmailEventModel $model */
+                $model = $container->get(EmailEventModel::class);
+
+                return $model;
+            },
+
+            RegistrationEventModelInterface::class => static function (ContainerInterface $container): RegistrationEventModelInterface {
+                /** @var RegistrationEventModel $model */
+                $model = $container->get(RegistrationEventModel::class);
+
+                return $model;
             },
         ];
     }
@@ -458,6 +476,35 @@ final class UserServiceProvider
                     $resetPassword,
                 );
             },
+
+            AdminUserDeletionService::class => static function (ContainerInterface $container): AdminUserDeletionService {
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                /** @var UserTokenModelInterface $userTokenModel */
+                $userTokenModel = $container->get(UserTokenModelInterface::class);
+
+                /** @var EmailEventModelInterface $emailEventModel */
+                $emailEventModel = $container->get(EmailEventModelInterface::class);
+
+                /** @var RegistrationEventModelInterface $registrationEvents */
+                $registrationEvents = $container->get(RegistrationEventModelInterface::class);
+
+                /** @var SqlHelperInterface $sqlHelper */
+                $sqlHelper = $container->get(SqlHelperInterface::class);
+
+                /** @var AuthCheckerInterface $authChecker */
+                $authChecker = $container->get(AuthCheckerInterface::class);
+
+                return new AdminUserDeletionService(
+                    $userModel,
+                    $userTokenModel,
+                    $emailEventModel,
+                    $registrationEvents,
+                    $sqlHelper,
+                    $authChecker,
+                );
+            },
         ];
     }
 
@@ -500,6 +547,13 @@ final class UserServiceProvider
             AdminUserServiceInterface::class => static function (ContainerInterface $container): AdminUserServiceInterface {
                 /** @var AdminUserService $service */
                 $service = $container->get(AdminUserService::class);
+
+                return $service;
+            },
+
+            AdminUserDeletionServiceInterface::class => static function (ContainerInterface $container): AdminUserDeletionServiceInterface {
+                /** @var AdminUserDeletionService $service */
+                $service = $container->get(AdminUserDeletionService::class);
 
                 return $service;
             },

@@ -23,5 +23,6 @@ final class FormId
     public const RESET_PASSWORD  = 'reset_password_form';
 
     // Admin
-    public const ADMIN_USER_EDIT = 'admin_user_edit_form';
+    public const ADMIN_USER_EDIT   = 'admin_user_edit_form';
+    public const ADMIN_USER_DELETE = 'admin_user_delete_form';
 }

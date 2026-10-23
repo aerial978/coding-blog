@@ -5,59 +5,86 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Core\Contract\SessionInterface;
+use App\Model\Contract\UserModelInterface;
+use App\Model\Entity\UserEntity;
 use App\Security\Contract\AuthCheckerInterface;
 
 /**
- * Vérifie l'état d'authentification en s'appuyant sur la session.
+ * Vérifie l'authentification à partir de la session et de la base de données.
  *
- * Stockage attendu dans la session :
- * $_SESSION['user'] = [
- *     'id' => int,
- *     'roles' => ['MEMBER', 'ADMIN'],
- * ];
+ * L'utilisateur est chargé une seule fois par instance.
  */
 final class SessionAuthChecker implements AuthCheckerInterface
 {
-    public function __construct(private SessionInterface $session)
-    {
+    private bool $resolved = false;
+
+    private ?UserEntity $authenticatedUser = null;
+
+    public function __construct(
+        private SessionInterface $session,
+        private UserModelInterface $userModel
+    ) {
     }
 
-    // @SuppressWarnings(PHPMD.UnusedFormalParameter)
     public function isAuthenticated(): bool
     {
-        $user = $this->session->get('user');
-        return is_array($user) && isset($user['id']);
+        return $this->resolveUser() !== null;
     }
 
     /** @return list<string> */
-    // @SuppressWarnings(PHPMD.UnusedFormalParameter)
     public function getRoles(): array
     {
-        $user = $this->session->get('user');
-        if (!is_array($user)) {
-            return [];
-        }
+        $role = $this->resolveUser()?->getRole();
 
-        $roles = $user['roles'] ?? [];
-        if (!is_array($roles)) {
-            return [];
-        }
-
-        // Ne renvoyer que des chaînes
-        $out = [];
-        foreach ($roles as $r) {
-            if (is_string($r)) {
-                $out[] = $r;
-            }
-        }
-        return $out;
+        return is_string($role) && $role !== '' ? [$role] : [];
     }
 
     public function getUserId(): ?int
     {
-        $user = $this->session->get('user');
-        return (is_array($user) && isset($user['id']) && is_int($user['id']))
-            ? $user['id']
-            : null;
+        return $this->resolveUser()?->getUserId();
+    }
+
+    private function resolveUser(): ?UserEntity
+    {
+        if ($this->resolved) {
+            return $this->authenticatedUser;
+        }
+
+        $this->resolved = true;
+
+        $sessionUser = $this->session->get('user');
+
+        if (!$this->hasValidSessionUser($sessionUser)) {
+            return null;
+        }
+
+        try {
+            $user = $this->userModel->findOneById($sessionUser['id']);
+        } catch (\Throwable $exception) {
+            // En cas d'erreur SQL, refuser l'accès sans détruire la session.
+            return null;
+        }
+
+        if ($user === null || $user->getStatus() !== 'active') {
+            // Le compte n'existe plus ou n'est plus autorisé à se connecter.
+            $this->session->remove('user');
+
+            return null;
+        }
+
+        $this->authenticatedUser = $user;
+
+        return $this->authenticatedUser;
+    }
+
+    /**
+     * @phpstan-assert-if-true array{id: int} $sessionUser
+     */
+    private function hasValidSessionUser(mixed $sessionUser): bool
+    {
+        return is_array($sessionUser)
+            && isset($sessionUser['id'])
+            && is_int($sessionUser['id'])
+            && $sessionUser['id'] > 0;
     }
 }

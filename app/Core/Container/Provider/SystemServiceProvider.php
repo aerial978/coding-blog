@@ -29,6 +29,7 @@ use App\Middleware\AuthenticationMiddleware;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\RememberMeMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
+use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
@@ -270,7 +271,11 @@ final class SystemServiceProvider
             SessionAuthChecker::class => static function (ContainerInterface $container): SessionAuthChecker {
                 /** @var SessionInterface $session */
                 $session = $container->get(SessionInterface::class);
-                return new SessionAuthChecker($session);
+
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                return new SessionAuthChecker($session, $userModel);
             },
 
             RememberMeCookieManager::class => static fn (): RememberMeCookieManager =>

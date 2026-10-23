@@ -9,6 +9,8 @@ use App\Core\Contract\SessionInterface;
 use App\Core\Contract\SqlHelperInterface;
 use App\Core\Mail\MailerInterface;
 use App\Model\Contract\Email2faChallengeModelInterface;
+use App\Model\Contract\EmailEventModelInterface;
+use App\Model\Contract\RegistrationEventModelInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Contract\UserTokenModelInterface;
 use App\Model\Email2faChallengeModel;
@@ -23,7 +25,9 @@ use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
 use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
+use App\Service\Admin\AdminUserDeletionService;
 use App\Service\Admin\AdminUserService;
+use App\Service\Admin\Contract\AdminUserDeletionServiceInterface;
 use App\Service\Admin\Contract\AdminUserServiceInterface;
 use App\Service\Security\AccountConfirmationService;
 use App\Service\Security\ConfirmationResendService;
@@ -122,6 +126,11 @@ final class UserServiceProviderTest extends TestCase
         $this->assertArrayHasKey(SecurityService::class, $definitions);
 
         $this->assertArrayHasKey(AdminUserServiceInterface::class, $definitions);
+        $this->assertArrayHasKey(EmailEventModelInterface::class, $definitions);
+        $this->assertArrayHasKey(RegistrationEventModelInterface::class, $definitions);
+
+        $this->assertArrayHasKey(AdminUserDeletionService::class, $definitions);
+        $this->assertArrayHasKey(AdminUserDeletionServiceInterface::class, $definitions);
 
         $this->assertArrayHasKey(SecurityServiceInterface::class, $definitions);
         $this->assertArrayHasKey(LoginServiceInterface::class, $definitions);
@@ -258,6 +267,51 @@ final class UserServiceProviderTest extends TestCase
         $this->assertSame(
             $adminUserService,
             $definitions[AdminUserServiceInterface::class](
+                $aliasContainer
+            )
+        );
+    }
+
+    public function testAdminUserDeletionServiceAndInterfaceBindingResolveCorrectly(): void
+    {
+        $definitions = UserServiceProvider::getDefinitions();
+
+        $services = $this->baseServices();
+        $sql      = $services[SqlHelperInterface::class];
+
+        $userModel              = new UserModel($sql);
+        $userTokenModel         = new UserTokenModel($sql);
+        $emailEventModel        = new EmailEventModel($sql);
+        $registrationEventModel = new RegistrationEventModel($sql);
+
+        $serviceContainer = $this->makeContainer($services + [
+            UserModelInterface::class              => $userModel,
+            UserTokenModelInterface::class         => $userTokenModel,
+            EmailEventModelInterface::class        => $emailEventModel,
+            RegistrationEventModelInterface::class => $registrationEventModel,
+        ]);
+
+        $deletionService = $definitions[AdminUserDeletionService::class](
+            $serviceContainer
+        );
+
+        $this->assertInstanceOf(
+            AdminUserDeletionService::class,
+            $deletionService
+        );
+
+        $this->assertInstanceOf(
+            AdminUserDeletionServiceInterface::class,
+            $deletionService
+        );
+
+        $aliasContainer = $this->makeContainer([
+            AdminUserDeletionService::class => $deletionService,
+        ]);
+
+        $this->assertSame(
+            $deletionService,
+            $definitions[AdminUserDeletionServiceInterface::class](
                 $aliasContainer
             )
         );

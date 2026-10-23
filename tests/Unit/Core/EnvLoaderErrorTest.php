@@ -52,7 +52,23 @@ final class EnvLoaderErrorTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Missing environment variables');
 
-        EnvLoader::load(dirname(__DIR__, 3) . '/');
+        $directory = sys_get_temp_dir() . '/coding-blog-envloader-' . bin2hex(random_bytes(8)) . '/';
+
+        if (!mkdir($directory, 0700, true)) {
+            $this->fail('Unable to create temporary environment directory.');
+        }
+
+        file_put_contents(
+            $directory . '.env.test',
+            "APP_ENV=test\nAPP_URL=http://localhost\nDB_HOST=localhost\n"
+        );
+
+        try {
+            EnvLoader::load($directory);
+        } finally {
+            unlink($directory . '.env.test');
+            rmdir($directory);
+        }
     }
 
     /**

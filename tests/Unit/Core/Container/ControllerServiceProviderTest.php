@@ -22,6 +22,7 @@ use App\Core\Container\Provider\ControllerServiceProvider;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
 use App\Core\View;
+use App\Handler\Admin\AdminUserDeleteHandler;
 use App\Handler\Admin\AdminUserGetHandler;
 use App\Handler\Admin\AdminUserPostHandler;
 use App\Handler\Auth\ConfirmAccountHandler;
@@ -97,8 +98,9 @@ final class ControllerServiceProviderTest extends TestCase
             ResponderInterface::class            => $this->createMock(ResponderInterface::class),
             AccountServiceInterface::class       => $this->createMock(AccountServiceInterface::class),
 
-            AdminUserGetHandler::class  => $this->instantiateWithoutConstructor(AdminUserGetHandler::class),
-            AdminUserPostHandler::class => $this->instantiateWithoutConstructor(AdminUserPostHandler::class),
+            AdminUserGetHandler::class           => $this->instantiateWithoutConstructor(AdminUserGetHandler::class),
+            AdminUserPostHandler::class          => $this->instantiateWithoutConstructor(AdminUserPostHandler::class),
+            AdminUserDeleteHandler::class        => $this->instantiateWithoutConstructor(AdminUserDeleteHandler::class),
 
             ConfirmAccountHandler::class         => $this->instantiateWithoutConstructor(ConfirmAccountHandler::class),
             RegisterGetHandler::class            => $this->instantiateWithoutConstructor(RegisterGetHandler::class),

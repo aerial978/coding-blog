@@ -17,4 +17,9 @@ interface RegistrationEventModelInterface
     ): bool;
 
     public function deleteOlderThan(int $days): int;
+
+    /**
+     * Detaches historical registration events from a user without deleting them.
+     */
+    public function detachUser(int $userId): void;
 }
