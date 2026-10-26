@@ -219,4 +219,43 @@ final class AdminUserPostHandlerTest extends TestCase
 
         $this->handler->handle('abc', $form);
     }
+
+    public function testHandleRejectsAdminAccountModification(): void
+    {
+        $form = [
+            'role'   => 'MEMBER',
+            'status' => 'disabled',
+        ];
+
+        $this->adminUserService
+            ->expects($this->once())
+            ->method('update')
+            ->with(10, $form)
+            ->willReturn([
+                'errors' => [
+                    ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+                ],
+            ]);
+
+        $this->flash
+            ->expects($this->once())
+            ->method('add')
+            ->with(
+                'error',
+                \App\Core\MessageManager::get(
+                    ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN
+                )
+            );
+
+        $this->flash
+            ->expects($this->never())
+            ->method('put');
+
+        $this->responder
+            ->expects($this->once())
+            ->method('redirect')
+            ->with('/admin/users/10/edit');
+
+        $this->handler->handle('10', $form);
+    }
 }

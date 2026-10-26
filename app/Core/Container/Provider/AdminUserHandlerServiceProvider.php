@@ -11,7 +11,6 @@ use App\Handler\Admin\AdminUserGetHandler;
 use App\Handler\Admin\AdminUserPostHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Model\Contract\UserModelInterface;
-use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Admin\Contract\AdminUserDeletionServiceInterface;
 use App\Service\Admin\Contract\AdminUserServiceInterface;
@@ -40,19 +39,11 @@ final class AdminUserHandlerServiceProvider
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
 
-                /** @var FlashInterface $flash */
-                $flash = $container->get(FlashInterface::class);
-
-                /** @var AuthCheckerInterface $authChecker */
-                $authChecker = $container->get(AuthCheckerInterface::class);
-
                 return new AdminUserGetHandler(
                     $userModel,
                     $responder,
                     $errorController,
                     $csrf,
-                    $flash,
-                    $authChecker,
                 );
             },
 

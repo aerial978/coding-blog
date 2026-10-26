@@ -98,26 +98,52 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
         self::assertSame(1, (int) $statement->fetchColumn());
     }
 
-    public function testAdminCanDeleteAnotherActiveAdmin(): void
+
+    public function testAdminCannotDeleteAnotherActiveAdmin(): void
     {
-        $adminId  = $this->createTestUser('ADMIN', 'last_admin_test_actor');
-        $targetId = $this->createTestUser('ADMIN', 'last_admin_test_target');
+        $adminId = $this->createTestUser(
+            'ADMIN',
+            'protected_admin_test_actor'
+        );
+
+        $targetId = $this->createTestUser(
+            'ADMIN',
+            'protected_admin_test_target'
+        );
 
         $service = $this->createDeletionService($adminId);
 
         $result = $service->delete($targetId);
 
-        self::assertSame([], $result);
+        self::assertSame(
+            ['errors' => [ErrorCode::ADMIN_USER_DELETE_FORBIDDEN]],
+            $result
+        );
+
+        self::assertFalse(
+            $this->pdo->inTransaction(),
+            'The transaction must be closed after refusing admin deletion.'
+        );
 
         $statement = $this->pdo->prepare(
             'SELECT COUNT(*) FROM user WHERE id = :user_id'
         );
 
         $statement->execute(['user_id' => $targetId]);
-        self::assertSame(0, (int) $statement->fetchColumn());
+
+        self::assertSame(
+            1,
+            (int) $statement->fetchColumn(),
+            'The protected administrator account must be preserved.'
+        );
 
         $statement->execute(['user_id' => $adminId]);
-        self::assertSame(1, (int) $statement->fetchColumn());
+
+        self::assertSame(
+            1,
+            (int) $statement->fetchColumn(),
+            'The acting administrator account must be preserved.'
+        );
     }
 
     public function testDeletingUserPreservesHistoricalEvents(): void
@@ -132,7 +158,7 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
             'historical_events_test_member'
         );
 
-        $emailEventId = $this->createEmailEvent($memberId);
+        $emailEventId        = $this->createEmailEvent($memberId);
         $registrationEventId = $this->createRegistrationEvent($memberId);
 
         $service = $this->createDeletionService($adminId);
@@ -193,7 +219,7 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
         );
 
         $targetTokenId = $this->createTestToken($memberId);
-        $adminTokenId = $this->createTestToken($adminId);
+        $adminTokenId  = $this->createTestToken($adminId);
 
         $service = $this->createDeletionService($adminId);
 
@@ -236,9 +262,9 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
             'rollback_test_member'
         );
 
-        $emailEventId = $this->createEmailEvent($memberId);
+        $emailEventId        = $this->createEmailEvent($memberId);
         $registrationEventId = $this->createRegistrationEvent($memberId);
-        $tokenId = $this->createTestToken($memberId);
+        $tokenId             = $this->createTestToken($memberId);
 
         $service = $this->createDeletionService(
             $adminId,
@@ -281,7 +307,7 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
 
         foreach (
             [
-            'email_events' => $emailEventId,
+            'email_events'        => $emailEventId,
             'registration_events' => $registrationEventId,
             ] as $table => $eventId
         ) {
@@ -494,7 +520,7 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
 
                 foreach (
                     [
-                    'email_events' => $this->createdEmailEventIds,
+                    'email_events'        => $this->createdEmailEventIds,
                     'registration_events' => $this->createdRegistrationEventIds,
                     ] as $table => $eventIds
                 ) {
@@ -518,5 +544,117 @@ final class AdminUserDeletionRecoveryTest extends BaseTestCase
         } finally {
             parent::tearDown();
         }
+    }
+
+    public function testAdminCannotDeleteDisabledAdmin(): void
+    {
+        $adminId = $this->createTestUser(
+            'ADMIN',
+            'disabled_admin_test_actor'
+        );
+
+        $targetId = $this->createTestUser(
+            'ADMIN',
+            'disabled_admin_test_target'
+        );
+
+        $statement = $this->pdo->prepare(
+            'UPDATE user SET status = :status WHERE id = :user_id'
+        );
+
+        $statement->execute([
+            'status'  => 'disabled',
+            'user_id' => $targetId,
+        ]);
+
+        self::assertSame(1, $statement->rowCount());
+
+        $service = $this->createDeletionService($adminId);
+
+        $result = $service->delete($targetId);
+
+        self::assertSame(
+            ['errors' => [ErrorCode::ADMIN_USER_DELETE_FORBIDDEN]],
+            $result
+        );
+
+        self::assertFalse(
+            $this->pdo->inTransaction(),
+            'The transaction must be closed after refusing admin deletion.'
+        );
+
+        $statement = $this->pdo->prepare(
+            'SELECT role.name AS role, user.status
+            FROM user
+            INNER JOIN role ON role.id = user.role_id
+            WHERE user.id = :user_id'
+        );
+
+        $statement->execute(['user_id' => $targetId]);
+
+        self::assertSame(
+            [
+                'role'   => 'ADMIN',
+                'status' => 'disabled',
+            ],
+            $statement->fetch(PDO::FETCH_ASSOC),
+            'The disabled administrator must remain unchanged.'
+        );
+    }
+
+    public function testAdminCannotDeleteInactiveAdmin(): void
+    {
+        $adminId = $this->createTestUser(
+            'ADMIN',
+            'inactive_admin_test_actor'
+        );
+
+        $targetId = $this->createTestUser(
+            'ADMIN',
+            'inactive_admin_test_target'
+        );
+
+        $statement = $this->pdo->prepare(
+            'UPDATE user SET status = :status WHERE id = :user_id'
+        );
+
+        $statement->execute([
+            'status'  => 'inactive',
+            'user_id' => $targetId,
+        ]);
+
+        self::assertSame(1, $statement->rowCount());
+
+        $service = $this->createDeletionService($adminId);
+
+        $result = $service->delete($targetId);
+
+        self::assertSame(
+            ['errors' => [ErrorCode::ADMIN_USER_DELETE_FORBIDDEN]],
+            $result
+        );
+
+        self::assertFalse(
+            $this->pdo->inTransaction(),
+            'The transaction must be closed after refusing admin deletion.'
+        );
+
+        $statement = $this->pdo->prepare(
+            'SELECT role.name AS role, user.status
+            FROM user
+            INNER JOIN role ON role.id = user.role_id
+            WHERE user.id = :user_id'
+        );
+
+        $statement->execute(['user_id' => $targetId]);
+
+        self::assertSame(
+            [
+                'role'   => 'ADMIN',
+                'status' => 'inactive',
+            ],
+            $statement->fetch(PDO::FETCH_ASSOC),
+            'The inactive administrator must remain unchanged.'
+        );
     }
 }

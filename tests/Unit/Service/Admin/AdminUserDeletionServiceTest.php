@@ -158,7 +158,7 @@ final class AdminUserDeletionServiceTest extends TestCase
         ], $result);
     }
 
-    public function testDeleteRejectsLastActiveAdmin(): void
+    public function testDeleteRejectsActiveAdminAccount(): void
     {
         $admin = (new UserEntity())
             ->setUserId(10)
@@ -198,9 +198,12 @@ final class AdminUserDeletionServiceTest extends TestCase
             );
 
         $this->userModel
-            ->expects($this->once())
-            ->method('countActiveAdminsForUpdate')
-            ->willReturn(1);
+            ->expects($this->never())
+            ->method('countActiveAdminsForUpdate');
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('deleteById');
 
         $this->sqlHelper
             ->expects($this->once())
@@ -210,15 +213,11 @@ final class AdminUserDeletionServiceTest extends TestCase
             ->expects($this->never())
             ->method('commit');
 
-        $this->userModel
-            ->expects($this->never())
-            ->method('deleteById');
-
         $result = $this->service->delete(20);
 
         $this->assertSame([
             'errors' => [
-                ErrorCode::ADMIN_USER_DELETE_LAST_ADMIN,
+                ErrorCode::ADMIN_USER_DELETE_FORBIDDEN,
             ],
         ], $result);
     }
@@ -497,7 +496,7 @@ final class AdminUserDeletionServiceTest extends TestCase
         ], $this->service->delete(20));
     }
 
-    public function testDeleteAllowsAdminWhenAnotherActiveAdminRemains(): void
+    public function testDeleteRejectsAdminEvenWhenAnotherActiveAdminRemains(): void
     {
         $admin = (new UserEntity())
             ->setUserId(10)
@@ -537,40 +536,38 @@ final class AdminUserDeletionServiceTest extends TestCase
             );
 
         $this->userModel
-            ->expects($this->once())
-            ->method('countActiveAdminsForUpdate')
-            ->willReturn(2);
+            ->expects($this->never())
+            ->method('countActiveAdminsForUpdate');
 
         $this->emailEventModel
-            ->expects($this->once())
-            ->method('detachUser')
-            ->with(20);
+            ->expects($this->never())
+            ->method('detachUser');
 
         $this->registrationEventModel
-            ->expects($this->once())
-            ->method('detachUser')
-            ->with(20);
+            ->expects($this->never())
+            ->method('detachUser');
 
         $this->userTokenModel
-            ->expects($this->once())
-            ->method('deleteAllByUserId')
-            ->with(20);
+            ->expects($this->never())
+            ->method('deleteAllByUserId');
 
         $this->userModel
-            ->expects($this->once())
-            ->method('deleteById')
-            ->with(20)
-            ->willReturn(true);
+            ->expects($this->never())
+            ->method('deleteById');
 
         $this->sqlHelper
             ->expects($this->once())
-            ->method('commit');
+            ->method('rollBack');
 
         $this->sqlHelper
             ->expects($this->never())
-            ->method('rollBack');
+            ->method('commit');
 
-        $this->assertSame([], $this->service->delete(20));
+        $this->assertSame([
+            'errors' => [
+                ErrorCode::ADMIN_USER_DELETE_FORBIDDEN,
+            ],
+        ], $this->service->delete(20));
     }
 
     public function testDeleteRejectsUnauthenticatedUser(): void
@@ -802,6 +799,130 @@ final class AdminUserDeletionServiceTest extends TestCase
         $this->assertSame([
             'errors' => [
                 ErrorCode::ADMIN_USER_DELETE_FAILED,
+            ],
+        ], $this->service->delete(20));
+    }
+
+    public function testDeleteRejectsDisabledAdminAccount(): void
+    {
+        $admin = (new UserEntity())
+            ->setUserId(10)
+            ->setRole('ADMIN')
+            ->setStatus('active');
+
+        $target = (new UserEntity())
+            ->setUserId(20)
+            ->setRole('ADMIN')
+            ->setStatus('disabled');
+
+        $this->authChecker
+            ->method('getUserId')
+            ->willReturn(10);
+
+        $this->authChecker
+            ->method('getRoles')
+            ->willReturn(['ADMIN']);
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('beginTransaction');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('lockAdminRole');
+
+        $this->userModel
+            ->expects($this->exactly(2))
+            ->method('findOneByIdForUpdate')
+            ->willReturnCallback(
+                static fn (int $id): ?UserEntity => match ($id) {
+                    10      => $admin,
+                    20      => $target,
+                    default => throw new \LogicException('Unexpected user ID'),
+                }
+            );
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('countActiveAdminsForUpdate');
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('deleteById');
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('rollBack');
+
+        $this->sqlHelper
+            ->expects($this->never())
+            ->method('commit');
+
+        $this->assertSame([
+            'errors' => [
+                ErrorCode::ADMIN_USER_DELETE_FORBIDDEN,
+            ],
+        ], $this->service->delete(20));
+    }
+
+    public function testDeleteRejectsInactiveAdminAccount(): void
+    {
+        $admin = (new UserEntity())
+            ->setUserId(10)
+            ->setRole('ADMIN')
+            ->setStatus('active');
+
+        $target = (new UserEntity())
+            ->setUserId(20)
+            ->setRole('ADMIN')
+            ->setStatus('inactive');
+
+        $this->authChecker
+            ->method('getUserId')
+            ->willReturn(10);
+
+        $this->authChecker
+            ->method('getRoles')
+            ->willReturn(['ADMIN']);
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('beginTransaction');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('lockAdminRole');
+
+        $this->userModel
+            ->expects($this->exactly(2))
+            ->method('findOneByIdForUpdate')
+            ->willReturnCallback(
+                static fn (int $id): ?UserEntity => match ($id) {
+                    10      => $admin,
+                    20      => $target,
+                    default => throw new \LogicException('Unexpected user ID'),
+                }
+            );
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('countActiveAdminsForUpdate');
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('deleteById');
+
+        $this->sqlHelper
+            ->expects($this->once())
+            ->method('rollBack');
+
+        $this->sqlHelper
+            ->expects($this->never())
+            ->method('commit');
+
+        $this->assertSame([
+            'errors' => [
+                ErrorCode::ADMIN_USER_DELETE_FORBIDDEN,
             ],
         ], $this->service->delete(20));
     }

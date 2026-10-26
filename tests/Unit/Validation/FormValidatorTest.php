@@ -256,21 +256,18 @@ final class FormValidatorTest extends TestCase
     public function test_validateAdminUserEdit_validates_editable_admin_fields(): void
     {
         $errors = $this->v->validateAdminUserEdit([
-            'username' => '',
-            'role'     => 'SUPER_ADMIN',
-            'status'   => 'inactive',
+            'role'   => 'SUPER_ADMIN',
+            'status' => 'inactive',
         ]);
 
         $this->assertSame([
-            'username' => ErrorCode::ADMIN_USER_USERNAME_REQUIRED,
-            'role'     => ErrorCode::ADMIN_USER_ROLE_INVALID,
-            'status'   => ErrorCode::ADMIN_USER_STATUS_INVALID,
+            'role'   => ErrorCode::ADMIN_USER_ROLE_INVALID,
+            'status' => ErrorCode::ADMIN_USER_STATUS_INVALID,
         ], $errors);
 
         $errors = $this->v->validateAdminUserEdit([
-            'username' => 'alice_123',
-            'role'     => 'MEMBER',
-            'status'   => 'active',
+            'role'   => 'MEMBER',
+            'status' => 'active',
         ]);
 
         $this->assertSame([], $errors);

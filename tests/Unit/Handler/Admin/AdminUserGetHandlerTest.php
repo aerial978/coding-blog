@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Handler\Admin;
 
 use App\Controller\ErrorController;
-use App\Core\Contract\FlashInterface;
 use App\Core\FormId;
 use App\Handler\Admin\AdminUserGetHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
-use App\Security\Contract\AuthCheckerInterface;
 use App\Security\Contract\CsrfTokenInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -22,8 +20,6 @@ final class AdminUserGetHandlerTest extends TestCase
     private ResponderInterface&MockObject $responder;
     private ErrorController&MockObject $errorController;
     private CsrfTokenInterface&MockObject $csrf;
-    private FlashInterface&MockObject $flash;
-    private AuthCheckerInterface&MockObject $authChecker;
 
     private AdminUserGetHandler $handler;
 
@@ -35,16 +31,12 @@ final class AdminUserGetHandlerTest extends TestCase
         $this->responder       = $this->createMock(ResponderInterface::class);
         $this->errorController = $this->createMock(ErrorController::class);
         $this->csrf            = $this->createMock(CsrfTokenInterface::class);
-        $this->flash           = $this->createMock(FlashInterface::class);
-        $this->authChecker     = $this->createMock(AuthCheckerInterface::class);
 
         $this->handler = new AdminUserGetHandler(
             $this->userModel,
             $this->responder,
             $this->errorController,
             $this->csrf,
-            $this->flash,
-            $this->authChecker,
         );
     }
 
@@ -79,10 +71,6 @@ final class AdminUserGetHandlerTest extends TestCase
             ->with(FormId::ADMIN_USER_EDIT)
             ->willReturn('csrf-admin-user-edit-token');
 
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(100);
 
         $this->responder
             ->expects($this->once())
@@ -90,9 +78,8 @@ final class AdminUserGetHandlerTest extends TestCase
             ->with(
                 'admin/users/edit.html.twig',
                 [
-                    'title'          => 'Modifier un utilisateur',
+                    'title'          => 'Consulter un administrateur',
                     'csrf_token'     => 'csrf-admin-user-edit-token',
-                    'is_own_account' => false,
                     'user'           => [
                         'user_id'    => 228,
                         'username'   => 'alice',
@@ -104,11 +91,6 @@ final class AdminUserGetHandlerTest extends TestCase
                     'active_nav'    => 'users',
                 ]
             );
-
-        $this->flash
-            ->method('take')
-            ->with('old', [])
-            ->willReturn([]);
 
         $this->handler->handle('228');
     }
@@ -130,15 +112,6 @@ final class AdminUserGetHandlerTest extends TestCase
         $this->errorController
             ->expects($this->once())
             ->method('notFound');
-
-        $this->authChecker
-            ->expects($this->never())
-            ->method('getUserId');
-
-        $this->flash
-            ->method('take')
-            ->with('old', [])
-            ->willReturn([]);
 
         $this->handler->handle('abc');
     }
@@ -163,19 +136,10 @@ final class AdminUserGetHandlerTest extends TestCase
             ->expects($this->once())
             ->method('notFound');
 
-        $this->authChecker
-            ->expects($this->never())
-            ->method('getUserId');
-
-        $this->flash
-            ->method('take')
-            ->with('old', [])
-            ->willReturn([]);
-
         $this->handler->handle('999999');
     }
 
-    public function testRendersOldEditableValuesAfterValidationError(): void
+    public function testRendersUserDataFromModel(): void
     {
         $user = (new UserEntity())->hydrate([
             'user_id'           => 228,
@@ -183,7 +147,7 @@ final class AdminUserGetHandlerTest extends TestCase
             'slug'              => 'alice',
             'email'             => 'alice@example.com',
             'password'          => 'hashed-password',
-            'role'              => 'ADMIN',
+            'role'              => 'MEMBER',
             'status'            => 'active',
             'email_2fa_enabled' => 0,
             'created_at'        => '2026-01-01 10:00:00',
@@ -196,26 +160,11 @@ final class AdminUserGetHandlerTest extends TestCase
             ->with(228)
             ->willReturn($user);
 
-        $this->flash
-            ->expects($this->once())
-            ->method('take')
-            ->with('old', [])
-            ->willReturn([
-                'username' => 'alice_updated',
-                'role'     => 'MEMBER',
-                'status'   => 'disabled',
-            ]);
-
         $this->csrf
             ->expects($this->once())
             ->method('generateToken')
             ->with(FormId::ADMIN_USER_EDIT)
             ->willReturn('csrf-admin-user-edit-token');
-
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(100);
 
         $this->responder
             ->expects($this->once())
@@ -223,25 +172,24 @@ final class AdminUserGetHandlerTest extends TestCase
             ->with(
                 'admin/users/edit.html.twig',
                 [
-                    'title'          => 'Modifier un utilisateur',
-                    'csrf_token'     => 'csrf-admin-user-edit-token',
-                    'is_own_account' => false,
-                    'user'           => [
+                    'title'      => 'Modifier un utilisateur',
+                    'csrf_token' => 'csrf-admin-user-edit-token',
+                    'user'       => [
                         'user_id'    => 228,
-                        'username'   => 'alice_updated',
+                        'username'   => 'alice',
                         'email'      => 'alice@example.com',
                         'role'       => 'MEMBER',
-                        'status'     => 'disabled',
+                        'status'     => 'active',
                         'created_at' => '2026-01-01 10:00:00',
                     ],
-                    'active_nav'    => 'users',
+                    'active_nav' => 'users',
                 ]
             );
 
         $this->handler->handle('228');
     }
 
-    public function testRendersOwnAccountFlagWhenEditingAuthenticatedUser(): void
+    public function testRendersAdminAccountData(): void
     {
         $user = (new UserEntity())->hydrate([
             'user_id'           => 228,
@@ -262,17 +210,6 @@ final class AdminUserGetHandlerTest extends TestCase
             ->with(228)
             ->willReturn($user);
 
-        $this->flash
-            ->expects($this->once())
-            ->method('take')
-            ->with('old', [])
-            ->willReturn([]);
-
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(228);
-
         $this->csrf
             ->expects($this->once())
             ->method('generateToken')
@@ -285,9 +222,8 @@ final class AdminUserGetHandlerTest extends TestCase
             ->with(
                 'admin/users/edit.html.twig',
                 [
-                    'title'          => 'Modifier un utilisateur',
+                    'title'          => 'Consulter un administrateur',
                     'csrf_token'     => 'csrf-admin-user-edit-token',
-                    'is_own_account' => true,
                     'user'           => [
                         'user_id'    => 228,
                         'username'   => 'admin',

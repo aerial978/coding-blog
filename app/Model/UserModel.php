@@ -311,30 +311,24 @@ class UserModel implements UserModelInterface
     }
 
     /**
-     * Updates the fields editable from the admin user management interface.
+     * Updates the role and status of a user from the admin interface.
      */
     public function updateAdminEditableFields(
         int $userId,
-        string $username,
-        string $slug,
         string $role,
         string $status
     ): bool {
         $sql = "UPDATE {$this->table}
                 SET
-                    username = :username,
-                    slug = :slug,
                     role_id = (SELECT id FROM role WHERE name = :role),
                     status = :status,
                     updated_at = NOW()
                 WHERE id = :user_id";
 
         $params = [
-            ':user_id'  => $userId,
-            ':username' => $username,
-            ':slug'     => $slug,
-            ':role'     => $role,
-            ':status'   => $status,
+            ':user_id' => $userId,
+            ':role'    => $role,
+            ':status'  => $status,
         ];
 
         $query = $this->sqlHelper->request($sql, $params);

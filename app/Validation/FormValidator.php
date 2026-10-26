@@ -140,13 +140,9 @@ final class FormValidator implements FormValidatorInterface
     public function validateAdminUserEdit(array $data): array
     {
         $schema = [
-            'username' => [
-                $this->required(ErrorCode::ADMIN_USER_USERNAME_REQUIRED),
-                $this->username(ErrorCode::ADMIN_USER_USERNAME_INVALID),
-            ],
             'role' => [
                 $this->inArray(
-                    ['MEMBER', 'ADMIN'],
+                    ['MEMBER'],
                     ErrorCode::ADMIN_USER_ROLE_INVALID
                 ),
             ],
