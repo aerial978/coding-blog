@@ -63,8 +63,6 @@ final class UserControllerTest extends TestCase
             $this->responder,
             $this->errorController,
             $this->csrf,
-            $this->flash,
-            $this->authChecker,
         );
 
         $postHandler = new AdminUserPostHandler(
@@ -151,11 +149,6 @@ final class UserControllerTest extends TestCase
             ->method('getUserId')
             ->willReturn(1);
 
-        $this->userModel
-            ->expects($this->once())
-            ->method('countActiveAdmins')
-            ->willReturn(1);
-
         $this->csrf
             ->expects($this->once())
             ->method('generateToken')
@@ -188,11 +181,6 @@ final class UserControllerTest extends TestCase
         $this->authChecker
             ->expects($this->once())
             ->method('getUserId')
-            ->willReturn(1);
-
-        $this->userModel
-            ->expects($this->once())
-            ->method('countActiveAdmins')
             ->willReturn(1);
 
         $this->csrf
@@ -254,22 +242,11 @@ final class UserControllerTest extends TestCase
             'updated_at'        => '2026-01-02 11:00:00',
         ]);
 
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(100);
-
         $this->userModel
             ->expects($this->once())
             ->method('findOneById')
             ->with(228)
             ->willReturn($user);
-
-        $this->flash
-            ->expects($this->once())
-            ->method('take')
-            ->with('old', [])
-            ->willReturn([]);
 
         $this->csrf
             ->expects($this->once())
@@ -283,9 +260,8 @@ final class UserControllerTest extends TestCase
             ->with(
                 'admin/users/edit.html.twig',
                 [
-                    'title'          => 'Modifier un utilisateur',
+                    'title'          => 'Consulter un administrateur',
                     'csrf_token'     => 'csrf-admin-user-edit-token',
-                    'is_own_account' => false,
                     'user'           => [
                         'user_id'    => 228,
                         'username'   => 'alice',

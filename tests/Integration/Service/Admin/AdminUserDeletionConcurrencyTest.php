@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Service\Admin;
 
 use App\Core\Database;
+use App\Core\ErrorCode;
 use PDO;
 use RuntimeException;
 use Tests\BaseTestCase;
@@ -57,14 +58,8 @@ final class AdminUserDeletionConcurrencyTest extends BaseTestCase
         self::assertSame(2, (int) $statement->fetchColumn());
     }
 
-    public function testConcurrentDeletionsPreserveOneActiveAdministrator(): void
+    public function testConcurrentAdminDeletionsAreRejected(): void
     {
-        self::assertSame(
-            0,
-            $this->countActiveAdmins(),
-            'The concurrency test requires no pre-existing active administrators.'
-        );
-
         $suffix = bin2hex(random_bytes(4));
 
         $adminA = $this->createTestAdmin('concurrency_delete_a_' . $suffix);
@@ -72,10 +67,12 @@ final class AdminUserDeletionConcurrencyTest extends BaseTestCase
 
         self::assertNotSame($adminA, $adminB);
 
-        self::assertSame(
+        $initialActiveAdminCount = $this->countActiveAdmins();
+
+        self::assertGreaterThanOrEqual(
             2,
-            $this->countActiveAdmins(),
-            'Exactly two active administrators must exist before concurrent deletion.'
+            $initialActiveAdminCount,
+            'At least two active administrators must exist before concurrent deletion attempts.'
         );
 
         $workerA = $this->startDeletionWorker($adminA, $adminB);
@@ -124,7 +121,7 @@ final class AdminUserDeletionConcurrencyTest extends BaseTestCase
             throw $startException;
         }
 
-        $resultA = [];
+        $resultA          = [];
         $workerAException = null;
 
         try {
@@ -147,24 +144,50 @@ final class AdminUserDeletionConcurrencyTest extends BaseTestCase
             throw $workerAException;
         }
 
-        $successfulDeletions = 0;
-
-        foreach ([$resultA, $resultB] as $result) {
-            if ($result === []) {
-                ++$successfulDeletions;
-            }
-        }
+        $expectedResult = [
+            'errors' => [
+                ErrorCode::ADMIN_USER_DELETE_FORBIDDEN,
+            ],
+        ];
 
         self::assertSame(
-            1,
-            $this->countActiveAdmins(),
-            'Exactly one active administrator must remain after concurrent deletions.'
+            $expectedResult,
+            $resultA,
+            'The first concurrent administrator deletion must be rejected.'
         );
 
         self::assertSame(
-            1,
-            $successfulDeletions,
-            'Exactly one concurrent administrator deletion must succeed.'
+            $expectedResult,
+            $resultB,
+            'The second concurrent administrator deletion must be rejected.'
+        );
+
+        self::assertSame(
+            $initialActiveAdminCount,
+            $this->countActiveAdmins(),
+            'The number of active administrators must remain unchanged after concurrent deletion attempts.'
+        );
+
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*)
+            FROM user u
+            INNER JOIN role r ON r.id = u.role_id
+            WHERE u.id IN (:admin_a, :admin_b)
+            AND r.name = :role
+            AND u.status = :status'
+        );
+
+        $statement->execute([
+            'admin_a' => $adminA,
+            'admin_b' => $adminB,
+            'role'    => 'ADMIN',
+            'status'  => 'active',
+        ]);
+
+        self::assertSame(
+            2,
+            (int) $statement->fetchColumn(),
+            'Both administrator accounts must remain active after concurrent deletion attempts.'
         );
     }
 
@@ -309,7 +332,7 @@ final class AdminUserDeletionConcurrencyTest extends BaseTestCase
 
             usleep(100_000);
         }
-    
+
         $stdout = stream_get_contents($worker['pipes'][1]);
         $stderr = stream_get_contents($worker['pipes'][2]);
 

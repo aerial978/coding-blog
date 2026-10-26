@@ -56,7 +56,7 @@ final class AdminUserDeletionCascadeTest extends BaseTestCase
         }
     }
 
-        private function createTestUser(string $username): int
+    private function createTestUser(string $username): int
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO user (role_id, username, slug, email, password, status)
@@ -137,7 +137,7 @@ final class AdminUserDeletionCascadeTest extends BaseTestCase
 
         $userId = $this->createTestUser($username);
 
-        $challengeId = $this->createTest2faChallenge($userId);
+        $challengeId    = $this->createTest2faChallenge($userId);
         $oauthAccountId = $this->createTestOAuthAccount($userId);
 
         $challengeExists = $this->pdo->prepare(

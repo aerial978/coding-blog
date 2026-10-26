@@ -63,10 +63,14 @@ final class AdminUserDeletionService implements AdminUserDeletionServiceInterfac
                 return $this->failure(ErrorCode::ADMIN_USER_NOT_FOUND, $adminId);
             }
 
-            if ($this->isLastActiveAdmin($target)) {
+            // Aucun compte administrateur ne peut être supprimé.
+            if ($target->getRole() === 'ADMIN') {
                 $this->sqlHelper->rollBack();
 
-                return $this->failure(ErrorCode::ADMIN_USER_DELETE_LAST_ADMIN, $adminId);
+                return $this->failure(
+                    ErrorCode::ADMIN_USER_DELETE_FORBIDDEN,
+                    $adminId
+                );
             }
 
             // Préserve les événements historiques sans référence utilisateur.
@@ -95,13 +99,6 @@ final class AdminUserDeletionService implements AdminUserDeletionServiceInterfac
         return $user !== null
             && $user->getStatus() === 'active'
             && $user->getRole()   === 'ADMIN';
-    }
-
-    private function isLastActiveAdmin(\App\Model\Entity\UserEntity $user): bool
-    {
-        return $user->getRole()   === 'ADMIN'
-            && $user->getStatus() === 'active'
-            && $this->userModel->countActiveAdminsForUpdate() <= 1;
     }
 
     /**

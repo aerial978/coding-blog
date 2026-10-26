@@ -68,8 +68,6 @@ interface UserModelInterface
      */
     public function updateAdminEditableFields(
         int $userId,
-        string $username,
-        string $slug,
         string $role,
         string $status
     ): bool;

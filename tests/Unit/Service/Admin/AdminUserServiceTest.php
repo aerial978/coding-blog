@@ -5,35 +5,57 @@ declare(strict_types=1);
 namespace Tests\Unit\Service\Admin;
 
 use App\Core\ErrorCode;
+use App\Core\Logger;
 use App\Model\Contract\UserModelInterface;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Service\Admin\AdminUserService;
 use App\Validation\Contract\FormValidatorInterface;
-use Cocur\Slugify\Slugify;
+use Monolog\Handler\TestHandler;
+use Monolog\Logger as MonoLogger;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class AdminUserServiceTest extends TestCase
 {
     private UserModelInterface&MockObject $userModel;
-    private FormValidatorInterface&MockObject $validator;
     private AuthCheckerInterface&MockObject $authChecker;
-    private Slugify&MockObject $slugify;
+    private FormValidatorInterface&MockObject $validator;
     private AdminUserService $service;
+    private TestHandler $logHandler;
 
     protected function setUp(): void
     {
+        Logger::reset();
+
+        $logger = Logger::getLogger('admin');
+
+        self::assertInstanceOf(MonoLogger::class, $logger);
+
+        $this->logHandler = new TestHandler();
+
+        $logger->setHandlers([$this->logHandler]);
+
+
         $this->userModel   = $this->createMock(UserModelInterface::class);
         $this->validator   = $this->createMock(FormValidatorInterface::class);
         $this->authChecker = $this->createMock(AuthCheckerInterface::class);
-        $this->slugify     = $this->createMock(Slugify::class);
+
+        $this->authChecker
+            ->method('getUserId')
+            ->willReturn(1);
 
         $this->service = new AdminUserService(
             $this->userModel,
             $this->validator,
             $this->authChecker,
-            $this->slugify,
         );
+    }
+
+    protected function tearDown(): void
+    {
+        Logger::reset();
+
+        parent::tearDown();
     }
 
     public function testUpdateReturnsNotFoundWhenTargetUserDoesNotExist(): void
@@ -84,45 +106,73 @@ final class AdminUserServiceTest extends TestCase
             ->expects($this->once())
             ->method('validateAdminUserEdit')
             ->with([
-                'username' => '',
-                'role'     => 'SUPER_ADMIN',
-                'status'   => 'blocked',
+                'role'   => 'SUPER_ADMIN',
+                'status' => 'blocked',
             ])
             ->willReturn([
-                'username' => ErrorCode::ADMIN_USER_USERNAME_REQUIRED,
-                'role'     => ErrorCode::ADMIN_USER_ROLE_INVALID,
-                'status'   => ErrorCode::ADMIN_USER_STATUS_INVALID,
+                'role'   => ErrorCode::ADMIN_USER_ROLE_INVALID,
+                'status' => ErrorCode::ADMIN_USER_STATUS_INVALID,
             ]);
-
-        $this->userModel
-            ->expects($this->never())
-            ->method('findOneByUsername');
 
         $this->userModel
             ->expects($this->never())
             ->method('updateAdminEditableFields');
 
         $result = $this->service->update(228, [
-            'username' => '',
+            'username' => 'alice_123',
             'role'     => 'SUPER_ADMIN',
             'status'   => 'blocked',
         ]);
 
         $this->assertSame([
             'errors' => [
-                'username' => ErrorCode::ADMIN_USER_USERNAME_REQUIRED,
-                'role'     => ErrorCode::ADMIN_USER_ROLE_INVALID,
-                'status'   => ErrorCode::ADMIN_USER_STATUS_INVALID,
+                'role'   => ErrorCode::ADMIN_USER_ROLE_INVALID,
+                'status' => ErrorCode::ADMIN_USER_STATUS_INVALID,
             ],
             'old' => [
-                'username' => '',
-                'role'     => 'SUPER_ADMIN',
-                'status'   => 'blocked',
+                'role'   => 'SUPER_ADMIN',
+                'status' => 'blocked',
             ],
         ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(2, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 228,
+            'reason'    => ErrorCode::ADMIN_USER_ROLE_INVALID,
+        ], $records[0]->context);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[1]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[1]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 228,
+            'reason'    => ErrorCode::ADMIN_USER_STATUS_INVALID,
+        ], $records[1]->context);
     }
 
-    public function testUpdateReturnsUsernameExistsWhenChangedUsernameIsAlreadyUsed(): void
+    public function testUpdateRejectsUsernameModification(): void
     {
         $user = (new \App\Model\Entity\UserEntity())
             ->setUserId(228)
@@ -131,9 +181,6 @@ final class AdminUserServiceTest extends TestCase
             ->setRole('MEMBER')
             ->setStatus('active');
 
-        $existingUser = (new \App\Model\Entity\UserEntity())
-            ->setUsername('bob_456');
-
         $this->userModel
             ->expects($this->once())
             ->method('findOneById')
@@ -141,20 +188,8 @@ final class AdminUserServiceTest extends TestCase
             ->willReturn($user);
 
         $this->validator
-            ->expects($this->once())
-            ->method('validateAdminUserEdit')
-            ->with([
-                'username' => 'bob_456',
-                'role'     => 'MEMBER',
-                'status'   => 'active',
-            ])
-            ->willReturn([]);
-
-        $this->userModel
-            ->expects($this->once())
-            ->method('findOneByUsername')
-            ->with('bob_456')
-            ->willReturn($existingUser);
+            ->expects($this->never())
+            ->method('validateAdminUserEdit');
 
         $this->userModel
             ->expects($this->never())
@@ -168,17 +203,88 @@ final class AdminUserServiceTest extends TestCase
 
         $this->assertSame([
             'errors' => [
-                'username' => ErrorCode::ADMIN_USER_USERNAME_EXISTS,
-            ],
-            'old' => [
-                'username' => 'bob_456',
-                'role'     => 'MEMBER',
-                'status'   => 'active',
+                'username' => ErrorCode::ADMIN_USER_USERNAME_FORBIDDEN,
             ],
         ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 228,
+            'reason'    => ErrorCode::ADMIN_USER_USERNAME_FORBIDDEN,
+        ], $records[0]->context);
     }
 
-    public function testUpdateDoesNotCheckUsernameCollisionWhenUsernameIsUnchanged(): void
+    public function testUpdateRejectsNonStringUsername(): void
+    {
+        $user = (new \App\Model\Entity\UserEntity())
+            ->setUserId(228)
+            ->setUsername('alice_123')
+            ->setSlug('alice-123')
+            ->setRole('MEMBER')
+            ->setStatus('active');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(228)
+            ->willReturn($user);
+
+        $this->validator
+            ->expects($this->never())
+            ->method('validateAdminUserEdit');
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('updateAdminEditableFields');
+
+        $result = $this->service->update(228, [
+            'username' => ['alice_123'],
+            'role'     => 'MEMBER',
+            'status'   => 'active',
+        ]);
+
+        $this->assertSame([
+            'errors' => [
+                'username' => ErrorCode::ADMIN_USER_USERNAME_FORBIDDEN,
+            ],
+        ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 228,
+            'reason'    => ErrorCode::ADMIN_USER_USERNAME_FORBIDDEN,
+        ], $records[0]->context);
+    }
+
+    public function testUpdateAllowsUnchangedUsernameAndUpdatesMemberStatus(): void
     {
         $user = (new \App\Model\Entity\UserEntity())
             ->setUserId(228)
@@ -197,36 +303,25 @@ final class AdminUserServiceTest extends TestCase
             ->expects($this->once())
             ->method('validateAdminUserEdit')
             ->with([
-                'username' => 'alice_123',
-                'role'     => 'MEMBER',
-                'status'   => 'active',
+                'role'   => 'MEMBER',
+                'status' => 'disabled',
             ])
             ->willReturn([]);
-
-        $this->userModel
-            ->expects($this->never())
-            ->method('findOneByUsername');
-
-        $this->slugify
-            ->expects($this->never())
-            ->method('slugify');
 
         $this->userModel
             ->expects($this->once())
             ->method('updateAdminEditableFields')
             ->with(
                 228,
-                'alice_123',
-                'alice-123',
                 'MEMBER',
-                'active'
+                'disabled'
             )
             ->willReturn(true);
 
         $result = $this->service->update(228, [
             'username' => 'alice_123',
             'role'     => 'MEMBER',
-            'status'   => 'active',
+            'status'   => 'disabled',
         ]);
 
         $this->assertSame([
@@ -234,7 +329,7 @@ final class AdminUserServiceTest extends TestCase
         ], $result);
     }
 
-    public function testUpdateGeneratesNewSlugAndPersistsWhenUsernameChanges(): void
+    public function testUpdateAllowsMissingUsernameField(): void
     {
         $user = (new \App\Model\Entity\UserEntity())
             ->setUserId(228)
@@ -253,45 +348,96 @@ final class AdminUserServiceTest extends TestCase
             ->expects($this->once())
             ->method('validateAdminUserEdit')
             ->with([
-                'username' => 'alice_updated',
-                'role'     => 'ADMIN',
-                'status'   => 'disabled',
+                'role'   => 'MEMBER',
+                'status' => 'disabled',
             ])
             ->willReturn([]);
-
-        $this->userModel
-            ->expects($this->once())
-            ->method('findOneByUsername')
-            ->with('alice_updated')
-            ->willReturn(null);
-
-        $this->slugify
-            ->expects($this->once())
-            ->method('slugify')
-            ->with('alice_updated')
-            ->willReturn('alice-updated');
 
         $this->userModel
             ->expects($this->once())
             ->method('updateAdminEditableFields')
             ->with(
                 228,
-                'alice_updated',
-                'alice-updated',
-                'ADMIN',
+                'MEMBER',
                 'disabled'
             )
             ->willReturn(true);
 
         $result = $this->service->update(228, [
-            'username' => 'alice_updated',
-            'role'     => 'ADMIN',
-            'status'   => 'disabled',
+            'role'   => 'MEMBER',
+            'status' => 'disabled',
         ]);
 
         $this->assertSame([
             'ok' => true,
         ], $result);
+    }
+
+    public function testUpdateRejectsAdminRoleAssignmentToMember(): void
+    {
+        $user = (new \App\Model\Entity\UserEntity())
+            ->setUserId(228)
+            ->setUsername('alice_123')
+            ->setSlug('alice-123')
+            ->setRole('MEMBER')
+            ->setStatus('active');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(228)
+            ->willReturn($user);
+
+        $this->validator
+            ->expects($this->once())
+            ->method('validateAdminUserEdit')
+            ->with([
+                'role'   => 'ADMIN',
+                'status' => 'active',
+            ])
+            ->willReturn([
+                'role' => ErrorCode::ADMIN_USER_ROLE_INVALID,
+            ]);
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('updateAdminEditableFields');
+
+        $result = $this->service->update(228, [
+            'username' => 'alice_123',
+            'role'     => 'ADMIN',
+            'status'   => 'active',
+        ]);
+
+        $this->assertSame([
+            'errors' => [
+                'role' => ErrorCode::ADMIN_USER_ROLE_INVALID,
+            ],
+            'old' => [
+                'role'   => 'ADMIN',
+                'status' => 'active',
+            ],
+        ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 228,
+            'reason'    => ErrorCode::ADMIN_USER_ROLE_INVALID,
+        ], $records[0]->context);
     }
 
     public function testUpdateReturnsUpdateFailedWhenPersistenceFails(): void
@@ -313,39 +459,24 @@ final class AdminUserServiceTest extends TestCase
             ->expects($this->once())
             ->method('validateAdminUserEdit')
             ->with([
-                'username' => 'alice_updated',
-                'role'     => 'ADMIN',
-                'status'   => 'disabled',
+                'role'   => 'MEMBER',
+                'status' => 'disabled',
             ])
             ->willReturn([]);
-
-        $this->userModel
-            ->expects($this->once())
-            ->method('findOneByUsername')
-            ->with('alice_updated')
-            ->willReturn(null);
-
-        $this->slugify
-            ->expects($this->once())
-            ->method('slugify')
-            ->with('alice_updated')
-            ->willReturn('alice-updated');
 
         $this->userModel
             ->expects($this->once())
             ->method('updateAdminEditableFields')
             ->with(
                 228,
-                'alice_updated',
-                'alice-updated',
-                'ADMIN',
+                'MEMBER',
                 'disabled'
             )
             ->willReturn(false);
 
         $result = $this->service->update(228, [
-            'username' => 'alice_updated',
-            'role'     => 'ADMIN',
+            'username' => 'alice_123',
+            'role'     => 'MEMBER',
             'status'   => 'disabled',
         ]);
 
@@ -354,14 +485,13 @@ final class AdminUserServiceTest extends TestCase
                 ErrorCode::ADMIN_USER_UPDATE_FAILED,
             ],
             'old' => [
-                'username' => 'alice_updated',
-                'role'     => 'ADMIN',
-                'status'   => 'disabled',
+                'role'   => 'MEMBER',
+                'status' => 'disabled',
             ],
         ], $result);
     }
 
-    public function testUpdatePreservesRoleAndStatusWhenAdminEditsOwnAccount(): void
+    public function testUpdateRejectsModificationOfAdminAccount(): void
     {
         $user = (new \App\Model\Entity\UserEntity())
             ->setUserId(228)
@@ -376,43 +506,13 @@ final class AdminUserServiceTest extends TestCase
             ->with(228)
             ->willReturn($user);
 
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(228);
-
         $this->validator
-            ->expects($this->once())
-            ->method('validateAdminUserEdit')
-            ->with([
-                'username' => 'alice_updated',
-                'role'     => 'ADMIN',
-            ])
-            ->willReturn([]);
+            ->expects($this->never())
+            ->method('validateAdminUserEdit');
 
         $this->userModel
-            ->expects($this->once())
-            ->method('findOneByUsername')
-            ->with('alice_updated')
-            ->willReturn(null);
-
-        $this->slugify
-            ->expects($this->once())
-            ->method('slugify')
-            ->with('alice_updated')
-            ->willReturn('alice-updated');
-
-        $this->userModel
-            ->expects($this->once())
-            ->method('updateAdminEditableFields')
-            ->with(
-                228,
-                'alice_updated',
-                'alice-updated',
-                'ADMIN',
-                'active'
-            )
-            ->willReturn(true);
+            ->expects($this->never())
+            ->method('updateAdminEditableFields');
 
         $result = $this->service->update(228, [
             'username' => 'alice_updated',
@@ -421,8 +521,140 @@ final class AdminUserServiceTest extends TestCase
         ]);
 
         $this->assertSame([
-            'ok' => true,
+            'errors' => [
+                ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+            ],
         ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 228,
+            'reason'    => ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+        ], $records[0]->context);
+    }
+
+    public function testUpdateRejectsModificationOfDisabledAdminAccount(): void
+    {
+        $user = (new \App\Model\Entity\UserEntity())
+            ->setUserId(230)
+            ->setUsername('admin_disabled')
+            ->setSlug('admin-disabled')
+            ->setRole('ADMIN')
+            ->setStatus('disabled');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(230)
+            ->willReturn($user);
+
+        $this->validator
+            ->expects($this->never())
+            ->method('validateAdminUserEdit');
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('updateAdminEditableFields');
+
+        $result = $this->service->update(230, [
+            'role'   => 'MEMBER',
+            'status' => 'active',
+        ]);
+
+        $this->assertSame([
+            'errors' => [
+                ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+            ],
+        ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 230,
+            'reason'    => ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+        ], $records[0]->context);
+    }
+
+    public function testUpdateRejectsModificationOfInactiveAdminAccount(): void
+    {
+        $user = (new \App\Model\Entity\UserEntity())
+            ->setUserId(231)
+            ->setUsername('admin_inactive')
+            ->setSlug('admin-inactive')
+            ->setRole('ADMIN')
+            ->setStatus('inactive');
+
+        $this->userModel
+            ->expects($this->once())
+            ->method('findOneById')
+            ->with(231)
+            ->willReturn($user);
+
+        $this->validator
+            ->expects($this->never())
+            ->method('validateAdminUserEdit');
+
+        $this->userModel
+            ->expects($this->never())
+            ->method('updateAdminEditableFields');
+
+        $result = $this->service->update(231, [
+            'role'   => 'MEMBER',
+            'status' => 'active',
+        ]);
+
+        $this->assertSame([
+            'errors' => [
+                ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+            ],
+        ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 231,
+            'reason'    => ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+        ], $records[0]->context);
     }
 
     public function testUpdatePreservesInactiveStatusWhenStatusIsNotSubmitted(): void
@@ -440,47 +672,26 @@ final class AdminUserServiceTest extends TestCase
             ->with(229)
             ->willReturn($user);
 
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(228);
-
         $this->validator
             ->expects($this->once())
             ->method('validateAdminUserEdit')
             ->with([
-                'username' => 'alice_updated',
-                'role'     => 'MEMBER',
+                'role' => 'MEMBER',
             ])
             ->willReturn([]);
-
-        $this->userModel
-            ->expects($this->once())
-            ->method('findOneByUsername')
-            ->with('alice_updated')
-            ->willReturn(null);
-
-        $this->slugify
-            ->expects($this->once())
-            ->method('slugify')
-            ->with('alice_updated')
-            ->willReturn('alice-updated');
 
         $this->userModel
             ->expects($this->once())
             ->method('updateAdminEditableFields')
             ->with(
                 229,
-                'alice_updated',
-                'alice-updated',
                 'MEMBER',
                 'inactive'
             )
             ->willReturn(true);
 
         $result = $this->service->update(229, [
-            'username' => 'alice_updated',
-            'role'     => 'MEMBER',
+            'role' => 'MEMBER',
         ]);
 
         $this->assertSame([
@@ -503,18 +714,12 @@ final class AdminUserServiceTest extends TestCase
             ->with(229)
             ->willReturn($user);
 
-        $this->authChecker
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(228);
-
         $this->validator
             ->expects($this->once())
             ->method('validateAdminUserEdit')
             ->with([
-                'username' => 'alice_updated',
-                'role'     => 'MEMBER',
-                'status'   => '',
+                'role'   => 'MEMBER',
+                'status' => '',
             ])
             ->willReturn([
                 'status' => ErrorCode::ADMIN_USER_STATUS_INVALID,
@@ -522,19 +727,10 @@ final class AdminUserServiceTest extends TestCase
 
         $this->userModel
             ->expects($this->never())
-            ->method('findOneByUsername');
-
-        $this->slugify
-            ->expects($this->never())
-            ->method('slugify');
-
-        $this->userModel
-            ->expects($this->never())
             ->method('updateAdminEditableFields');
 
         $result = $this->service->update(229, [
-            'username' => 'alice_updated',
-            'role'     => 'MEMBER',
+            'role' => 'MEMBER',
         ]);
 
         $this->assertSame([
@@ -542,10 +738,29 @@ final class AdminUserServiceTest extends TestCase
                 'status' => ErrorCode::ADMIN_USER_STATUS_INVALID,
             ],
             'old' => [
-                'username' => 'alice_updated',
-                'role'     => 'MEMBER',
-                'status'   => '',
+                'role'   => 'MEMBER',
+                'status' => '',
             ],
         ], $result);
+
+        $records = $this->logHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertSame(
+            'admin_user_update_rejected',
+            $records[0]->message
+        );
+
+        $this->assertSame(
+            \Monolog\Level::Warning,
+            $records[0]->level
+        );
+
+        $this->assertSame([
+            'actor_id'  => 1,
+            'target_id' => 229,
+            'reason'    => ErrorCode::ADMIN_USER_STATUS_INVALID,
+        ], $records[0]->context);
     }
 }

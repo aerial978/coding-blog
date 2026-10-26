@@ -1,4 +1,3 @@
-
 {% extends "templates/layouts/admin.html.twig" %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -6,7 +5,9 @@
 {% block content %}
 
 <section>
-    <h2 class="mb-4">Modifier un utilisateur</h2>
+    <h2 class="mb-4">
+        {{ user.role == 'ADMIN' or user.status == 'inactive' ? 'Consulter un utilisateur' : 'Modifier un utilisateur' }}
+    </h2>
 
     {% include 'templates/partials/_flashes.html.twig' with { flashes: flashes } %}
 
@@ -35,13 +36,13 @@
                         <input
                             type="text"
                             id="user_id"
-                            class="form-control"
+                            class="form-control bg-body-secondary"
                             value="{{ user.user_id }}"
                             readonly
                         >
                     </div>
 
-                    {# Nom d'utilisateur #}
+                    {# Nom d'utilisateur : non modifiable #}
                     <div class="col-12 col-md-6">
                         <label for="username" class="form-label">
                             Nom d’utilisateur
@@ -49,12 +50,10 @@
                         <input
                             type="text"
                             id="username"
-                            name="username"
-                            class="form-control"
+                            class="form-control bg-body-secondary"
                             value="{{ user.username }}"
-                            required
+                            readonly
                         >
-                        <div id="username_error"></div>
                     </div>
 
                     {# Adresse e-mail #}
@@ -65,45 +64,32 @@
                         <input
                             type="email"
                             id="email"
-                            class="form-control"
+                            class="form-control bg-body-secondary"
                             value="{{ user.email }}"
                             readonly
                         >
                     </div>
 
-                    {# Rôle #}
+                    {# Rôle : aucune promotion vers ADMIN #}
                     <div class="col-12 col-md-6">
                         <label for="role" class="form-label">
                             Rôle
                         </label>
 
-                        {% if is_own_account %}
+                        <input
+                            type="text"
+                            id="role"
+                            class="form-control bg-body-secondary"
+                            value="{{ user.role }}"
+                            readonly
+                        >
+
+                        {% if user.role == 'MEMBER' %}
                             <input
-                                type="text"
-                                id="role"
-                                class="form-control"
-                                value="{{ user.role }}"
-                                readonly
-                            >
-                        {% else %}
-                            <select
-                                id="role"
+                                type="hidden"
                                 name="role"
-                                class="form-select"
+                                value="MEMBER"
                             >
-                                <option
-                                    value="MEMBER"
-                                    {% if user.role == 'MEMBER' %}selected{% endif %}
-                                >
-                                    MEMBER
-                                </option>
-                                <option
-                                    value="ADMIN"
-                                    {% if user.role == 'ADMIN' %}selected{% endif %}
-                                >
-                                    ADMIN
-                                </option>
-                            </select>
                         {% endif %}
                     </div>
 
@@ -113,11 +99,11 @@
                             Statut
                         </label>
 
-                        {% if is_own_account or user.status == 'inactive' %}
+                        {% if user.role == 'ADMIN' or user.status == 'inactive' %}
                             <input
                                 type="text"
                                 id="status"
-                                class="form-control"
+                                class="form-control bg-body-secondary"
                                 value="{{ user.status }}"
                                 readonly
                             >
@@ -151,7 +137,7 @@
                         <input
                             type="text"
                             id="created_at"
-                            class="form-control"
+                            class="form-control bg-body-secondary"
                             value="{{ user.created_at }}"
                             readonly
                         >
@@ -161,15 +147,18 @@
 
                 {# Actions du formulaire #}
                 <div class="d-flex flex-wrap gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary">
-                        Enregistrer les modifications
-                    </button>
+
+                    {% if user.role == 'MEMBER' and user.status != 'inactive' %}
+                        <button type="submit" class="btn btn-primary">
+                            Enregistrer les modifications
+                        </button>
+                    {% endif %}
 
                     <a
                         href="{{ base_path }}admin/users"
                         class="btn btn-outline-secondary"
                     >
-                        Annuler
+                        Retour à la liste
                     </a>
                 </div>
 
@@ -182,8 +171,10 @@
 {% endblock %}
 
 {% block page_scripts %}
-    <script
-        type="module"
-        src="{{ base_path }}assets/js/admin/validation.user-edit.js"
-    ></script>
+    {% if user.role != 'ADMIN' %}
+        <script
+            type="module"
+            src="{{ base_path }}assets/js/admin/validation.user-edit.js"
+        ></script>
+    {% endif %}
 {% endblock %}

@@ -9,18 +9,20 @@ final class ErrorCode
     public const AUTH_FIELD_REQUIRED          = 'auth.field.required';
 
     // ==== Admin - User management ====
-    public const ADMIN_USER_USERNAME_REQUIRED = 'admin.user.username.required';
-    public const ADMIN_USER_USERNAME_INVALID  = 'admin.user.username.invalid';
-    public const ADMIN_USER_USERNAME_EXISTS   = 'admin.user.username.exists';
-    public const ADMIN_USER_ROLE_INVALID      = 'admin.user.role.invalid';
-    public const ADMIN_USER_STATUS_INVALID    = 'admin.user.status.invalid';
-    public const ADMIN_USER_NOT_FOUND         = 'admin.user.not_found';
-    public const ADMIN_USER_UPDATE_FAILED     = 'admin.user.update_failed';
-    public const ADMIN_USER_UPDATE_SUCCESS    = 'admin.user.update.success';
-    public const ADMIN_USER_DELETE_SUCCESS    = 'admin.user.delete.success';
-    public const ADMIN_USER_DELETE_FAILED     = 'admin.user.delete.failed';
-    public const ADMIN_USER_DELETE_SELF       = 'admin.user.delete.self';
-    public const ADMIN_USER_DELETE_LAST_ADMIN = 'admin.user.delete.last_admin';
+    public const ADMIN_USER_USERNAME_REQUIRED  = 'admin.user.username.required';
+    public const ADMIN_USER_USERNAME_INVALID   = 'admin.user.username.invalid';
+    public const ADMIN_USER_USERNAME_EXISTS    = 'admin.user.username.exists';
+    public const ADMIN_USER_USERNAME_FORBIDDEN = 'admin.user.username.forbidden';
+    public const ADMIN_USER_ROLE_INVALID       = 'admin.user.role.invalid';
+    public const ADMIN_USER_STATUS_INVALID     = 'admin.user.status.invalid';
+    public const ADMIN_USER_NOT_FOUND          = 'admin.user.not_found';
+    public const ADMIN_USER_UPDATE_FAILED      = 'admin.user.update_failed';
+    public const ADMIN_USER_UPDATE_FORBIDDEN   = 'admin.user.update.forbidden';
+    public const ADMIN_USER_UPDATE_SUCCESS     = 'admin.user.update.success';
+    public const ADMIN_USER_DELETE_SUCCESS     = 'admin.user.delete.success';
+    public const ADMIN_USER_DELETE_FAILED      = 'admin.user.delete.failed';
+    public const ADMIN_USER_DELETE_SELF        = 'admin.user.delete.self';
+    public const ADMIN_USER_DELETE_FORBIDDEN   = 'admin.user.delete.forbidden';
 
     // ==== Auth - Registration ====
     public const AUTH_USERNAME_EXISTS               = 'auth.registration.username_exists';

@@ -36,7 +36,7 @@
                             <td>{{ user.created_at }}</td>
                             <td>
                                 <a href="{{ base_path }}admin/users/{{ user.user_id }}/edit">
-                                    Modifier
+                                    {{ user.role == 'ADMIN' or user.status == 'inactive' ? 'Consulter' : 'Modifier' }}
                                 </a>
 
                                 {% if user.can_delete %}

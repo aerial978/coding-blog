@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Service\Admin;
 
 use App\Core\ErrorCode;
+use App\Core\Logger;
 use App\Model\Contract\UserModelInterface;
 use App\Model\Entity\UserEntity;
 use App\Security\Contract\AuthCheckerInterface;
 use App\Service\Admin\Contract\AdminUserServiceInterface;
 use App\Validation\Contract\FormValidatorInterface;
-use Cocur\Slugify\Slugify;
 
 final class AdminUserService implements AdminUserServiceInterface
 {
@@ -18,7 +18,6 @@ final class AdminUserService implements AdminUserServiceInterface
         private UserModelInterface $userModel,
         private FormValidatorInterface $validator,
         private AuthCheckerInterface $authChecker,
-        private Slugify $slugify,
     ) {
     }
 
@@ -38,38 +37,57 @@ final class AdminUserService implements AdminUserServiceInterface
             ];
         }
 
-        [$editable, $status] = $this->prepareEditableFields(
-            $userId,
-            $form,
-            $user
-        );
+        // Administrator accounts cannot be modified from this interface.
+        if ($user->getRole() === 'ADMIN') {
+            $this->logRejectedUpdate(
+                $userId,
+                ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN
+            );
 
-        $errors = $this->validator->validateAdminUserEdit($editable);
+            return [
+                'errors' => [
+                    ErrorCode::ADMIN_USER_UPDATE_FORBIDDEN,
+                ],
+            ];
+        }
+
+        // Usernames can only be changed through account management.
+        if ($this->isUsernameModificationAttempt($form, $user)) {
+            $this->logRejectedUpdate(
+                $userId,
+                ErrorCode::ADMIN_USER_USERNAME_FORBIDDEN
+            );
+
+            return [
+                'errors' => [
+                    'username' => ErrorCode::ADMIN_USER_USERNAME_FORBIDDEN,
+                ],
+            ];
+        }
+
+        $editable = $this->prepareEditableFields($form, $user);
+
+        $validationData = $editable;
+
+        if ($editable['status'] === 'inactive') {
+            unset($validationData['status']);
+        }
+
+        $errors = $this->validator->validateAdminUserEdit($validationData);
 
         if ($errors !== []) {
+            $this->logValidationErrors($userId, $errors);
+
             return [
                 'errors' => $errors,
                 'old'    => $editable,
             ];
         }
 
-        if (!$this->isUsernameAvailable($editable['username'], $user)) {
-            return [
-                'errors' => [
-                    'username' => ErrorCode::ADMIN_USER_USERNAME_EXISTS,
-                ],
-                'old' => $editable,
-            ];
-        }
-
-        $slug = $this->resolveSlug($editable['username'], $user);
-
         $updated = $this->userModel->updateAdminEditableFields(
             $userId,
-            $editable['username'],
-            $slug,
             $editable['role'],
-            $status
+            $editable['status']
         );
 
         if (!$updated) {
@@ -86,55 +104,22 @@ final class AdminUserService implements AdminUserServiceInterface
         ];
     }
 
-    private function isUsernameAvailable(string $username, UserEntity $user): bool
-    {
-        if ($username === $user->getUsername()) {
-            return true;
-        }
-
-        return $this->userModel->findOneByUsername($username) === null;
-    }
-
-    private function resolveSlug(
-        string $username,
-        UserEntity $user
-    ): string {
-        if ($username === $user->getUsername()) {
-            return $user->getSlug() ?? '';
-        }
-
-        return $this->slugify->slugify($username);
-    }
-
     /**
      * @param array<string, mixed> $form
-     * @return array{0: array<string, string>, 1: string}
+     * @return array<string, string>
      */
     private function prepareEditableFields(
-        int $userId,
         array $form,
         UserEntity $user
     ): array {
-        $editable = [
-            'username' => $this->stringField($form, 'username'),
-            'role'     => $this->stringField($form, 'role'),
-        ];
-
         $currentStatus = $user->getStatus() ?? '';
 
-        if ($this->authChecker->getUserId() === $userId) {
-            $editable['role'] = $user->getRole() ?? '';
-
-            return [$editable, $currentStatus];
-        }
-
-        if ($currentStatus === 'inactive') {
-            return [$editable, $currentStatus];
-        }
-
-        $editable['status'] = $this->stringField($form, 'status');
-
-        return [$editable, $editable['status']];
+        return [
+            'role'   => $this->stringField($form, 'role'),
+            'status' => $currentStatus === 'inactive'
+                ? $currentStatus
+                : $this->stringField($form, 'status'),
+        ];
     }
 
     /**
@@ -145,5 +130,52 @@ final class AdminUserService implements AdminUserServiceInterface
         $value = $form[$key] ?? null;
 
         return is_string($value) ? trim($value) : '';
+    }
+
+    /**
+     * Detects attempts to modify the username through the admin interface.
+     *
+     * @param array<string, mixed> $form
+     */
+    private function isUsernameModificationAttempt(
+        array $form,
+        UserEntity $user
+    ): bool {
+        if (!array_key_exists('username', $form)) {
+            return false;
+        }
+
+        return !is_string($form['username'])
+            || $form['username'] !== $user->getUsername();
+    }
+
+    /**
+     * Logs rejected role and status modifications.
+     *
+     * @param array<string, string> $errors
+     */
+    private function logValidationErrors(int $userId, array $errors): void
+    {
+        foreach ($errors as $errorCode) {
+            if (
+                $errorCode    === ErrorCode::ADMIN_USER_ROLE_INVALID
+                || $errorCode === ErrorCode::ADMIN_USER_STATUS_INVALID
+            ) {
+                $this->logRejectedUpdate($userId, $errorCode);
+            }
+        }
+    }
+
+    private function logRejectedUpdate(int $userId, string $errorCode): void
+    {
+        try {
+            Logger::getLogger('admin')->warning('admin_user_update_rejected', [
+                'actor_id'  => $this->authChecker->getUserId(),
+                'target_id' => $userId,
+                'reason'    => $errorCode,
+            ]);
+        } catch (\Throwable) {
+            // La journalisation ne doit pas modifier le résultat du refus.
+        }
     }
 }

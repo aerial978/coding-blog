@@ -31,26 +31,19 @@ final class UserController
 
     public function index(): void
     {
-        $currentUserId    = $this->authChecker->getUserId();
-        $activeAdminCount = $this->userModel->countActiveAdmins();
+        $currentUserId = $this->authChecker->getUserId();
 
         $users = array_map(
-            static function (UserEntity $user) use (
-                $currentUserId,
-                $activeAdminCount
-            ): array {
-                $isOwnAccount = $user->getUserId() === $currentUserId;
-
-                $isLastActiveAdmin = $user->getRole() === 'ADMIN'
-                    && $user->getStatus()             === 'active'
-                    && $activeAdminCount <= 1;
+            static function (UserEntity $user) use ($currentUserId): array {
+                $isOwnAccount   = $user->getUserId() === $currentUserId;
+                $isAdminAccount = $user->getRole()   === 'ADMIN';
 
                 $deleteDisabledReason = null;
 
                 if ($isOwnAccount) {
                     $deleteDisabledReason = 'Vous ne pouvez pas supprimer votre propre compte.';
-                } elseif ($isLastActiveAdmin) {
-                    $deleteDisabledReason = 'Le dernier administrateur actif ne peut pas être supprimé.';
+                } elseif ($isAdminAccount) {
+                    $deleteDisabledReason = 'Vous ne pouvez pas supprimer un compte administrateur.';
                 }
 
                 return [

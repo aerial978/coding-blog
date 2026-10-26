@@ -431,14 +431,10 @@ final class UserServiceProvider
                 /** @var AuthCheckerInterface $authChecker */
                 $authChecker = $container->get(AuthCheckerInterface::class);
 
-                /** @var Slugify $slugify */
-                $slugify = $container->get(Slugify::class);
-
                 return new AdminUserService(
                     $userModel,
                     $validator,
                     $authChecker,
-                    $slugify,
                 );
             },
         ];
