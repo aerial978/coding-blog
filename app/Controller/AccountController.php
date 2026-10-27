@@ -31,6 +31,9 @@ final class AccountController
                 'username'          => $user->getUsername(),
                 'email'             => $user->getEmail(),
                 'email_2fa_enabled' => $user->isEmail2faEnabled(),
+                'role'              => $user->getRole(),
+                'status'            => $user->getStatus(),
+                'created_at'        => $user->getCreatedAt(),
             ],
         ]);
     }
