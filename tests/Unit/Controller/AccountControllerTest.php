@@ -41,6 +41,9 @@ final class AccountControllerTest extends TestCase
             'username'          => 'michael',
             'email'             => 'michael@example.com',
             'email_2fa_enabled' => 1,
+            'role'              => 'MEMBER',
+            'status'            => 'active',
+            'created_at'        => '2026-01-15 10:30:00',
         ]);
 
         $this->accountService
@@ -60,6 +63,9 @@ final class AccountControllerTest extends TestCase
                         'username'          => 'michael',
                         'email'             => 'michael@example.com',
                         'email_2fa_enabled' => true,
+                        'role'              => 'MEMBER',
+                        'status'            => 'active',
+                        'created_at'        => '2026-01-15 10:30:00',
                     ],
                 ]
             );
