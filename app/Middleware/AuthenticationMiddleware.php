@@ -21,11 +21,11 @@ final class AuthenticationMiddleware implements MiddlewareInterface
     /** @var string[] Liste des routes protégées */
     private const PROTECTED_ROUTES = [
         '/change-password',
-        '/account',
         '/dashboard',
     ];
 
     private const PROTECTED_PREFIXES = [
+        '/account',
         '/admin',
     ];
 

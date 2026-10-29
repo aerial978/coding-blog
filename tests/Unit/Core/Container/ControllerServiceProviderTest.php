@@ -22,6 +22,7 @@ use App\Core\Container\Provider\ControllerServiceProvider;
 use App\Core\Contract\FlashInterface;
 use App\Core\Contract\SessionInterface;
 use App\Core\View;
+use App\Handler\Account\AccountUsernameUpdateHandler;
 use App\Handler\Admin\AdminUserDeleteHandler;
 use App\Handler\Admin\AdminUserGetHandler;
 use App\Handler\Admin\AdminUserPostHandler;
@@ -97,6 +98,7 @@ final class ControllerServiceProviderTest extends TestCase
             CsrfTokenInterface::class            => $this->createMock(CsrfTokenInterface::class),
             ResponderInterface::class            => $this->createMock(ResponderInterface::class),
             AccountServiceInterface::class       => $this->createMock(AccountServiceInterface::class),
+            AccountUsernameUpdateHandler::class  => $this->instantiateWithoutConstructor(AccountUsernameUpdateHandler::class),
 
             AdminUserGetHandler::class           => $this->instantiateWithoutConstructor(AdminUserGetHandler::class),
             AdminUserPostHandler::class          => $this->instantiateWithoutConstructor(AdminUserPostHandler::class),

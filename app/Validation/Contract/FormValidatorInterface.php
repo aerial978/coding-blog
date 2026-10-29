@@ -37,4 +37,12 @@ interface FormValidatorInterface
      * @return array<string, string>
      */
     public function validateAdminUserEdit(array $data): array;
+
+    /**
+     * Validates the username submitted from the account settings form.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, string>
+     */
+    public function validateUsernameUpdate(array $data): array;
 }

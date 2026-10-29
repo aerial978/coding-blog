@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Container\Provider\AccountHandlerServiceProvider;
 use App\Core\Container\Provider\AdminUserHandlerServiceProvider;
 use App\Core\Container\Provider\AuthServiceProvider;
 use App\Core\Container\Provider\ControllerServiceProvider;
@@ -13,6 +14,7 @@ return array_merge(
     SystemServiceProvider::getDefinitions(),
     HttpServiceProvider::getDefinitions(),
     UserServiceProvider::getDefinitions(),
+    AccountHandlerServiceProvider::getDefinitions(),
     AdminUserHandlerServiceProvider::getDefinitions(),
     ControllerServiceProvider::getDefinitions(),
     AuthServiceProvider::getDefinitions(),

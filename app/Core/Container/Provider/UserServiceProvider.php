@@ -26,6 +26,8 @@ use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
 use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
+use App\Service\Account\AccountUsernameUpdateService;
+use App\Service\Account\Contract\AccountUsernameUpdateServiceInterface;
 use App\Service\Admin\AdminUserDeletionService;
 use App\Service\Admin\AdminUserService;
 use App\Service\Admin\Contract\AdminUserDeletionServiceInterface;
@@ -203,6 +205,7 @@ final class UserServiceProvider
             self::getRecoveryFlowDefinitions(),
             self::getAdminUserDefinitions(),
             self::getSecurityFacadeDefinitions(),
+            self::getAccountUserDefinitions(),
         );
     }
 
@@ -408,6 +411,39 @@ final class UserServiceProvider
                     $validator,
                     $userTokenModel,
                     $tokenGen,
+                );
+            },
+        ];
+    }
+
+    /**
+     * Account management services.
+     *
+     * @phpstan-return array<class-string, \Closure(ContainerInterface): object>
+     */
+    private static function getAccountUserDefinitions(): array
+    {
+        return [
+            AccountUsernameUpdateServiceInterface::class => static function (
+                ContainerInterface $container
+            ): AccountUsernameUpdateServiceInterface {
+                /** @var AuthCheckerInterface $authChecker */
+                $authChecker = $container->get(AuthCheckerInterface::class);
+
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                /** @var FormValidatorInterface $validator */
+                $validator = $container->get(FormValidatorInterface::class);
+
+                /** @var Slugify $slugify */
+                $slugify = $container->get(Slugify::class);
+
+                return new AccountUsernameUpdateService(
+                    $authChecker,
+                    $userModel,
+                    $validator,
+                    $slugify
                 );
             },
         ];

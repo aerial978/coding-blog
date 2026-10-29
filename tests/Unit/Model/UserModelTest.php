@@ -118,6 +118,7 @@ final class UserModelTest extends TestCase
         $username = 'alice';
 
         $row = [
+            'user_id'  => 42,
             'username' => 'alice',
         ];
 
@@ -125,7 +126,7 @@ final class UserModelTest extends TestCase
             ->expects($this->once())
             ->method('request')
             ->with(
-                'SELECT username FROM user WHERE username = :username',
+                'SELECT id AS user_id, username FROM user WHERE username = :username',
                 [':username' => $username]
             )
             ->willReturn($this->statement);
@@ -139,6 +140,7 @@ final class UserModelTest extends TestCase
         $result = $this->model->findOneByUsername($username);
 
         $this->assertInstanceOf(UserEntity::class, $result);
+        $this->assertSame(42, $result->getUserId());
         $this->assertSame('alice', $result->getUsername());
     }
 
@@ -148,7 +150,7 @@ final class UserModelTest extends TestCase
             ->expects($this->once())
             ->method('request')
             ->with(
-                'SELECT username FROM user WHERE username = :username',
+                'SELECT id AS user_id, username FROM user WHERE username = :username',
                 [':username' => 'unknown']
             )
             ->willReturn($this->statement);

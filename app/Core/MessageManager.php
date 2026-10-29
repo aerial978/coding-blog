@@ -29,6 +29,13 @@ class MessageManager
             ErrorCode::ADMIN_USER_DELETE_SELF        => 'Vous ne pouvez pas supprimer votre propre compte.',
             ErrorCode::ADMIN_USER_DELETE_FORBIDDEN   => 'Vous ne pouvez pas supprimer un compte administrateur depuis cette interface.',
 
+            // ==== Account - Username update ====
+            ErrorCode::ACCOUNT_USERNAME_EXISTS         => "Ce nom d'utilisateur est déjà utilisé.",
+            ErrorCode::ACCOUNT_USERNAME_UNCHANGED      => "Le nouveau nom d'utilisateur est identique à l'actuel.",
+            ErrorCode::ACCOUNT_USERNAME_UPDATE_FAILED  => "Impossible de modifier votre nom d'utilisateur. Veuillez réessayer.",
+            ErrorCode::ACCOUNT_USERNAME_UPDATE_SUCCESS => "Votre nom d'utilisateur a été modifié avec succès.",
+            ErrorCode::ACCOUNT_USER_NOT_FOUND          => 'Votre compte utilisateur est introuvable.',
+
             // ==== Auth - Registration ====
             ErrorCode::AUTH_USERNAME_INVALID               => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",
             ErrorCode::AUTH_USERNAME_EXISTS                => "Nom d'utilisateur déjà utilisé.",

@@ -176,4 +176,20 @@ final class FormValidator implements FormValidatorInterface
         // Réutilise la règle "password()" déjà définie (regex + ErrorCode)
         return ($this->password())($password);
     }
+
+    /**
+     * Validates the username submitted from the account settings form.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, string>
+     */
+    public function validateUsernameUpdate(array $data): array
+    {
+        return $this->validate($data, [
+            'username' => [
+                $this->required(),
+                $this->username(),
+            ],
+        ]);
+    }
 }

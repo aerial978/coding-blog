@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace Tests\Unit\Controller;
 
 use App\Controller\AccountController;
+use App\Core\Contract\FlashInterface;
+use App\Core\FormId;
+use App\Handler\Account\AccountUsernameUpdateHandler;
 use App\Http\Contract\ResponderInterface;
+use App\Http\Request;
 use App\Model\Entity\UserEntity;
+use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
+use App\Service\Account\Contract\AccountUsernameUpdateServiceInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -23,14 +29,39 @@ final class AccountControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->responder      = $this->createMock(ResponderInterface::class);
+        $this->responder = $this->createMock(ResponderInterface::class);
+
         $this->accountService = $this->createMock(
             AccountServiceInterface::class
         );
 
+        $usernameUpdateService = $this->createMock(
+            AccountUsernameUpdateServiceInterface::class
+        );
+
+        $flash = $this->createMock(FlashInterface::class);
+
+        $usernameUpdateHandler = new AccountUsernameUpdateHandler(
+            $usernameUpdateService,
+            $flash,
+            $this->responder,
+        );
+
+        $request = $this->createMock(Request::class);
+
+        $csrf = $this->createMock(CsrfTokenInterface::class);
+
+        $csrf
+            ->method('generateToken')
+            ->with(FormId::ACCOUNT_USERNAME_UPDATE)
+            ->willReturn('test-csrf-token');
+
         $this->controller = new AccountController(
             $this->responder,
             $this->accountService,
+            $usernameUpdateHandler,
+            $request,
+            $csrf,
         );
     }
 
@@ -59,6 +90,7 @@ final class AccountControllerTest extends TestCase
                 [
                     'title'      => 'Mon compte',
                     'active_nav' => 'account',
+                    'csrf_token' => 'test-csrf-token',
                     'account'    => [
                         'username'          => 'michael',
                         'email'             => 'michael@example.com',
