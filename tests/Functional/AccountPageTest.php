@@ -8,13 +8,17 @@ use App\Controller\AccountController;
 use App\Controller\ErrorController;
 use App\Core\Contract\FlashInterface;
 use App\Core\ControllerFactoryInterface;
+use App\Core\FormId;
 use App\Core\Router;
+use App\Handler\Account\AccountUsernameUpdateHandler;
 use App\Http\Contract\ResponderInterface;
 use App\Http\Request;
 use App\Middleware\AuthenticationMiddleware;
 use App\Model\Entity\UserEntity;
 use App\Security\Contract\AuthCheckerInterface;
+use App\Security\Contract\CsrfTokenInterface;
 use App\Service\Account\Contract\AccountServiceInterface;
+use App\Service\Account\Contract\AccountUsernameUpdateServiceInterface;
 use PHPUnit\Framework\TestCase;
 
 final class AccountPageTest extends TestCase
@@ -131,8 +135,10 @@ final class AccountPageTest extends TestCase
             ->with(
                 'account/index.html.twig',
                 [
-                    'title'   => 'Mon compte',
-                    'account' => [
+                    'title'      => 'Mon compte',
+                    'active_nav' => 'account',
+                    'csrf_token' => 'test-csrf-token',
+                    'account'    => [
                         'username'          => 'michael',
                         'email'             => 'michael@example.com',
                         'email_2fa_enabled' => true,
@@ -140,7 +146,6 @@ final class AccountPageTest extends TestCase
                         'status'            => 'active',
                         'created_at'        => '2026-01-15 10:30:00',
                     ],
-                    'active_nav' => 'account',
                 ]
             );
 
@@ -148,7 +153,7 @@ final class AccountPageTest extends TestCase
             ->expects($this->never())
             ->method('redirect');
 
-        $controller = new AccountController(
+        $controller = $this->makeAccountController(
             $responder,
             $accountService
         );
@@ -201,7 +206,7 @@ final class AccountPageTest extends TestCase
             ->method('redirect')
             ->with('/login');
 
-        $controller = new AccountController(
+        $controller = $this->makeAccountController(
             $responder,
             $accountService
         );
@@ -278,5 +283,37 @@ final class AccountPageTest extends TestCase
                 return $this->controller;
             }
         };
+    }
+
+    private function makeAccountController(
+        ResponderInterface $responder,
+        AccountServiceInterface $accountService
+    ): AccountController {
+        $usernameUpdateService = $this->createMock(
+            AccountUsernameUpdateServiceInterface::class
+        );
+
+        $flash = $this->createMock(FlashInterface::class);
+
+        $usernameUpdateHandler = new AccountUsernameUpdateHandler(
+            $usernameUpdateService,
+            $flash,
+            $responder
+        );
+
+        $csrf = $this->createMock(CsrfTokenInterface::class);
+
+        $csrf
+            ->method('generateToken')
+            ->with(FormId::ACCOUNT_USERNAME_UPDATE)
+            ->willReturn('test-csrf-token');
+
+        return new AccountController(
+            $responder,
+            $accountService,
+            $usernameUpdateHandler,
+            new Request(),
+            $csrf
+        );
     }
 }

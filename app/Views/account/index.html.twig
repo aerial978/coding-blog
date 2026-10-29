@@ -8,7 +8,6 @@
 
 <div class="account-page">
     <h1 class="mb-4">Mon compte</h1>
-
     {# Personal information #}
     <section class="card mb-4" aria-labelledby="personal-information-title">
         <div class="card-body">
@@ -23,6 +22,49 @@
                 <dt class="col-sm-4">Adresse e-mail</dt>
                 <dd class="col-sm-8">{{ account.email ?? 'Non renseignée' }}</dd>
             </dl>
+
+            <hr class="my-4">
+
+            <h3 class="h6 mb-3">Modifier mon nom d’utilisateur</h3>
+
+            <form id="accountUsernameForm" action="{{ base_path }}account/username" method="post">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token }}"
+                >
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        Nouveau nom d’utilisateur
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="username"
+                        name="username"
+                        value="{{ account.username }}"
+                        minlength="3"
+                        maxlength="20"
+                        pattern="[A-Za-z0-9_]{3,20}"
+                        autocomplete="username"
+                        required
+                        aria-describedby="username-help"
+                    >
+
+                    <div id="username_error"></div>
+
+                    <div id="username-help" class="form-text">
+                        Entre 3 et 20 caractères : lettres, chiffres et tiret bas (_).
+                        Au moins une lettre est obligatoire.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Enregistrer le nom d’utilisateur
+                </button>
+            </form>
         </div>
     </section>
 
@@ -97,4 +139,11 @@
     </section>
 </div>
 
+{% endblock %}
+
+{% block page_scripts %}
+    <script
+        type="module"
+        src="{{ base_path }}assets/js/security/validation.account-username.js"
+    ></script>
 {% endblock %}

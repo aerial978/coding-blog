@@ -64,6 +64,17 @@ interface UserModelInterface
     public function createOAuthUser(UserEntity $user): int;
 
     /**
+     * Updates a user's username and slug in a single database operation.
+     *
+     * Returns true if a row was updated, false otherwise.
+     */
+    public function updateUsername(
+        int $userId,
+        string $username,
+        string $slug
+    ): bool;
+
+    /**
      * Updates the fields editable from the admin user management interface.
      */
     public function updateAdminEditableFields(

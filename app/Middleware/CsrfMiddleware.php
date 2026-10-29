@@ -23,6 +23,7 @@ final class CsrfMiddleware implements MiddlewareInterface
         '/resend-confirmation'     => FormId::RESEND_CONFIRM,
         '/forgot-password'         => FormId::FORGOT_PASSWORD,
         '/reset-password'          => FormId::RESET_PASSWORD,
+        '/account/username'        => FormId::ACCOUNT_USERNAME_UPDATE,
         '/admin/users/{id}/edit'   => FormId::ADMIN_USER_EDIT,
         '/admin/users/{id}/delete' => FormId::ADMIN_USER_DELETE,
     ];

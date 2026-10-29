@@ -84,7 +84,7 @@ class UserModel implements UserModelInterface
     public function findOneByUsername(string $username): ?UserEntity
     {
         $stmt = $this->sqlHelper->request(
-            "SELECT username FROM {$this->table} WHERE username = :username",
+            "SELECT id AS user_id, username FROM {$this->table} WHERE username = :username",
             [':username' => $username]
         );
 
@@ -308,6 +308,34 @@ class UserModel implements UserModelInterface
         }
 
         return $this->sqlHelper->lastInsertId();
+    }
+
+    /**
+     * Updates a user's username and slug in a single database operation.
+     *
+     * Returns true if a row was updated, false otherwise.
+     */
+    public function updateUsername(
+        int $userId,
+        string $username,
+        string $slug
+    ): bool {
+        $sql = "UPDATE {$this->table}
+                SET
+                    username = :username,
+                    slug = :slug,
+                    updated_at = NOW()
+                WHERE id = :user_id";
+
+        $params = [
+            ':user_id'  => $userId,
+            ':username' => $username,
+            ':slug'     => $slug,
+        ];
+
+        $query = $this->sqlHelper->request($sql, $params);
+
+        return $query->rowCount() === 1;
     }
 
     /**

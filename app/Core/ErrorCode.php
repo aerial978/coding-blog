@@ -24,6 +24,13 @@ final class ErrorCode
     public const ADMIN_USER_DELETE_SELF        = 'admin.user.delete.self';
     public const ADMIN_USER_DELETE_FORBIDDEN   = 'admin.user.delete.forbidden';
 
+    // ==== Account - Username update ====
+    public const ACCOUNT_USERNAME_EXISTS         = 'account.username.exists';
+    public const ACCOUNT_USERNAME_UNCHANGED      = 'account.username.unchanged';
+    public const ACCOUNT_USERNAME_UPDATE_FAILED  = 'account.username.update_failed';
+    public const ACCOUNT_USERNAME_UPDATE_SUCCESS = 'account.username.update.success';
+    public const ACCOUNT_USER_NOT_FOUND          = 'account.user.not_found';
+
     // ==== Auth - Registration ====
     public const AUTH_USERNAME_EXISTS               = 'auth.registration.username_exists';
     public const AUTH_EMAIL_EXISTS                  = 'auth.registration.email_exists';

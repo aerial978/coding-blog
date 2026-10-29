@@ -38,6 +38,7 @@ return [
     ],
     Router::METHOD_POST => [
         '/register'                => [RegisterController::class, 'register'],
+        '/account/username'        => [AccountController::class, 'updateUsername'],
         '/resend-confirmation'     => [ResendConfirmationController::class, 'resendConfirmation'],
         '/login'                   => [LoginController::class, 'login'],
         '/login/2fa'               => [Email2faController::class, 'verify'],
