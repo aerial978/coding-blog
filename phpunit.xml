@@ -7,6 +7,7 @@
 
   <php>
     <env name="APP_ENV" value="test"/>
+    <env name="APP_URL" value="http://localhost/coding-blog"/>
     <env name="LOG_LEVEL" value="DEBUG"/>
   </php>
 
