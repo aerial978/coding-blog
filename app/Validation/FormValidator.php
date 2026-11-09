@@ -192,4 +192,12 @@ final class FormValidator implements FormValidatorInterface
             ],
         ]);
     }
+
+    /**
+     * Validates a password without modifying its original value.
+     */
+    public function validatePasswordChangeField(string $password): ?string
+    {
+        return ($this->password())($password);
+    }
 }

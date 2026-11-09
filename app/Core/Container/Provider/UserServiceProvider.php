@@ -26,7 +26,9 @@ use App\Security\DisposableChecker;
 use App\Security\EmailQuotaService;
 use App\Security\PasswordBlacklist;
 use App\Security\RegistrationThrottleService;
+use App\Service\Account\AccountPasswordChangeService;
 use App\Service\Account\AccountUsernameUpdateService;
+use App\Service\Account\Contract\AccountPasswordChangeServiceInterface;
 use App\Service\Account\Contract\AccountUsernameUpdateServiceInterface;
 use App\Service\Admin\AdminUserDeletionService;
 use App\Service\Admin\AdminUserService;
@@ -444,6 +446,37 @@ final class UserServiceProvider
                     $userModel,
                     $validator,
                     $slugify
+                );
+            },
+
+            AccountPasswordChangeServiceInterface::class => static function (
+                ContainerInterface $container
+            ): AccountPasswordChangeServiceInterface {
+                /** @var AuthCheckerInterface $authChecker */
+                $authChecker = $container->get(AuthCheckerInterface::class);
+
+                /** @var UserModelInterface $userModel */
+                $userModel = $container->get(UserModelInterface::class);
+
+                /** @var UserTokenModelInterface $userTokenModel */
+                $userTokenModel = $container->get(UserTokenModelInterface::class);
+
+                /** @var FormValidatorInterface $validator */
+                $validator = $container->get(FormValidatorInterface::class);
+
+                /** @var PasswordBlacklist $passwordBlacklist */
+                $passwordBlacklist = $container->get(PasswordBlacklist::class);
+
+                /** @var SqlHelperInterface $sqlHelper */
+                $sqlHelper = $container->get(SqlHelperInterface::class);
+
+                return new AccountPasswordChangeService(
+                    $authChecker,
+                    $userModel,
+                    $userTokenModel,
+                    $validator,
+                    $passwordBlacklist,
+                    $sqlHelper,
                 );
             },
         ];

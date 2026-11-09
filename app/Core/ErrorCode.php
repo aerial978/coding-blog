@@ -31,6 +31,14 @@ final class ErrorCode
     public const ACCOUNT_USERNAME_UPDATE_SUCCESS = 'account.username.update.success';
     public const ACCOUNT_USER_NOT_FOUND          = 'account.user.not_found';
 
+    // ==== Account - Password change ====
+    public const ACCOUNT_CURRENT_PASSWORD_INVALID       = 'account.password.current.invalid';
+    public const ACCOUNT_PASSWORD_CONFIRMATION_MISMATCH = 'account.password.confirmation.mismatch';
+    public const ACCOUNT_PASSWORD_UNCHANGED             = 'account.password.unchanged';
+    public const ACCOUNT_PASSWORD_UPDATE_FAILED         = 'account.password.update_failed';
+    public const ACCOUNT_PASSWORD_UPDATE_SUCCESS        = 'account.password.update.success';
+    public const ACCOUNT_PASSWORD_ROLLBACK_FAILED       = 'account.password.rollback_failed';
+
     // ==== Auth - Registration ====
     public const AUTH_USERNAME_EXISTS               = 'auth.registration.username_exists';
     public const AUTH_EMAIL_EXISTS                  = 'auth.registration.email_exists';

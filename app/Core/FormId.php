@@ -24,6 +24,7 @@ final class FormId
 
     // Account
     public const ACCOUNT_USERNAME_UPDATE = 'account_username_update_form';
+    public const ACCOUNT_PASSWORD_CHANGE = 'account_password_change_form';
 
     // Admin
     public const ADMIN_USER_EDIT   = 'admin_user_edit_form';

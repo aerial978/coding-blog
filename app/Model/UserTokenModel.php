@@ -293,6 +293,31 @@ class UserTokenModel implements UserTokenModelInterface
     }
 
     /**
+     * Revokes all active remember-me tokens belonging to a user.
+     *
+     * Must be called within an active database transaction.
+     */
+    public function revokeAllActiveRememberMeTokens(int $userId): void
+    {
+        $sql = "
+            UPDATE {$this->table}
+            SET
+                used = 1,
+                used_at = NOW()
+            WHERE
+                user_id = :user_id
+                AND purpose = :purpose
+                AND used = 0
+                AND expires_at > NOW()
+        ";
+
+        $this->sqlHelper->request($sql, [
+            ':user_id' => $userId,
+            ':purpose' => 'remember_me',
+        ]);
+    }
+
+    /**
      * Permanently deletes all tokens associated with a user.
      */
     public function deleteAllByUserId(int $userId): void

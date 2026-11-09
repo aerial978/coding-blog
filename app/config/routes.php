@@ -39,6 +39,7 @@ return [
     Router::METHOD_POST => [
         '/register'                => [RegisterController::class, 'register'],
         '/account/username'        => [AccountController::class, 'updateUsername'],
+        '/account/password'        => [AccountController::class, 'updatePassword'],
         '/resend-confirmation'     => [ResendConfirmationController::class, 'resendConfirmation'],
         '/login'                   => [LoginController::class, 'login'],
         '/login/2fa'               => [Email2faController::class, 'verify'],

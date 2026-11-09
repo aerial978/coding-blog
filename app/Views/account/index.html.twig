@@ -105,6 +105,116 @@
                     {% endif %}
                 </dd>
             </dl>
+
+            <hr class="my-4">
+
+            <h3 class="h6 mb-3">Modifier mon mot de passe</h3>
+
+            <form
+                id="accountPasswordForm"
+                action="{{ base_path }}account/password"
+                method="post"
+            >
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ password_csrf_token }}"
+                >
+
+                <div class="mb-3">
+                    <label for="current_password" class="form-label">
+                        Mot de passe actuel
+                    </label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="current_password"
+                            name="current_password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button
+                            type="button"
+                            class="input-group-text"
+                            data-password-toggle
+                            aria-controls="current_password"
+                            aria-label="Afficher le mot de passe"
+                            aria-pressed="false"
+                        >
+                            <i class="bi bi-eye-fill" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="current_password_error"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="new_password" class="form-label">
+                        Nouveau mot de passe
+                    </label>
+
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="new_password"
+                            name="new_password"
+                            minlength="12"
+                            autocomplete="new-password"
+                            required
+                            aria-describedby="new-password-help"
+                        >
+                        <button
+                            type="button"
+                            class="input-group-text"
+                            data-password-toggle
+                            aria-controls="new_password"
+                            aria-label="Afficher le mot de passe"
+                            aria-pressed="false"
+                        >
+                            <i class="bi bi-eye-fill" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="new_password_error"></div>
+
+                    <div id="new-password-help" class="form-text">
+                        Au moins 12 caractères, dont une lettre minuscule,
+                        une lettre majuscule, un chiffre et un caractère spécial.
+                        Les espaces ne sont pas autorisés.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password_confirmation" class="form-label">
+                        Confirmer le nouveau mot de passe
+                    </label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            autocomplete="new-password"
+                            required
+                        >
+                        <button
+                            type="button"
+                            class="input-group-text"
+                            data-password-toggle
+                            aria-controls="password_confirmation"
+                            aria-label="Afficher le mot de passe"
+                            aria-pressed="false"
+                        >
+                            <i class="bi bi-eye-fill" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="password_confirmation_error"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Modifier mon mot de passe
+                </button>
+            </form>
         </div>
     </section>
 
@@ -145,5 +255,15 @@
     <script
         type="module"
         src="{{ base_path }}assets/js/security/validation.account-username.js"
+    ></script>
+
+    <script
+        type="module"
+        src="{{ base_path }}assets/js/security/validation.account-password.js"
+    ></script>
+
+    <script
+        type="module"
+        src="{{ base_path }}assets/js/security/password-visibility.js"
     ></script>
 {% endblock %}
