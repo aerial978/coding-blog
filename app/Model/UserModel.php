@@ -339,6 +339,31 @@ class UserModel implements UserModelInterface
     }
 
     /**
+     * Updates a user's password hash.
+     *
+     * Returns true if a row was updated, false otherwise.
+     */
+    public function updatePassword(
+        int $userId,
+        string $passwordHash
+    ): bool {
+        $sql = "UPDATE {$this->table}
+                SET
+                    password = :password,
+                    updated_at = NOW()
+                WHERE id = :user_id";
+
+        $params = [
+            ':user_id'  => $userId,
+            ':password' => $passwordHash,
+        ];
+
+        $query = $this->sqlHelper->request($sql, $params);
+
+        return $query->rowCount() === 1;
+    }
+
+    /**
      * Updates the role and status of a user from the admin interface.
      */
     public function updateAdminEditableFields(

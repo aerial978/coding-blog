@@ -15,6 +15,7 @@ use App\Service\Admin\AdminUserDeletionService;
 require dirname(__DIR__, 4) . '/vendor/autoload.php';
 
 $_ENV['APP_ENV']      = 'test';
+$_ENV['APP_URL']      = 'http://localhost/coding-blog';
 $_ENV['DB_HOST']      = 'localhost';
 $_ENV['DB_USER']      = 'root';
 $_ENV['DB_PASSWORD']  = '';

@@ -19,6 +19,16 @@ interface UserTokenModelInterface
     public function invalidateRememberMeToken(int $userId): bool;
 
     /**
+     * Revokes all active remember-me tokens belonging to a user.
+     *
+     * Must be called within an active database transaction.
+     * No active tokens is a valid outcome.
+     *
+     * Database exceptions must propagate to the caller.
+     */
+    public function revokeAllActiveRememberMeTokens(int $userId): void;
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findConfirmationContextByHash(string $hashBinary32): ?array;

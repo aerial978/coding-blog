@@ -75,6 +75,18 @@ interface UserModelInterface
     ): bool;
 
     /**
+     * Updates a user's password hash.
+     *
+     * The password must already be hashed before calling this method.
+     *
+     * Returns true if a row was updated, false otherwise.
+     */
+    public function updatePassword(
+        int $userId,
+        string $passwordHash
+    ): bool;
+
+    /**
      * Updates the fields editable from the admin user management interface.
      */
     public function updateAdminEditableFields(

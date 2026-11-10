@@ -242,4 +242,80 @@ final class CsrfMiddlewareTest extends TestCase
         $result                  = $mw->handle($this->request, '/resend-confirmation', 'POST');
         $this->assertFalse($result);
     }
+
+    public function test_post_account_password_route_with_valid_token_is_allowed(): void
+    {
+        $this->request->method('request')->willReturn([
+            'csrf_token' => 'password-change-token',
+        ]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ACCOUNT_PASSWORD_CHANGE, 'password-change-token')
+            ->willReturn(true);
+
+        $this->flash->expects($this->never())->method('add');
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/account/password',
+            'POST'
+        );
+
+        $this->assertTrue($result);
+    }
+
+    #[RunInSeparateProcess]
+    public function test_post_account_password_route_with_invalid_token_is_blocked(): void
+    {
+        $this->request->method('request')->willReturn([
+            'csrf_token' => 'invalid-password-token',
+        ]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ACCOUNT_PASSWORD_CHANGE, 'invalid-password-token')
+            ->willReturn(false);
+
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/account/password',
+            'POST'
+        );
+
+        $this->assertFalse($result);
+    }
+
+    #[RunInSeparateProcess]
+    public function test_post_account_password_route_without_token_is_blocked(): void
+    {
+        $this->request->method('request')->willReturn([]);
+
+        $this->csrf->expects($this->once())
+            ->method('validateToken')
+            ->with(FormId::ACCOUNT_PASSWORD_CHANGE, null)
+            ->willReturn(false);
+
+        $this->flash->expects($this->once())
+            ->method('add')
+            ->with('error', $this->isType('string'));
+
+        $mw = $this->makeMiddleware();
+
+        $result = $mw->handle(
+            $this->request,
+            '/account/password',
+            'POST'
+        );
+
+        $this->assertFalse($result);
+    }
 }

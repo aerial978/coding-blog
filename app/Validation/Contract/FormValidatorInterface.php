@@ -45,4 +45,11 @@ interface FormValidatorInterface
      * @return array<string, string>
      */
     public function validateUsernameUpdate(array $data): array;
+
+    /**
+     * Validates a password without normalization.
+     *
+     * Intended for authenticated password changes.
+     */
+    public function validatePasswordChangeField(string $password): ?string;
 }

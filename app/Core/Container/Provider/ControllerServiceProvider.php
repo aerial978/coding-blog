@@ -20,6 +20,7 @@ use App\Controller\RegisterController;
 use App\Controller\ResendConfirmationController;
 use App\Controller\ResetPasswordController;
 use App\Core\Contract\SessionInterface;
+use App\Handler\Account\AccountPasswordChangeHandler;
 use App\Handler\Account\AccountUsernameUpdateHandler;
 use App\Handler\Admin\AdminUserDeleteHandler;
 use App\Handler\Admin\AdminUserGetHandler;
@@ -112,12 +113,18 @@ final class ControllerServiceProvider
                 /** @var CsrfTokenInterface $csrf */
                 $csrf = $container->get(CsrfTokenInterface::class);
 
+                /** @var AccountPasswordChangeHandler $passwordHandler */
+                $passwordHandler = $container->get(
+                    AccountPasswordChangeHandler::class
+                );
+
                 return new AccountController(
                     $responder,
                     $accountService,
                     $updateHandler,
                     $request,
                     $csrf,
+                    $passwordHandler,
                 );
             },
 

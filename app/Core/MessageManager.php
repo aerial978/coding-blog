@@ -36,6 +36,13 @@ class MessageManager
             ErrorCode::ACCOUNT_USERNAME_UPDATE_SUCCESS => "Votre nom d'utilisateur a été modifié avec succès.",
             ErrorCode::ACCOUNT_USER_NOT_FOUND          => 'Votre compte utilisateur est introuvable.',
 
+            // ==== Account - Password change ====
+            ErrorCode::ACCOUNT_CURRENT_PASSWORD_INVALID       => 'Le mot de passe actuel est incorrect.',
+            ErrorCode::ACCOUNT_PASSWORD_CONFIRMATION_MISMATCH => 'La confirmation du nouveau mot de passe ne correspond pas.',
+            ErrorCode::ACCOUNT_PASSWORD_UNCHANGED             => 'Le nouveau mot de passe doit être différent du mot de passe actuel.',
+            ErrorCode::ACCOUNT_PASSWORD_UPDATE_FAILED         => 'Impossible de modifier votre mot de passe. Veuillez réessayer.',
+            ErrorCode::ACCOUNT_PASSWORD_UPDATE_SUCCESS        => 'Votre mot de passe a été modifié avec succès.',
+
             // ==== Auth - Registration ====
             ErrorCode::AUTH_USERNAME_INVALID               => "Le nom d'utilisateur est invalide (3 à 20 caractères alphanumériques ou underscores).",
             ErrorCode::AUTH_USERNAME_EXISTS                => "Nom d'utilisateur déjà utilisé.",
